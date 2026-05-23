@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg:        #FAF8F5;
+  --bg-alt:    #F0EBE3;
+  --surface:   #FFFFFF;
+  --border:    #E5E0D8;
+  --border-md: #D4CFC7;
+  --border-hi: #B8AA94;
+  --text1:     #1A1A1A;
+  --text2:     #444444;
+  --text3:     #888888;
+  --accent:    #BF4A07;
+  --green:     #1B7050;
+  --red:       #B02828;
+  --amber:     #92400E;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text1);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+/* Article link hover */
+a { color: inherit; text-decoration: none; }
+
+/* Hide scrollbar on category tabs */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Safe area for bottom nav on iOS */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
