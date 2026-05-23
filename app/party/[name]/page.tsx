@@ -74,7 +74,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
           </div>
           <div className="divide-y divide-[var(--border)]">
             {(party.ministers ?? []).map((m, i) => (
-              <Link key={i} href={`/minister/${m.name?.toLowerCase().replace(/\s+/g, '-') ?? '#'}`}
+              <Link key={i} href={`/minister/${m.name?.toLowerCase().replace(/\s+/g, '_') ?? '#'}`}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-alt)] transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-[var(--bg-alt)] flex items-center justify-center text-[12px] font-bold text-[var(--text2)] flex-shrink-0">
                   {m.name?.[0] ?? '?'}
