@@ -62,7 +62,12 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
   const paginatedArticles = articles.slice(0, visibleCount)
   const hasMore           = articles.length > paginatedArticles.length
 
-  const tabLabel = activeTab === 'all' ? "Today's Reality" : `${activeTab.charAt(0).toUpperCase()}${activeTab.slice(1)} Edition`
+  const tabLabel = 
+    activeTab === 'all' 
+      ? "Today's Reality" 
+      : (activeTab === 'flagged' 
+          ? "Critical Civic Alerts — What Needs Attention" 
+          : `${activeTab.charAt(0).toUpperCase()}${activeTab.slice(1)} Edition`)
 
   return (
     <div>

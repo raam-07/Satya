@@ -9,9 +9,19 @@ interface Props {
   party?: string
   person?: string
   category?: string
+  preloadedEvidence?: {
+    url: string
+    title: string
+    source: string
+    scraped_at: string
+    relevance_score?: number
+    gemma_validated?: boolean
+    rephrased?: string
+    content?: string
+  }[]
 }
 
-export function VaadeRelatedArticles({ party, person, category }: Props) {
+export function VaadeRelatedArticles({ party, person, category, preloadedEvidence }: Props) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<Article | null>(null)
@@ -19,6 +29,25 @@ export function VaadeRelatedArticles({ party, person, category }: Props) {
   const closeModal = useCallback(() => setModal(null), [])
 
   useEffect(() => {
+    if (preloadedEvidence && preloadedEvidence.length > 0) {
+      const mapped: Article[] = preloadedEvidence.map((e, idx) => ({
+        id: idx,
+        title: e.title,
+        url: e.url,
+        source: e.source,
+        scraped_at: e.scraped_at,
+        rephrased_article: e.rephrased ?? '',
+        content: e.content ?? '',
+        category: category ?? 'politics',
+        sentiment: 'neutral',
+        party_mentioned: party ? [party] : [],
+        ministers_mentioned: person ? [person] : [],
+      }))
+      setArticles(mapped)
+      setLoading(false)
+      return
+    }
+
     api.feed('all').then(feedData => {
       const filtered = (feedData?.articles ?? []).filter(a => {
         const partyMatch   = party    && a.party_mentioned?.some(p => p.toLowerCase() === party.toLowerCase())
@@ -29,7 +58,7 @@ export function VaadeRelatedArticles({ party, person, category }: Props) {
       setArticles(filtered)
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [party, person, category])
+  }, [party, person, category, preloadedEvidence])
 
   if (loading) {
     return (
@@ -51,7 +80,7 @@ export function VaadeRelatedArticles({ party, person, category }: Props) {
       </div>
       <div className="flex flex-col">
         {articles.map((a, i) => (
-          <ArticleCard key={a.id ?? i} article={a} variant="default" onOpen={openModal} />
+          <ArticleCard key={a.id ?? i} article={a} variant="default" onOpen={openModal} clampSummary={false} />
         ))}
       </div>
       <ArticleModal article={modal} onClose={closeModal} />

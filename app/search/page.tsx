@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import { ArticleCard } from '@/components/ArticleCard'
+import { ArticleList } from '@/components/ArticleList'
 
 export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
   const query = searchParams.q?.toLowerCase() || ''
@@ -28,13 +28,15 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         </p>
       </div>
       
-      <div className="flex flex-col bg-white">
-        {filtered.map((article, i) => (
-          <ArticleCard key={article.id ?? i} article={article} variant="default" />
-        ))}
-        {query && filtered.length === 0 && (
+      <div className="bg-white">
+        {query ? (
+          <ArticleList
+            articles={filtered}
+            emptyMessage={`No articles found matching "${searchParams.q}"`}
+          />
+        ) : (
           <div className="p-12 text-center text-[13px] text-[var(--text3)] font-mono bg-[var(--bg)]">
-            No articles found matching "{searchParams.q}"
+            Enter a search term above.
           </div>
         )}
       </div>

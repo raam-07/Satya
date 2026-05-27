@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import { ArticleCard } from '@/components/ArticleCard'
+import { ArticleList } from '@/components/ArticleList'
 import { StatusBadge, PBadge } from '@/components/SrcTag'
 import Link from 'next/link'
 
@@ -121,12 +121,10 @@ export default async function PartyPage({ params }: { params: { name: string } }
             <div className="px-4 py-3 border-b border-[var(--border-md)]">
               <span className="text-[10px] font-mono tracking-widest uppercase text-[var(--text2)]">Recent Articles</span>
             </div>
-            {(party.recent_articles ?? []).map((a, i) => (
-              <ArticleCard key={a.id ?? i} article={a} variant="default" />
-            ))}
-            {(party.recent_articles ?? []).length === 0 && (
-              <p className="px-4 py-6 text-[12px] text-[var(--text3)] font-mono">No articles loaded</p>
-            )}
+            <ArticleList
+              articles={party.recent_articles ?? []}
+              emptyMessage="No articles loaded"
+            />
           </div>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import React from 'react'
+
 // Strip " - Source Name" from end of titles
 export function cleanTitle(title: string): string {
   return title.replace(/\s[-|]\s[^-|]+$/, '').trim()
@@ -61,4 +63,16 @@ export function sentimentStyle(s?: string) {
 // Check if image_url is valid
 export function hasImage(url?: string): boolean {
   return !!url && url !== 'No image available' && url.startsWith('http')
+}
+
+// Render **bold** markdown tags as <strong> elements in React
+export function renderMarkdown(text?: string): React.ReactNode[] | string {
+  if (!text) return ''
+  const parts = text.split(/\*\*(.*?)\*\*/g)
+  return parts.map((part, idx) => {
+    if (idx % 2 === 1) {
+      return React.createElement('strong', { key: idx, className: 'font-bold' }, part)
+    }
+    return part
+  })
 }

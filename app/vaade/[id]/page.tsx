@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { PBadge, StatusBadge } from '@/components/SrcTag'
 import { VaadeRelatedArticles } from '@/components/VaadeRelatedArticles'
 import type { PoliticalPromise } from '@/lib/api'
+import { renderMarkdown } from '@/lib/utils'
 
 const STATUS_COLOR: Record<string, string> = {
   kept:    '#1B7050',
@@ -89,7 +90,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
             AI Analysis
           </div>
           <div className="border-l-2 pl-4 text-[13px] leading-relaxed" style={{ borderColor: statusColor + '55', color: 'var(--text2)' }}>
-            {promise.gemma_reasoning}
+            {renderMarkdown(promise.gemma_reasoning)}
           </div>
           {promise.gemma_suggestion && (
             <p className="text-[11px] mt-3 italic" style={{ color: 'var(--text3)' }}>
@@ -113,6 +114,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
         party={promise.party}
         person={promise.person}
         category={promise.category}
+        preloadedEvidence={promise.evidence_articles}
       />
     </div>
   )

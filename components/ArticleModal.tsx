@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Article } from '@/lib/api'
-import { cleanTitle, formatDate, categoryLabel, hasImage } from '@/lib/utils'
+import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown } from '@/lib/utils'
 import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from './SrcTag'
 
 // Topic display names per spec
@@ -127,11 +127,48 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
               {displayTitle}
             </h2>
 
+            {/* Civic Warning Alert Box */}
+            {article.civic_flag && (
+              <div 
+                className="mb-5 p-4 rounded-sm border flex gap-3 text-[13px] font-sans leading-relaxed"
+                style={{ 
+                  background: 'rgba(176, 40, 40, 0.05)', 
+                  borderColor: 'rgba(176, 40, 40, 0.3)', 
+                  color: '#B02828' 
+                }}
+              >
+                <span className="text-[20px] leading-none flex-shrink-0">⚑</span>
+                <div>
+                  <div className="font-mono text-[10px] font-bold tracking-widest uppercase mb-1">
+                    Urgent Civic Alert: {article.civic_flag_category?.replace(/_/g, ' ')}
+                  </div>
+                  <p className="font-semibold">
+                    {article.civic_flag_reason || 'This article reports an incident flagged for systemic civic concern or institutional abuse of power.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Summary */}
             {article.rephrased_article && (
               <p className="text-[14px] leading-relaxed border-l-2 pl-4 mb-5" style={{ color: 'var(--text2)', borderColor: 'var(--accent)' }}>
-                {article.rephrased_article}
+                {renderMarkdown(article.rephrased_article)}
               </p>
+            )}
+
+            {/* Original Full Text */}
+            {article.content && (
+              <div className="mb-5 border border-[var(--border-md)] rounded-sm p-4 bg-[var(--bg)]">
+                <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-2" style={{ color: 'var(--text3)' }}>
+                  Original Full Article
+                </div>
+                <div 
+                  className="text-[12.5px] leading-relaxed max-h-72 overflow-y-auto whitespace-pre-line font-sans"
+                  style={{ color: 'var(--text2)' }}
+                >
+                  {article.content}
+                </div>
+              </div>
             )}
 
             {/* Topic tags — tappable */}

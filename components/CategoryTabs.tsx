@@ -4,6 +4,7 @@ import { useRef } from 'react'
 // Exactly 8 tabs per spec — tab id maps to feed API key in HomeClient
 const TABS = [
   { id: 'all',        label: 'All' },
+  { id: 'flagged',    label: 'Civic Alerts ⚑' },
   { id: 'governance', label: 'Governance' },
   { id: 'economy',    label: 'Economy' },
   { id: 'justice',    label: 'Justice' },
@@ -29,6 +30,7 @@ export function CategoryTabs({ activeTab, onChangeTab }: CategoryTabsProps) {
     >
       {TABS.map(tab => {
         const isActive = activeTab === tab.id
+        const isFlagged = tab.id === 'flagged'
         return (
           <button
             key={tab.id}
@@ -39,12 +41,17 @@ export function CategoryTabs({ activeTab, onChangeTab }: CategoryTabsProps) {
             {isActive && (
               <div
                 className="absolute bottom-0 left-3 right-3 h-[2px]"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: isFlagged ? '#B02828' : 'var(--accent)' }}
               />
             )}
             <span
               className="text-[11px] font-semibold tracking-wide"
-              style={{ color: isActive ? 'var(--accent)' : 'var(--text3)' }}
+              style={{ 
+                color: isActive 
+                  ? (isFlagged ? '#B02828' : 'var(--accent)') 
+                  : (isFlagged ? 'rgba(176,40,40,0.85)' : 'var(--text3)'),
+                fontWeight: isFlagged ? 'bold' : '600'
+              }}
             >
               {tab.label}
             </span>

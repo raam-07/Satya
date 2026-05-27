@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PBadge, StatusBadge } from './SrcTag'
 import type { PoliticalPromise, PromisesSummary } from '@/lib/api'
+import { renderMarkdown } from '@/lib/utils'
 
 type FilterId = 'all' | 'broken' | 'ongoing' | 'kept' | 'bjp' | 'inc' | 'aap'
 
@@ -131,7 +132,7 @@ export function VaadeClient({ data }: VaadeClientProps) {
                     {p.gemma_reasoning && (
                       <p className="text-[11px] leading-relaxed border-l-2 pl-3 line-clamp-2"
                         style={{ color: 'var(--text2)', borderColor: `${statusColor}44` }}>
-                        {p.gemma_reasoning}
+                        {renderMarkdown(p.gemma_reasoning)}
                       </p>
                     )}
 

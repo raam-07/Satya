@@ -12,12 +12,17 @@ export interface Article {
   sentiment?: string
   sentiment_target?: string
   rephrased_article?: string
+  content?: string
   party_mentioned?: string[]
   ministers_mentioned?: string[]
   states_mentioned?: string[]
   cities_mentioned?: string[]
   topic_tags?: string[]
   is_india?: boolean
+  civic_flag?: boolean
+  civic_flag_score?: number
+  civic_flag_category?: string
+  civic_flag_reason?: string
 }
 
 // ── india_overview.json ──────────────────────────────────────────────────────
@@ -135,6 +140,16 @@ export interface PoliticalPromise {
   evidence_count?: number
   gemma_suggestion?: string
   gemma_reasoning?: string
+  evidence_articles?: {
+    url: string
+    title: string
+    source: string
+    scraped_at: string
+    relevance_score?: number
+    gemma_validated?: boolean
+    rephrased?: string
+    content?: string
+  }[]
 }
 
 export interface PromisesSummary {
@@ -164,7 +179,18 @@ export interface Manifest {
 // ── Fetch helper ─────────────────────────────────────────────────────────────
 async function fetchJSON<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${BASE}/${path}`, { next: { revalidate: 300 } })
+    // Bust GitHub CDN and browser cache by appending a minute-based timestamp
+    const cacheBuster = Math.floor(Date.now() / 60000)
+    const url = `${BASE}/${path}?t=${cacheBuster}`
+
+    const res = await fetch(url, {
+      cache: 'no-store', // Tells Next.js and the browser to bypass standard disk caching
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
     if (!res.ok) return null
     return res.json()
   } catch {
@@ -184,6 +210,7 @@ export const api = {
   feed: (type: string) => {
     const files: Record<string, string> = {
       all:           'feed.json',
+      flagged:       'feed_flagged.json',
       politics:      'feed_politics.json',
       governance:    'feed_politics.json',
       crime:         'feed_crime.json',

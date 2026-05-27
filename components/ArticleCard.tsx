@@ -1,7 +1,7 @@
 'use client'
 import type { Article } from '@/lib/api'
 import { SrcTag, PBadge, SentimentDot } from './SrcTag'
-import { cleanTitle, formatDate, categoryLabel, hasImage } from '@/lib/utils'
+import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown } from '@/lib/utils'
 
 // Category placeholder when no image — colored div with initial letter
 const CAT_PLACEHOLDER: Record<string, { initial: string; bg: string; text: string }> = {
@@ -41,13 +41,15 @@ interface ArticleCardProps {
   article: Article
   variant?: 'default' | 'featured'
   onOpen?: (article: Article) => void
+  clampSummary?: boolean
 }
 
-export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCardProps) {
+export function ArticleCard({ article, variant = 'default', onOpen, clampSummary = true }: ArticleCardProps) {
   const {
     title, rephrased_article, source,
     image_url, sentiment, party_mentioned,
-    category, scraped_at,
+    category, scraped_at, civic_flag,
+    civic_flag_category, civic_flag_reason,
   } = article
 
 
@@ -68,7 +70,10 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
       <button
         onClick={handleClick}
         className="w-full text-left block border rounded-sm overflow-hidden transition-colors group bg-[var(--surface)] hover:border-[var(--accent)]"
-        style={{ borderColor: 'var(--border-md)' }}
+        style={{ 
+          borderColor: 'var(--border-md)',
+          borderLeft: civic_flag ? '4px solid #B02828' : undefined
+        }}
       >
         {/* Image or placeholder */}
         <div className="h-48 sm:h-64 overflow-hidden border-b" style={{ borderColor: 'var(--border-md)' }}>
@@ -88,11 +93,33 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
             </span>
             <span
               className="ml-auto text-[9px] font-mono tracking-widest uppercase rounded-[2px] px-[5px] py-[1px]"
-              style={{ color: 'var(--accent)', border: '1px solid rgba(191,74,7,0.3)' }}
+              style={{ 
+                color: civic_flag ? '#B02828' : 'var(--accent)', 
+                border: civic_flag ? '1px solid rgba(176,40,40,0.3)' : '1px solid rgba(191,74,7,0.3)',
+                background: civic_flag ? 'rgba(176,40,40,0.03)' : undefined
+              }}
             >
-              TOP STORY
+              {civic_flag ? '⚑ CIVIC ALERT' : 'TOP STORY'}
             </span>
           </div>
+
+          {/* Civic Warning Box */}
+          {civic_flag && (
+            <div 
+              className="mb-3 px-3 py-2 rounded-sm border flex items-start gap-2 text-[11px] font-mono font-medium leading-relaxed"
+              style={{ 
+                background: 'rgba(176, 40, 40, 0.04)', 
+                borderColor: 'rgba(176, 40, 40, 0.2)', 
+                color: '#B02828' 
+              }}
+            >
+              <span className="font-bold flex-shrink-0 mt-0.5">⚠️ ALERT:</span>
+              <span>
+                <strong className="uppercase">{civic_flag_category?.replace(/_/g, ' ')}</strong>
+                {civic_flag_reason && ` — ${civic_flag_reason}`}
+              </span>
+            </div>
+          )}
 
           {/* Headline */}
           <h3 className="text-[20px] sm:text-[24px] font-bold leading-tight font-serif mb-3" style={{ color: 'var(--text1)' }}>
@@ -101,8 +128,11 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
 
           {/* Summary only on featured */}
           {rephrased_article && (
-            <p className="text-[14px] leading-relaxed line-clamp-3 font-sans mb-4" style={{ color: 'var(--text2)' }}>
-              {rephrased_article}
+            <p 
+              className={`text-[14px] leading-relaxed font-sans mb-4 ${clampSummary ? 'line-clamp-3' : ''}`} 
+              style={{ color: 'var(--text2)' }}
+            >
+              {renderMarkdown(rephrased_article)}
             </p>
           )}
 
@@ -120,7 +150,10 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any) }}
       className="w-full text-left flex gap-3 py-4 px-4 border-b hover:bg-[var(--bg-alt)] transition-colors group bg-[var(--surface)] cursor-pointer"
-      style={{ borderColor: 'var(--border)' }}
+      style={{ 
+        borderColor: 'var(--border)',
+        borderLeft: civic_flag ? '3px solid #B02828' : undefined
+      }}
     >
       {/* Text content */}
       <div className="flex-1 min-w-0">
@@ -130,7 +163,7 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
           {firstParty && <PBadge party={firstParty} />}
           <span
             className="text-[9px] font-mono tracking-widest uppercase"
-            style={{ color: 'var(--accent)' }}
+            style={{ color: civic_flag ? '#B02828' : 'var(--accent)' }}
           >
             {displayCategory}
           </span>
@@ -138,6 +171,21 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
             <span className="text-[9px] font-mono" style={{ color: 'var(--text3)' }}>· {displayDate}</span>
           )}
         </div>
+
+        {/* Civic Alert Line */}
+        {civic_flag && (
+          <div 
+            className="mb-2 px-2 py-1 rounded-[2px] border inline-flex items-center gap-1.5 text-[9px] font-mono font-bold leading-none"
+            style={{ 
+              background: 'rgba(176, 40, 40, 0.04)', 
+              borderColor: 'rgba(176, 40, 40, 0.2)', 
+              color: '#B02828' 
+            }}
+          >
+            <span>⚑ ALERT: {civic_flag_category?.replace(/_/g, ' ').toUpperCase()}</span>
+            {civic_flag_reason && <span className="font-medium opacity-85 line-clamp-1">· {civic_flag_reason}</span>}
+          </div>
+        )}
 
         {/* Headline */}
         <h3
@@ -149,8 +197,11 @@ export function ArticleCard({ article, variant = 'default', onOpen }: ArticleCar
 
         {/* Summary */}
         {rephrased_article && (
-          <p className="text-[12px] leading-relaxed line-clamp-2 mb-2" style={{ color: 'var(--text2)' }}>
-            {rephrased_article}
+          <p 
+            className={`text-[12px] leading-relaxed mb-2 ${clampSummary ? 'line-clamp-2' : ''}`} 
+            style={{ color: 'var(--text2)' }}
+          >
+            {renderMarkdown(rephrased_article)}
           </p>
         )}
 
