@@ -39,11 +39,28 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
       const ps = new Set<string>()
       const ms = new Set<string>()
       const ss = new Set<string>()
-      for (const e of m.endpoints) {
-        if (e.startsWith('party_'))    ps.add(e.replace('party_', '').replace('.json', ''))
-        if (e.startsWith('minister_')) ms.add(e.replace('minister_', '').replace('.json', ''))
-        if (e.startsWith('state_'))    ss.add(e.replace('state_', '').replace('.json', ''))
+
+      // Manifest uses nested objects: endpoints.parties, endpoints.ministers, endpoints.states
+      // Each value is a filename like "party_bjp.json" → slug "bjp"
+      const endpoints = m.endpoints as unknown as Record<string, unknown>
+
+      const parties   = endpoints['parties']   as Record<string, string> | undefined
+      const ministers = endpoints['ministers'] as Record<string, string> | undefined
+      const states    = endpoints['states']    as Record<string, string> | undefined
+
+      if (parties)   Object.values(parties).forEach(f   => ps.add(f.replace('party_', '').replace('.json', '')))
+      if (ministers) Object.values(ministers).forEach(f => ms.add(f.replace('minister_', '').replace('.json', '')))
+      if (states)    Object.values(states).forEach(f    => ss.add(f.replace('state_', '').replace('.json', '')))
+
+      // Fallback: if endpoints is still a plain array of filenames
+      if (Array.isArray(m.endpoints)) {
+        for (const e of m.endpoints as string[]) {
+          if (e.startsWith('party_'))    ps.add(e.replace('party_', '').replace('.json', ''))
+          if (e.startsWith('minister_')) ms.add(e.replace('minister_', '').replace('.json', ''))
+          if (e.startsWith('state_'))    ss.add(e.replace('state_', '').replace('.json', ''))
+        }
       }
+
       setParties(ps); setMinisters(ms); setStates(ss); setLoaded(true)
     }).catch(() => setLoaded(true))
   }, [])

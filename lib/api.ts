@@ -172,7 +172,8 @@ export interface PromisesSummary {
 // ── manifest.json ────────────────────────────────────────────────────────────
 export interface Manifest {
   generated_at?: string
-  endpoints?: string[]
+  // Can be a string[] (legacy) or a nested object { parties: {...}, ministers: {...}, states: {...} }
+  endpoints?: string[] | Record<string, unknown>
   stats?: Record<string, number>
 }
 

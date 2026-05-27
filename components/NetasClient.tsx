@@ -57,25 +57,52 @@ type Tab = 'parties' | 'ministers' | 'states'
 interface NetasClientProps {
   partyData: (PartyData | null)[]
   overview: IndiaOverview | null
+  manifestMinisters?: Set<string>
+  manifestStates?: Set<string>
 }
 
-export function NetasClient({ partyData, overview }: NetasClientProps) {
+export function NetasClient({ partyData, overview, manifestMinisters, manifestStates }: NetasClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('parties')
 
-  const topMins  = overview?.top_ministers_30d ?? {}
+  const topMins   = overview?.top_ministers_30d ?? {}
   const topStates = overview?.top_states_30d ?? {}
 
-  // Build states list: top covered states from API, fallback to hardcoded
-  const stateList = Object.keys(topStates).length > 0
-    ? Object.entries(topStates)
-        .sort(([, a], [, b]) => Number(b) - Number(a))
-        .slice(0, 15)
-        .map(([name, count]) => ({
-          slug: name.toLowerCase().replace(/\s+/g, '_'),
-          name,
-          count: Number(count),
-        }))
-    : MAJOR_STATES.map(s => ({ ...s, count: 0 }))
+  // Build minister list: start from manifest (all available), sort by coverage
+  const ministerList = (() => {
+    const coverageMap: Record<string, number> = topMins as Record<string, number>
+    // Base names from manifest minister slugs (convert slug → display name)
+    const manifestNames = manifestMinisters
+      ? Array.from(manifestMinisters).map(slug =>
+          slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        )
+      : []
+    // Merge: coverage names first, then any manifest names not already listed
+    const allNames = [...Object.keys(coverageMap)]
+    manifestNames.forEach(n => { if (!allNames.includes(n)) allNames.push(n) })
+    return allNames.map(name => ({
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, '_').replace(/\./g, ''),
+      count: Number(coverageMap[name] ?? 0),
+    })).sort((a, b) => b.count - a.count)
+  })()
+
+  // Build states list: manifest covers all states (27+); sort by coverage
+  const stateList = (() => {
+    const coverageMap: Record<string, number> = topStates as Record<string, number>
+    const manifestStateNames = manifestStates
+      ? Array.from(manifestStates).map(slug =>
+          slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        )
+      : []
+    // All states from API coverage + manifest, deduplicated
+    const allNames: string[] = [...Object.keys(coverageMap)]
+    manifestStateNames.forEach(n => { if (!allNames.find(x => x.toLowerCase() === n.toLowerCase())) allNames.push(n) })
+    return allNames.map(name => ({
+      slug: name.toLowerCase().replace(/\s+/g, '_'),
+      name,
+      count: Number(coverageMap[name] ?? 0),
+    })).sort((a, b) => b.count - a.count)
+  })()
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'parties',   label: 'Parties' },
@@ -166,35 +193,32 @@ export function NetasClient({ partyData, overview }: NetasClientProps) {
       {/* Ministers tab */}
       {activeTab === 'ministers' && (
         <div className="px-4 md:px-6 py-5">
-          {/* Most covered in news */}
-          {Object.keys(topMins).length > 0 && (
-            <div className="mb-6">
-              <div className="text-[9px] font-mono tracking-widest uppercase mb-3" style={{ color: 'var(--text3)' }}>
-                Most Covered (30 days)
-              </div>
-              <div className="border rounded-sm overflow-hidden" style={{ borderColor: 'var(--border-md)' }}>
-                {Object.entries(topMins)
-                  .sort(([, a], [, b]) => Number(b) - Number(a))
-                  .slice(0, 8)
-                  .map(([name, count]) => (
-                    <Link
-                      key={name}
-                      href={`/minister/${name.toLowerCase().replace(/\s+/g, '_')}`}
-                      className="flex items-center justify-between px-4 py-3 border-b last:border-b-0 hover:bg-[var(--bg-alt)] transition-colors group"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      <span className="text-[13px] font-medium group-hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text1)' }}>
-                        {name}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>{count} articles</span>
-                        <span style={{ color: 'var(--text3)' }}>→</span>
-                      </div>
-                    </Link>
-                  ))}
-              </div>
+          {/* All ministers from manifest, sorted by news coverage */}
+          <div className="mb-6">
+            <div className="text-[9px] font-mono tracking-widest uppercase mb-3" style={{ color: 'var(--text3)' }}>
+              Most Covered (30 days)
             </div>
-          )}
+            <div className="border rounded-sm overflow-hidden" style={{ borderColor: 'var(--border-md)' }}>
+              {ministerList.slice(0, 12).map(({ name, slug, count }) => (
+                <Link
+                  key={slug}
+                  href={`/minister/${slug}`}
+                  className="flex items-center justify-between px-4 py-3 border-b last:border-b-0 hover:bg-[var(--bg-alt)] transition-colors group"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <span className="text-[13px] font-medium group-hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text1)' }}>
+                    {name}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    {count > 0 && (
+                      <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>{count} articles</span>
+                    )}
+                    <span style={{ color: 'var(--text3)' }}>→</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
 
           {/* Key ministers hardcoded list */}
           <div>
