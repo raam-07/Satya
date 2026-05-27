@@ -183,14 +183,7 @@ async function fetchJSON<T>(path: string): Promise<T | null> {
     const cacheBuster = Math.floor(Date.now() / 60000)
     const url = `${BASE}/${path}?t=${cacheBuster}`
 
-    const res = await fetch(url, {
-      cache: 'no-store', // Tells Next.js and the browser to bypass standard disk caching
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    })
+    const res = await fetch(url)
     if (!res.ok) return null
     return res.json()
   } catch {
