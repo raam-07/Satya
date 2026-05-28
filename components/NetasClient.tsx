@@ -140,7 +140,7 @@ export function NetasClient({ partyData, overview, manifestMinisters, manifestSt
               const data = partyData[idx]
               const ministerCount = data?.ministers?.length ?? '—'
               const promiseCount  = data?.promises?.length ?? '—'
-              const articleCount  = data?.recent_articles?.length ?? '—'
+              const articleCount  = data?.stats?.total_articles ?? data?.recent_articles?.length ?? '—'
               return (
                 <Link
                   key={party.id}
