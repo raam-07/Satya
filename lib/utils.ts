@@ -65,14 +65,43 @@ export function hasImage(url?: string): boolean {
   return !!url && url !== 'No image available' && url.startsWith('http')
 }
 
-// Render **bold** markdown tags as <strong> elements in React
+// Render **bold** and *italics* markdown tags as JSX in React, auto-healing unmatched tags
 export function renderMarkdown(text?: string): React.ReactNode[] | string {
   if (!text) return ''
-  const parts = text.split(/\*\*(.*?)\*\*/g)
-  return parts.map((part, idx) => {
-    if (idx % 2 === 1) {
-      return React.createElement('strong', { key: idx, className: 'font-bold' }, part)
+  
+  let cleaned = text.trim()
+  
+  // Close any unclosed bold tags (odd number of ** )
+  const boldCount = (cleaned.match(/\*\*/g) || []).length
+  if (boldCount % 2 !== 0) {
+    cleaned += '**'
+  }
+  
+  // Close any unclosed italic tags (odd number of single * )
+  const temp = cleaned.replace(/\*\*/g, '')
+  const italicCount = (temp.match(/\*/g) || []).length
+  if (italicCount % 2 !== 0) {
+    cleaned += '*'
+  }
+
+  // Parse bold and italics
+  const boldParts = cleaned.split(/\*\*(.*?)\*\*/g)
+  const result: React.ReactNode[] = []
+  
+  boldParts.forEach((boldPart, boldIdx) => {
+    if (boldIdx % 2 === 1) {
+      result.push(React.createElement('strong', { key: `b-${boldIdx}`, className: 'font-bold' }, boldPart))
+    } else {
+      const italicParts = boldPart.split(/\*(.*?)\*/g)
+      italicParts.forEach((italicPart, italicIdx) => {
+        if (italicIdx % 2 === 1) {
+          result.push(React.createElement('em', { key: `i-${boldIdx}-${italicIdx}`, className: 'italic' }, italicPart))
+        } else {
+          result.push(italicPart)
+        }
+      })
     }
-    return part
   })
+  
+  return result
 }

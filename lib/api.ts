@@ -38,6 +38,13 @@ export interface IndiaOverview {
     total_articles_classified?: number
     articles_last_7_days?: number
     articles_last_30_days?: number
+    civic_flags_last_30_days?: number
+    civic_flags_today?: number
+  }
+  civic_alert?: {
+    flagged_count_30d?: number
+    flagged_today?: number
+    top_flag_categories?: Record<string, number>
   }
   top_stories?: Article[]
   category_breakdown_30d?: Record<string, number>
@@ -97,7 +104,13 @@ export interface Minister {
   constituency?: string
   criminal_cases?: number
   criminal_cases_in_news?: number
-  criminal_incidents?: string[]
+  criminal_incidents?: {
+    incident_text?: string
+    incident_type?: string
+    source_url?: string
+    source_title?: string
+    scraped_at?: string
+  }[]
   wikipedia?: string
   affidavit_url?: string
   stats?: Record<string, number>

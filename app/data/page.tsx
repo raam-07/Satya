@@ -19,16 +19,20 @@ export default async function DataPage() {
     api.promises(),
   ])
 
-  const stats    = overview?.stats ?? {}
-  const gov      = overview?.current_government ?? {}
-  const catBreak = overview?.category_breakdown_30d ?? {}
-  const topMins  = overview?.top_ministers_30d ?? {}
-  const topParty = overview?.top_parties_30d ?? {}
-  const ps       = promises?.stats ?? { kept: 0, broken: 0, ongoing: 0, total_promises: 0 }
+  const stats      = overview?.stats ?? {}
+  const gov        = overview?.current_government ?? {}
+  const catBreak   = overview?.category_breakdown_30d ?? {}
+  const topMins    = overview?.top_ministers_30d ?? {}
+  const topParty   = overview?.top_parties_30d ?? {}
+  const topState   = overview?.top_states_30d ?? {}
+  const civicAlert = overview?.civic_alert ?? {}
+  const ps         = promises?.stats ?? { kept: 0, broken: 0, ongoing: 0, total_promises: 0 }
 
-  const catMax    = Math.max(...Object.values(catBreak), 1)
-  const minMax    = Math.max(...Object.values(topMins).map(Number), 1)
-  const partyMax  = Math.max(...Object.values(topParty).map(Number), 1)
+  const catMax     = Math.max(...Object.values(catBreak), 1)
+  const minMax     = Math.max(...Object.values(topMins).map(Number), 1)
+  const partyMax   = Math.max(...Object.values(topParty).map(Number), 1)
+  const stateMax   = Math.max(...Object.values(topState).map(Number), 1)
+  const civicMax   = Math.max(...Object.values(civicAlert.top_flag_categories ?? {}).map(Number), 1)
 
   const promiseTotal = (ps.kept ?? 0) + (ps.broken ?? 0) + (ps.ongoing ?? 0) || 1
 
@@ -133,6 +137,45 @@ export default async function DataPage() {
               </div>
             </div>
           )}
+
+          {/* AI Civic Alerts */}
+          {civicAlert.top_flag_categories && Object.keys(civicAlert.top_flag_categories).length > 0 && (
+            <div className="px-4 md:px-6 py-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">AI Civic Alerts (30d)</h2>
+                <div className="text-[9px] font-mono text-[var(--accent)] font-semibold">
+                  Today: {stats.civic_flags_today ?? 0} flagged
+                </div>
+              </div>
+              <div className="mb-4 p-3 rounded-sm bg-[var(--bg-alt)] border flex justify-between items-center" style={{ borderColor: 'var(--border)' }}>
+                <div>
+                  <div className="text-[18px] font-mono font-black" style={{ color: 'var(--text1)' }}>
+                    {stats.civic_flags_last_30_days ?? 0}
+                  </div>
+                  <div className="text-[8px] font-mono tracking-wider uppercase" style={{ color: 'var(--text3)' }}>
+                    Total Flagged (30d)
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Link href="/feed?tab=flagged" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
+                    View Flagged Feed →
+                  </Link>
+                </div>
+              </div>
+              <div className="space-y-2.5">
+                {Object.entries(civicAlert.top_flag_categories)
+                  .sort(([, a], [, b]) => Number(b) - Number(a))
+                  .slice(0, 5)
+                  .map(([cat, count]) => (
+                    <div key={cat} className="flex items-center gap-3">
+                      <span className="text-[10px] font-mono text-[var(--text2)] w-24 capitalize truncate">{cat.replace(/_/g, ' ')}</span>
+                      <Bar value={Number(count)} max={civicMax} color="#B02828" />
+                      <span className="text-[10px] font-mono text-[var(--text3)] w-8 text-right">{count}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right column */}
@@ -184,6 +227,30 @@ export default async function DataPage() {
               </div>
             </div>
           )}
+
+          {/* Top states in news */}
+          {Object.keys(topState).length > 0 && (
+            <div className="px-4 md:px-6 py-5">
+              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">Coverage by State (30d)</h2>
+              <div className="space-y-2.5">
+                {Object.entries(topState)
+                  .sort(([, a], [, b]) => Number(b) - Number(a))
+                  .slice(0, 8)
+                  .map(([state, count]) => (
+                    <div key={state} className="flex items-center gap-3">
+                      <Link
+                        href={`/state/${state.toLowerCase().replace(/\s+/g, '_')}`}
+                        className="text-[11px] text-[var(--text1)] hover:text-[var(--accent)] transition-colors truncate w-40 flex-shrink-0"
+                      >
+                        {state}
+                      </Link>
+                      <Bar value={Number(count)} max={stateMax} color="var(--accent)" />
+                      <span className="text-[10px] font-mono text-[var(--text3)] w-8 text-right">{count}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -220,7 +287,6 @@ export default async function DataPage() {
                     'AI classification: category, sentiment, party, ministers, states',
                     'Promise scoring via Gemma reasoning model',
                     'All data linked to original primary sources',
-                    'Open data API at github.com/raam-07/Satya-API',
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--accent)' }} />
