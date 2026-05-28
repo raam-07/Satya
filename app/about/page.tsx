@@ -4,20 +4,20 @@ export default function AboutPage() {
       {/* Masthead */}
       <div className="border-b-2 border-[var(--accent)] pb-6 mb-8 text-center">
         <div className="text-[10px] font-mono tracking-[0.3em] text-[var(--text3)] uppercase mb-4">Est. 2024 · Vol. II</div>
-        <h1 className="text-[48px] font-black font-serif tracking-[0.15em] uppercase text-[var(--text1)] leading-none">Satya</h1>
-        <div className="text-[20px] font-serif text-accent mt-2">सत्य</div>
+        <h1 className="text-[48px] font-black font-serif tracking-[0.15em] uppercase text-[var(--text1)] leading-none">SatyaDheesh</h1>
+        <div className="text-[20px] font-serif text-accent mt-2">सत्याधीश</div>
         <div className="text-[10px] font-mono tracking-[0.25em] text-[var(--text3)] uppercase mt-4">
           India's Ground Truth Record
         </div>
       </div>
 
-      {/* What is Satya */}
+      {/* What is SatyaDheesh */}
       <section className="mb-8">
         <h2 className="text-[14px] font-mono tracking-widest uppercase text-[var(--text2)] mb-3 border-b border-[var(--border-md)] pb-2">
-          What is Satya?
+          What is SatyaDheesh?
         </h2>
         <p className="text-[14px] leading-relaxed text-[var(--text1)]">
-          Satya (सत्य — Sanskrit for "truth") is a newspaper-style civic intelligence platform for Indian citizens.
+          SatyaDheesh (सत्याधीश — Sanskrit/Hindi for "lord of truth") is a newspaper-style civic intelligence platform for Indian citizens.
           It shows the unfiltered, sourced reality of India — politics, crime, economy, ministers, promises vs. reality —
           all backed by real news articles and primary sources.
         </p>
@@ -79,7 +79,7 @@ export default function AboutPage() {
 
       <div className="mt-10 pt-6 border-t border-[var(--border)] text-center">
         <p className="text-[10px] font-mono text-[var(--text3)] tracking-wider">
-          Satya is an independent, non-partisan civic project. Not affiliated with any political party or media house.
+          SatyaDheesh is an independent, non-partisan civic project. Not affiliated with any political party or media house.
         </p>
       </div>
     </div>

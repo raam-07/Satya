@@ -35,7 +35,7 @@ const NAV = [
       { label: 'Economy',          href: '/topic/economy' },
     ],
   },
-  { label: 'About Satya', href: '/about', icon: '◻' },
+  { label: 'About SatyaDheesh', href: '/about', icon: '◻' },
 ]
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
@@ -52,10 +52,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         {!collapsed && (
           <Link href="/" className="flex-1 px-4">
             <div className="font-serif font-black text-[18px] tracking-[0.18em] uppercase text-[var(--text1)] leading-none">
-              Satya
+              SatyaDheesh
             </div>
             <div className="text-[9px] tracking-[0.2em] text-[var(--text3)] font-mono uppercase mt-0.5">
-              सत्य
+              सत्याधीश
             </div>
           </Link>
         )}

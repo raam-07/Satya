@@ -187,16 +187,16 @@ export default async function DataPage() {
         </div>
       </div>
 
-      {/* About Satya */}
+      {/* About SatyaDheesh */}
       <div className="border-t" style={{ borderColor: 'var(--border-md)' }}>
         <div className="px-4 md:px-6 py-6">
           <h2 className="text-[10px] font-mono tracking-widest uppercase mb-4" style={{ color: 'var(--text3)' }}>
-            About Satya
+            About SatyaDheesh
           </h2>
           <div className="md:grid md:grid-cols-2 gap-8">
             <div className="space-y-4 text-[12px] leading-relaxed" style={{ color: 'var(--text2)' }}>
               <p>
-                <strong className="text-[var(--text1)]">Satya (सत्य)</strong> is an independent civic intelligence platform
+                <strong className="text-[var(--text1)]">SatyaDheesh (सत्याधीश)</strong> is an independent civic intelligence platform
                 that tracks Indian political accountability in real time. No editorial filter. No advertiser influence.
                 Just sourced, structured data.
               </p>
@@ -246,7 +246,7 @@ export default async function DataPage() {
       {/* Footer note */}
       <div className="px-4 md:px-6 py-4 border-t text-center" style={{ borderColor: 'var(--border)' }}>
         <p className="text-[10px] font-mono text-[var(--text3)]">
-          Satya · सत्य · Truth · Open civic intelligence for India · Data updated every 5 minutes
+          SatyaDheesh · सत्याधीश · Truth · Open civic intelligence for India · Data updated every 5 minutes
         </p>
       </div>
     </div>

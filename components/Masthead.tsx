@@ -19,10 +19,10 @@ export function Masthead() {
       {/* Logo */}
       <div className="text-center px-4 py-2">
         <div className="font-serif font-black text-[32px] tracking-[0.22em] uppercase text-[var(--text1)] leading-none">
-          Satya
+          SatyaDheesh
         </div>
         <div className="font-serif font-bold text-[14px] leading-none mt-1" style={{ color: 'var(--accent)' }}>
-          सत्य
+          सत्याधीश
         </div>
         <div className="text-[7.5px] font-mono tracking-[0.24em] text-[var(--text3)] uppercase mt-1.5">
           India's Ground Truth Record
