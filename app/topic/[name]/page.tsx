@@ -19,27 +19,17 @@ const TOPIC_LABELS: Record<string, string> = {
 export default async function TopicPage({ params }: { params: { name: string } }) {
   const slug = decodeURIComponent(params.name)
 
-  // Fetch feed + try topic-specific JSON (may not exist) in parallel
-  const [feedData, topicData] = await Promise.all([
-    api.feed('all'),
-    api.topic(slug).catch(() => null),
-  ])
+  // Fetch the specific topic JSON first (fast and lightweight)
+  const topicData = await api.topic(slug).catch(() => null)
+  let mergedArticles = topicData?.recent_articles ?? []
 
-  // Filter main feed by topic_tags
-  const feedArticles = (feedData?.articles ?? []).filter(
-    a => a.topic_tags?.some(t => t === slug || t.toLowerCase() === slug.toLowerCase())
-  )
-
-  // Merge with topic-specific articles (deduplicate by id)
-  const seen = new Set<number>()
-  const mergedArticles = [
-    ...feedArticles,
-    ...(topicData?.recent_articles ?? []),
-  ].filter(a => {
-    if (a.id != null && seen.has(a.id)) return false
-    if (a.id != null) seen.add(a.id)
-    return true
-  })
+  // If the topic JSON does not exist or has no articles, fetch feed as a fallback
+  if (mergedArticles.length === 0) {
+    const feedData = await api.feed('all')
+    mergedArticles = (feedData?.articles ?? []).filter(
+      a => a.topic_tags?.some(t => t === slug || t.toLowerCase() === slug.toLowerCase())
+    )
+  }
 
   const displayName =
     TOPIC_LABELS[slug] ??

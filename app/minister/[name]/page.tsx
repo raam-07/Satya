@@ -7,32 +7,25 @@ import { renderMarkdown } from '@/lib/utils'
 export default async function MinisterPage({ params }: { params: { name: string } }) {
   const displayName = params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
-  const [minister, feedData] = await Promise.all([
-    api.minister(params.name),
-    api.feed('all'),
-  ])
+  // Fetch the specific minister profile first (fast and lightweight)
+  const minister = await api.minister(params.name)
+  let articles = minister?.recent_articles ?? []
+
+  // If the minister profile does not exist or has no articles, fetch feed as a fallback
+  if (articles.length === 0) {
+    const feedData = await api.feed('all')
+    articles = (feedData?.articles ?? []).filter(a =>
+      a.ministers_mentioned?.some(m =>
+        m.toLowerCase().includes(params.name.replace(/_/g, ' ').toLowerCase())
+      )
+    )
+  }
 
   // One-line intro from API or fallback
   const intro = minister
     ? [minister.role, minister.ministry, minister.party && `${minister.party}`]
         .filter(Boolean).join(' · ')
     : null
-
-  // Articles: prefer minister's own recent_articles, supplement with feed filter
-  const ministerArticles = minister?.recent_articles ?? []
-  const feedArticles = (feedData?.articles ?? []).filter(a =>
-    a.ministers_mentioned?.some(m =>
-      m.toLowerCase().includes(params.name.replace(/_/g, ' ').toLowerCase())
-    )
-  )
-
-  // Merge, deduplicate by id
-  const seen = new Set<number>()
-  const articles = [...ministerArticles, ...feedArticles].filter(a => {
-    if (a.id != null && seen.has(a.id)) return false
-    if (a.id != null) seen.add(a.id)
-    return true
-  })
 
   return (
     <div className="md:max-w-4xl md:mx-auto">

@@ -5,25 +5,9 @@ import { ArticleList } from '@/components/ArticleList'
 export default async function SourcePage({ params }: { params: { name: string } }) {
   const sourceName = decodeURIComponent(params.name)
 
-  // Fetch all feeds in parallel and merge for better coverage
-  const [mainFeed, ...categoryFeeds] = await Promise.all([
-    api.feed('all'),
-    api.feed('governance'),
-    api.feed('justice'),
-    api.feed('economy'),
-    api.feed('health'),
-  ])
-
-  // Deduplicate by id
-  const seen = new Set<number>()
-  const allArticles = [
-    ...(mainFeed?.articles ?? []),
-    ...(categoryFeeds.flatMap(f => f?.articles ?? [])),
-  ].filter(a => {
-    if (a.id != null && seen.has(a.id)) return false
-    if (a.id != null) seen.add(a.id)
-    return true
-  })
+  // Fetch only the master feed to minimize network requests
+  const mainFeed = await api.feed('all')
+  const allArticles = mainFeed?.articles ?? []
 
   // Filter by source (case-insensitive)
   const articles = allArticles.filter(
