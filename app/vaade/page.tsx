@@ -10,6 +10,7 @@ export default async function VaadePage() {
   const kept    = stats.kept    ?? 0
   const broken  = stats.broken  ?? 0
   const ongoing = stats.ongoing ?? 0
+  const voidVal = stats.void    ?? 0
   const total   = (kept + broken + ongoing) || 1
   const keptPct = Math.round((kept / total) * 100)
 
@@ -27,12 +28,13 @@ export default async function VaadePage() {
       {/* Scorecard */}
       <div className="border-b" style={{ borderColor: 'var(--border-md)' }}>
         {/* Big numbers */}
-        <div className="grid grid-cols-4 divide-x" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="grid grid-cols-5 divide-x" style={{ borderColor: 'var(--border-md)' }}>
           {[
             { label: 'BROKEN',  val: broken,  color: '#B02828' },
             { label: 'ONGOING', val: ongoing, color: '#BF4A07' },
             { label: 'KEPT',    val: kept,    color: '#1B7050' },
-            { label: 'TOTAL',   val: stats.total_promises ?? total, color: 'var(--text1)' },
+            { label: 'VOID',    val: voidVal,  color: '#6B7280' },
+            { label: 'TOTAL',   val: stats.total_promises ?? (kept + broken + ongoing + voidVal), color: 'var(--text1)' },
           ].map(({ label, val, color }) => (
             <div key={label} className="flex flex-col items-center py-5 px-2">
               <div className="text-[28px] md:text-[36px] font-black font-mono leading-none" style={{ color }}>

@@ -9,6 +9,7 @@ const STATUS_COLOR: Record<string, string> = {
   kept:    '#1B7050',
   broken:  '#B02828',
   ongoing: '#BF4A07',
+  void:    '#6B7280',
 }
 
 export default async function PromisePage({ params }: { params: { id: string } }) {
@@ -21,6 +22,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
     ...(data?.by_status?.broken  ?? []),
     ...(data?.by_status?.ongoing ?? []),
     ...(data?.by_status?.kept    ?? []),
+    ...(data?.by_status?.void   ?? []),
   ]
 
   const promise = allPromises.find(p => String(p.id) === promiseId)

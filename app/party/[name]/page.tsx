@@ -14,6 +14,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
   const kept    = promises.filter(p => p.status === 'kept').length
   const broken  = promises.filter(p => p.status === 'broken').length
   const ongoing = promises.filter(p => p.status === 'ongoing').length
+  const voidVal = promises.filter(p => p.status === 'void').length
 
   return (
     <div className="md:max-w-6xl md:mx-auto">
@@ -41,7 +42,12 @@ export default async function PartyPage({ params }: { params: { name: string } }
           {/* Promise pills */}
           {promises.length > 0 && (
             <div className="flex gap-4 flex-shrink-0 border border-[var(--border-md)] rounded-sm p-3 bg-[var(--bg)]">
-              {[{ label: 'Kept', val: kept, color: '#1b7050' }, { label: 'Broken', val: broken, color: '#b02828' }, { label: 'Ongoing', val: ongoing, color: '#bf4a07' }].map(({ label, val, color }) => (
+              {[
+                { label: 'Kept', val: kept, color: '#1b7050' },
+                { label: 'Broken', val: broken, color: '#b02828' },
+                { label: 'Ongoing', val: ongoing, color: '#bf4a07' },
+                { label: 'Void', val: voidVal, color: '#6b7280' }
+              ].map(({ label, val, color }) => (
                 <div key={label} className="text-center">
                   <div className="text-[20px] font-black font-mono" style={{ color }}>{val}</div>
                   <div className="text-[8px] font-mono tracking-widest uppercase text-[var(--text3)]">{label}</div>

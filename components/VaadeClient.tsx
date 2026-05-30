@@ -6,13 +6,14 @@ import { PBadge, StatusBadge } from './SrcTag'
 import type { PoliticalPromise, PromisesSummary } from '@/lib/api'
 import { renderMarkdown } from '@/lib/utils'
 
-type FilterId = 'all' | 'broken' | 'ongoing' | 'kept' | 'bjp' | 'inc' | 'aap'
+type FilterId = 'all' | 'broken' | 'ongoing' | 'kept' | 'void' | 'bjp' | 'inc' | 'aap'
 
 const FILTERS: { id: FilterId; label: string }[] = [
   { id: 'all',     label: 'All' },
   { id: 'broken',  label: 'Broken' },
   { id: 'ongoing', label: 'Ongoing' },
   { id: 'kept',    label: 'Kept' },
+  { id: 'void',    label: 'Void' },
   { id: 'bjp',     label: 'BJP' },
   { id: 'inc',     label: 'INC' },
   { id: 'aap',     label: 'AAP' },
@@ -22,6 +23,7 @@ const STATUS_COLOR: Record<string, string> = {
   kept:    '#1B7050',
   broken:  '#B02828',
   ongoing: '#BF4A07',
+  void:    '#6B7280',
 }
 
 interface VaadeClientProps {
@@ -36,6 +38,7 @@ export function VaadeClient({ data }: VaadeClientProps) {
     ...(byStatus.broken  ?? []),
     ...(byStatus.ongoing ?? []),
     ...(byStatus.kept    ?? []),
+    ...(byStatus.void    ?? []),
   ]
 
   const filteredPromises = allPromises.filter(p => {
@@ -43,6 +46,7 @@ export function VaadeClient({ data }: VaadeClientProps) {
     if (activeFilter === 'broken')  return p.status === 'broken'
     if (activeFilter === 'ongoing') return p.status === 'ongoing'
     if (activeFilter === 'kept')    return p.status === 'kept'
+    if (activeFilter === 'void')    return p.status === 'void'
     // Party filters
     return p.party?.toLowerCase() === activeFilter
   })
@@ -70,6 +74,7 @@ export function VaadeClient({ data }: VaadeClientProps) {
                   {f.id === 'broken'  ? byStatus.broken?.length ?? 0 :
                    f.id === 'ongoing' ? byStatus.ongoing?.length ?? 0 :
                    f.id === 'kept'    ? byStatus.kept?.length ?? 0 :
+                   f.id === 'void'    ? byStatus.void?.length ?? 0 :
                    allPromises.filter(p => p.party?.toLowerCase() === f.id).length}
                 </span>
               )}

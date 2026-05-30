@@ -11,6 +11,7 @@ export default async function PromisesPage() {
     ...(byStatus.broken  ?? []),
     ...(byStatus.ongoing ?? []),
     ...(byStatus.kept    ?? []),
+    ...(byStatus.void    ?? []),
   ]
 
   return (
@@ -27,6 +28,7 @@ export default async function PromisesPage() {
             { label: 'Broken',  val: stats.broken  ?? 0, color: '#b02828' },
             { label: 'Ongoing', val: stats.ongoing ?? 0,  color: '#bf4a07' },
             { label: 'Kept',    val: stats.kept    ?? 0,  color: '#1b7050' },
+            { label: 'Void',    val: stats.void    ?? 0,  color: '#6b7280' },
             { label: 'Total',   val: stats.total_promises ?? 0, color: 'var(--text1)' },
           ].map(({ label, val, color }) => (
             <div key={label}>
@@ -52,7 +54,7 @@ export default async function PromisesPage() {
       </div>
 
       {/* Grouped sections */}
-      {(['broken', 'ongoing', 'kept'] as const).map(status => {
+      {(['broken', 'ongoing', 'kept', 'void'] as const).map(status => {
         const items = byStatus[status] ?? []
         if (items.length === 0) return null
         return (
@@ -79,7 +81,7 @@ export default async function PromisesPage() {
                       </div>
                       <p className="text-[13px] md:text-[14px] text-[var(--text1)] leading-relaxed font-medium">{p.promise}</p>
                       {p.gemma_reasoning && (
-                        <p className="text-[11px] text-[var(--text2)] mt-2 leading-relaxed border-l-2 pl-3" style={{ borderColor: status === 'broken' ? '#b02828' : status === 'kept' ? '#1b7050' : '#bf4a07' }}>
+                        <p className="text-[11px] text-[var(--text2)] mt-2 leading-relaxed border-l-2 pl-3" style={{ borderColor: status === 'broken' ? '#b02828' : status === 'kept' ? '#1b7050' : status === 'void' ? '#6b7280' : '#bf4a07' }}>
                           {p.gemma_reasoning}
                         </p>
                       )}

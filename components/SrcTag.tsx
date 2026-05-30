@@ -74,6 +74,7 @@ export function StatusBadge({ status }: { status?: string }) {
     kept:    { label: 'KEPT',    bg: '#1B7050', text: '#fff' },
     broken:  { label: 'BROKEN',  bg: '#B02828', text: '#fff' },
     ongoing: { label: 'ONGOING', bg: '#92400E', text: '#fff' },
+    void:    { label: 'VOID',    bg: '#6B7280', text: '#fff' },
   }
   const s = map[status ?? ''] ?? map.ongoing
   return (

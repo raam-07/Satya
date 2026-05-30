@@ -66,7 +66,7 @@ export interface PartyPromise {
   id?: string
   person?: string
   promise?: string
-  status?: 'kept' | 'broken' | 'ongoing'
+  status?: 'kept' | 'broken' | 'ongoing' | 'void'
   category?: string
 }
 
@@ -89,7 +89,7 @@ export interface PartyData {
 export interface MinisterPromise {
   id?: string
   promise?: string
-  status?: 'kept' | 'broken' | 'ongoing'
+  status?: 'kept' | 'broken' | 'ongoing' | 'void'
   made_on?: string
   evidence_count?: number
 }
@@ -147,7 +147,7 @@ export interface PoliticalPromise {
   party?: string
   promise?: string          // NOTE: field is "promise" not "text"
   category?: string
-  status?: 'kept' | 'broken' | 'ongoing'
+  status?: 'kept' | 'broken' | 'ongoing' | 'void'
   made_on?: string
   deadline?: string
   evidence_count?: number
@@ -172,11 +172,13 @@ export interface PromisesSummary {
     kept?: number
     broken?: number
     ongoing?: number
+    void?: number
   }
   by_status?: {
     broken?: PoliticalPromise[]
     ongoing?: PoliticalPromise[]
     kept?: PoliticalPromise[]
+    void?: PoliticalPromise[]
   }
   by_person?: Record<string, number>
   by_party?: Record<string, number>
