@@ -111,6 +111,12 @@ export interface Minister {
     source_title?: string
     scraped_at?: string
   }[]
+  controversies?: {
+    incident_text?: string
+    source_url?: string
+    source_title?: string
+    scraped_at?: string
+  }[]
   wikipedia?: string
   affidavit_url?: string
   stats?: Record<string, number>

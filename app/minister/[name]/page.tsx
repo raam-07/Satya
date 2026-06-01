@@ -84,6 +84,39 @@ export default async function MinisterPage({ params }: { params: { name: string 
                 </div>
               )}
             </div>
+
+            {/* Controversies & Gaffes Spotlight Card */}
+            {minister.controversies && minister.controversies.length > 0 && (
+              <div className="pt-4 border-t space-y-3 mt-4" style={{ borderColor: 'var(--border-md)' }}>
+                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">Controversies & Verbal Gaffes</h2>
+                <div className="p-3 border rounded-sm bg-[var(--bg-alt)] space-y-1.5" style={{ borderColor: 'var(--border-md)' }}>
+                  <div className="text-[8.5px] font-mono tracking-widest uppercase text-[var(--text3)]">Statement Log</div>
+                  <div className="max-h-[140px] overflow-y-auto space-y-2.5 pr-1 no-scrollbar">
+                    {minister.controversies.map((incident, i) => (
+                      <div key={i} className="flex gap-2 items-start text-[10px] leading-relaxed" style={{ color: 'var(--text2)' }}>
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-[#BF4A07]" />
+                        <div className="flex-1 min-w-0">
+                          <span className="block">{renderMarkdown(incident.incident_text)}</span>
+                          {incident.source_url && (
+                            <span className="block mt-1 text-[8.5px] font-mono" style={{ color: 'var(--text3)' }}>
+                              Citation:{' '}
+                              <a
+                                href={incident.source_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[var(--accent)] hover:underline font-semibold"
+                              >
+                                {incident.source_title || 'View Source ↗'}
+                              </a>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Criminal Case Spotlight Column */}
