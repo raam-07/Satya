@@ -199,7 +199,9 @@ async function fetchJSON<T>(path: string): Promise<T | null> {
     const cacheBuster = Math.floor(Date.now() / 60000)
     const url = `${BASE}/${path}?t=${cacheBuster}`
 
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      next: { revalidate: 60 } // Revalidate cache every 60 seconds (Incremental Static Regeneration)
+    })
     if (!res.ok) return null
     return res.json()
   } catch {
