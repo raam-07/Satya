@@ -127,11 +127,27 @@ export function VaadeClient({ data }: VaadeClientProps) {
                     {/* Promise text — tappable */}
                     <Link
                       href={`/vaade/${p.id ?? i}`}
-                      className="block text-[13px] md:text-[14px] font-medium leading-relaxed mb-2 hover:text-[var(--accent)] transition-colors"
+                      className="block text-[13px] md:text-[14px] font-medium leading-relaxed mb-1.5 hover:text-[var(--accent)] transition-colors"
                       style={{ color: 'var(--text1)' }}
                     >
                       {p.promise}
                     </Link>
+
+                    {p.source_url && (
+                      <div className="mb-2 text-[10px] font-mono text-[var(--text3)] flex items-center gap-1 flex-wrap">
+                        <span>Source:</span>
+                        <a
+                          href={p.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
+                          style={{ color: 'var(--accent)' }}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          {p.source_description || 'Manifesto/Announcement'} ↗
+                        </a>
+                      </div>
+                    )}
 
                     {/* AI reasoning preview */}
                     {p.gemma_reasoning && (

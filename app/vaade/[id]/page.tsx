@@ -79,9 +79,25 @@ export default async function PromisePage({ params }: { params: { id: string } }
       <div className="px-4 md:px-6 py-6 border-b" style={{ borderColor: 'var(--border-md)' }}>
         <div className="flex gap-3">
           <div className="w-[3px] self-stretch rounded-full flex-shrink-0" style={{ background: statusColor, opacity: 0.5 }} />
-          <p className="text-[18px] md:text-[22px] font-bold font-serif leading-relaxed" style={{ color: 'var(--text1)' }}>
-            {promise.promise}
-          </p>
+          <div className="flex-1">
+            <p className="text-[18px] md:text-[22px] font-bold font-serif leading-relaxed" style={{ color: 'var(--text1)' }}>
+              {promise.promise}
+            </p>
+            {promise.source_url && (
+              <div className="mt-3 text-[11px] font-mono text-[var(--text3)] flex items-center gap-1.5 flex-wrap">
+                <span>Original Source:</span>
+                <a
+                  href={promise.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  {promise.source_description || 'Manifesto/Official Announcement'} ↗
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

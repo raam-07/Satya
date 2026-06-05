@@ -80,6 +80,20 @@ export default async function PromisesPage() {
                         {p.deadline && <span className="text-[9px] font-mono text-[var(--text3)]">· due {p.deadline}</span>}
                       </div>
                       <p className="text-[13px] md:text-[14px] text-[var(--text1)] leading-relaxed font-medium">{p.promise}</p>
+                      {p.source_url && (
+                        <div className="mt-1.5 text-[10px] font-mono text-[var(--text3)] flex items-center gap-1 flex-wrap">
+                          <span>Source:</span>
+                          <a
+                            href={p.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            {p.source_description || 'Manifesto/Announcement'} ↗
+                          </a>
+                        </div>
+                      )}
                       {p.gemma_reasoning && (
                         <p className="text-[11px] text-[var(--text2)] mt-2 leading-relaxed border-l-2 pl-3" style={{ borderColor: status === 'broken' ? '#b02828' : status === 'kept' ? '#1b7050' : status === 'void' ? '#6b7280' : '#bf4a07' }}>
                           {p.gemma_reasoning}

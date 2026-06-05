@@ -156,6 +156,8 @@ export interface PoliticalPromise {
   status?: 'kept' | 'broken' | 'ongoing' | 'void'
   made_on?: string
   deadline?: string
+  source_url?: string
+  source_description?: string
   evidence_count?: number
   gemma_suggestion?: string
   gemma_reasoning?: string
