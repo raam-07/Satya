@@ -38,13 +38,13 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
 
   const q = query.toLowerCase().trim()
   const results = q.length < 2 ? [] : allArticles.filter(a =>
-    a.title?.toLowerCase().includes(q) ||
-    a.rephrased_article?.toLowerCase().includes(q) ||
-    a.category?.toLowerCase().includes(q) ||
-    a.party_mentioned?.some(p => p.toLowerCase().includes(q)) ||
-    a.ministers_mentioned?.some(m => m.toLowerCase().includes(q)) ||
-    a.states_mentioned?.some(s => s.toLowerCase().includes(q)) ||
-    a.topic_tags?.some(t => t.toLowerCase().includes(q))
+    (a.title && typeof a.title === 'string' && a.title.toLowerCase().includes(q)) ||
+    (a.rephrased_article && typeof a.rephrased_article === 'string' && a.rephrased_article.toLowerCase().includes(q)) ||
+    (a.category && typeof a.category === 'string' && a.category.toLowerCase().includes(q)) ||
+    (a.party_mentioned && Array.isArray(a.party_mentioned) && a.party_mentioned.some(p => p && typeof p === 'string' && p.toLowerCase().includes(q))) ||
+    (a.ministers_mentioned && Array.isArray(a.ministers_mentioned) && a.ministers_mentioned.some(m => m && typeof m === 'string' && m.toLowerCase().includes(q))) ||
+    (a.states_mentioned && Array.isArray(a.states_mentioned) && a.states_mentioned.some(s => s && typeof s === 'string' && s.toLowerCase().includes(q))) ||
+    (a.topic_tags && Array.isArray(a.topic_tags) && a.topic_tags.some(t => t && typeof t === 'string' && t.toLowerCase().includes(q)))
   ).slice(0, 40)
 
   return (
