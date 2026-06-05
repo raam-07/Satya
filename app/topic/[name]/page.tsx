@@ -27,7 +27,7 @@ export default async function TopicPage({ params }: { params: { name: string } }
   if (mergedArticles.length === 0) {
     const feedData = await api.feed('all')
     mergedArticles = (feedData?.articles ?? []).filter(
-      a => a.topic_tags?.some(t => t === slug || t.toLowerCase() === slug.toLowerCase())
+      a => a.topic_tags?.some(t => t === slug || (t && typeof t === 'string' && t.toLowerCase() === slug.toLowerCase()))
     )
   }
 

@@ -9,11 +9,11 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   
   const filtered = query 
     ? articles.filter(a => {
-        return a.title.toLowerCase().includes(query) ||
-               a.category?.toLowerCase().includes(query) ||
-               a.party_mentioned?.some(p => p.toLowerCase().includes(query)) ||
-               a.ministers_mentioned?.some(m => m.toLowerCase().includes(query)) ||
-               a.topic_tags?.some(t => t.toLowerCase().includes(query))
+        return (a.title && typeof a.title === 'string' && a.title.toLowerCase().includes(query)) ||
+               (a.category && typeof a.category === 'string' && a.category.toLowerCase().includes(query)) ||
+               (a.party_mentioned && Array.isArray(a.party_mentioned) && a.party_mentioned.some(p => p && typeof p === 'string' && p.toLowerCase().includes(query))) ||
+               (a.ministers_mentioned && Array.isArray(a.ministers_mentioned) && a.ministers_mentioned.some(m => m && typeof m === 'string' && m.toLowerCase().includes(query))) ||
+               (a.topic_tags && Array.isArray(a.topic_tags) && a.topic_tags.some(t => t && typeof t === 'string' && t.toLowerCase().includes(query)))
       })
     : []
 

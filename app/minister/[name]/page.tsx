@@ -16,7 +16,7 @@ export default async function MinisterPage({ params }: { params: { name: string 
     const feedData = await api.feed('all')
     articles = (feedData?.articles ?? []).filter(a =>
       a.ministers_mentioned?.some(m =>
-        m.toLowerCase().includes(params.name.replace(/_/g, ' ').toLowerCase())
+        m && typeof m === 'string' && m.toLowerCase().includes(params.name.replace(/_/g, ' ').toLowerCase())
       )
     )
   }

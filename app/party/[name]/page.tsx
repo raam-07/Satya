@@ -62,7 +62,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
           <div className="mt-3 flex flex-wrap gap-2 items-center">
             <span className="text-[10px] font-mono text-[var(--text3)] uppercase tracking-wider">Ruling states:</span>
             {party.ruling_states.map(state => (
-              <Link key={state} href={`/state/${state.toLowerCase()}`}
+              <Link key={state} href={`/state/${state.toLowerCase().replace(/\s+/g, '_')}`}
                 className="text-[10px] font-mono border border-[var(--border-md)] rounded-sm px-2 py-0.5 text-[var(--text2)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
                 {state}
               </Link>
@@ -80,7 +80,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
           </div>
           <div className="divide-y divide-[var(--border)]">
             {(party.ministers ?? []).map((m, i) => (
-              <Link key={i} href={`/minister/${m.name?.toLowerCase().replace(/\s+/g, '_') ?? '#'}`}
+              <Link key={i} href={`/minister/${m.name ? m.name.toLowerCase().replace(/\s+/g, '_') : '#'}`}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-alt)] transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-[var(--bg-alt)] flex items-center justify-center text-[12px] font-bold text-[var(--text2)] flex-shrink-0">
                   {m.name?.[0] ?? '?'}

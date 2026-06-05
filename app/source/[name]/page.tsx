@@ -11,7 +11,7 @@ export default async function SourcePage({ params }: { params: { name: string } 
 
   // Filter by source (case-insensitive)
   const articles = allArticles.filter(
-    a => a.source?.toLowerCase() === sourceName.toLowerCase()
+    a => a.source && typeof a.source === 'string' && a.source.toLowerCase() === sourceName.toLowerCase()
   )
 
   return (

@@ -201,9 +201,7 @@ export interface Manifest {
 // ── Fetch helper ─────────────────────────────────────────────────────────────
 async function fetchJSON<T>(path: string): Promise<T | null> {
   try {
-    // Bust GitHub CDN and browser cache by appending a minute-based timestamp
-    const cacheBuster = Math.floor(Date.now() / 60000)
-    const url = `${BASE}/${path}?t=${cacheBuster}`
+    const url = `${BASE}/${path}`
 
     const res = await fetch(url, {
       next: { revalidate: 60 } // Revalidate cache every 60 seconds (Incremental Static Regeneration)
