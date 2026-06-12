@@ -143,14 +143,15 @@ export function VaadeClient({ data }: VaadeClientProps) {
                       <div className="mb-2 text-[10px] font-mono text-[var(--text3)] flex items-center gap-1 flex-wrap">
                         <span>Source:</span>
                         <a
-                          href={p.source_url}
+                          href={p.url_status === 'dead' && p.archived_url ? p.archived_url : p.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
                           style={{ color: 'var(--accent)' }}
                           onClick={e => e.stopPropagation()}
                         >
-                          {p.source_description || 'Manifesto/Announcement'} ↗
+                          {p.source_description || 'Manifesto/Announcement'}
+                          {p.url_status === 'dead' && p.archived_url ? ' (archived)' : ''} ↗
                         </a>
                       </div>
                     )}

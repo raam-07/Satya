@@ -158,6 +158,9 @@ export interface PoliticalPromise {
   deadline?: string
   source_url?: string
   source_description?: string
+  archived_url?: string          // Wayback Machine snapshot (set by link checker)
+  url_status?: 'ok' | 'dead'     // liveness of source_url
+  source_quality?: string        // 'homepage_only' = needs a better source
   evidence_count?: number
   gemma_suggestion?: string
   gemma_reasoning?: string
@@ -170,6 +173,8 @@ export interface PoliticalPromise {
     gemma_validated?: boolean
     rephrased?: string
     content?: string
+    archived_url?: string
+    url_status?: 'ok' | 'dead'
   }[]
 }
 

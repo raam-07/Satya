@@ -87,14 +87,26 @@ export default async function PromisePage({ params }: { params: { id: string } }
               <div className="mt-3 text-[11px] font-mono text-[var(--text3)] flex items-center gap-1.5 flex-wrap">
                 <span>Original Source:</span>
                 <a
-                  href={promise.source_url}
+                  href={promise.url_status === 'dead' && promise.archived_url ? promise.archived_url : promise.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
                   style={{ color: 'var(--accent)' }}
                 >
-                  {promise.source_description || 'Manifesto/Official Announcement'} ↗
+                  {promise.source_description || 'Manifesto/Official Announcement'}
+                  {promise.url_status === 'dead' && promise.archived_url ? ' (archived copy)' : ''} ↗
                 </a>
+                {promise.url_status === 'ok' && promise.archived_url && (
+                  <a
+                    href={promise.archived_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                    style={{ color: 'var(--text3)' }}
+                  >
+                    · archived ↗
+                  </a>
+                )}
               </div>
             )}
           </div>

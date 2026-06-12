@@ -18,6 +18,8 @@ interface Props {
     gemma_validated?: boolean
     rephrased?: string
     content?: string
+    archived_url?: string
+    url_status?: 'ok' | 'dead'
   }[]
 }
 
@@ -33,7 +35,7 @@ export function VaadeRelatedArticles({ party, person, category, preloadedEvidenc
       const mapped: Article[] = preloadedEvidence.map((e, idx) => ({
         id: idx,
         title: e.title,
-        url: e.url,
+        url: e.url_status === 'dead' && e.archived_url ? e.archived_url : e.url,
         source: e.source,
         scraped_at: e.scraped_at,
         rephrased_article: e.rephrased ?? '',
