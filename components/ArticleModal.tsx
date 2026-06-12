@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Article } from '@/lib/api'
-import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown } from '@/lib/utils'
+import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown, slugify, partySlugify } from '@/lib/utils'
 import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from './SrcTag'
 
 // Topic display names per spec
@@ -240,7 +240,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                   <DigRow
                     key={`party-${i}`}
                     label={`About ${party}`}
-                    href={`/party/${party.toLowerCase()}`}
+                    href={`/party/${partySlugify(party)}`}
                     onClose={onClose}
                   />
                 ))}
@@ -250,7 +250,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                   <DigRow
                     key={`min-${i}`}
                     label={`About ${name}`}
-                    href={`/minister/${name.toLowerCase().replace(/\s+/g, '_')}`}
+                    href={`/minister/${slugify(name)}`}
                     onClose={onClose}
                   />
                 ))}
@@ -260,7 +260,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                   <DigRow
                     key={`state-${i}`}
                     label={`News from ${state}`}
-                    href={`/state/${state.toLowerCase().replace(/\s+/g, '_')}`}
+                    href={`/state/${slugify(state)}`}
                     onClose={onClose}
                   />
                 ))}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { PartyData, IndiaOverview } from '@/lib/api'
+import { slugify } from '@/lib/utils'
 
 const PARTY_CONFIG = [
   { id: 'bjp', name: 'BJP', fullName: 'Bharatiya Janata Party',       accent: '#BF4A07', bg: '#FFF3E0', border: '#FFB74D' },
@@ -70,38 +71,52 @@ export function NetasClient({ partyData, overview, manifestMinisters, manifestSt
   // Build minister list: start from manifest (all available), sort by coverage
   const ministerList = (() => {
     const coverageMap: Record<string, number> = topMins as Record<string, number>
-    // Base names from manifest minister slugs (convert slug → display name)
-    const manifestNames = manifestMinisters
-      ? Array.from(manifestMinisters).map(slug =>
-          slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        )
-      : []
-    // Merge: coverage names first, then any manifest names not already listed
-    const allNames = [...Object.keys(coverageMap)]
-    manifestNames.forEach(n => { if (!allNames.includes(n)) allNames.push(n) })
-    return allNames.map(name => ({
+    // Coverage map keys are canonical display names ('S. Jaishankar').
+    // Dedupe against the manifest BY SLUG, not by reconstructed name, so
+    // 'S. Jaishankar' and manifest slug 's_jaishankar' are one entry.
+    const entries = Object.keys(coverageMap).map(name => ({
       name,
-      slug: name.toLowerCase().replace(/\s+/g, '_').replace(/\./g, ''),
+      slug: slugify(name),
       count: Number(coverageMap[name] ?? 0),
-    })).sort((a, b) => b.count - a.count)
+    }))
+    const seenSlugs = new Set(entries.map(e => e.slug))
+    if (manifestMinisters) {
+      for (const slug of Array.from(manifestMinisters)) {
+        if (!seenSlugs.has(slug)) {
+          entries.push({
+            name: slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            slug,
+            count: 0,
+          })
+          seenSlugs.add(slug)
+        }
+      }
+    }
+    return entries.sort((a, b) => b.count - a.count)
   })()
 
   // Build states list: manifest covers all states (27+); sort by coverage
   const stateList = (() => {
     const coverageMap: Record<string, number> = topStates as Record<string, number>
-    const manifestStateNames = manifestStates
-      ? Array.from(manifestStates).map(slug =>
-          slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        )
-      : []
-    // All states from API coverage + manifest, deduplicated
-    const allNames: string[] = [...Object.keys(coverageMap)]
-    manifestStateNames.forEach(n => { if (!allNames.find(x => x.toLowerCase() === n.toLowerCase())) allNames.push(n) })
-    return allNames.map(name => ({
-      slug: name.toLowerCase().replace(/\s+/g, '_'),
+    const entries = Object.keys(coverageMap).map(name => ({
+      slug: slugify(name),
       name,
       count: Number(coverageMap[name] ?? 0),
-    })).sort((a, b) => b.count - a.count)
+    }))
+    const seenSlugs = new Set(entries.map(e => e.slug))
+    if (manifestStates) {
+      for (const slug of Array.from(manifestStates)) {
+        if (!seenSlugs.has(slug)) {
+          entries.push({
+            slug,
+            name: slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            count: 0,
+          })
+          seenSlugs.add(slug)
+        }
+      }
+    }
+    return entries.sort((a, b) => b.count - a.count)
   })()
 
   const TABS: { id: Tab; label: string }[] = [

@@ -157,7 +157,7 @@ export default async function DataPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <Link href="/feed?tab=flagged" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
+                  <Link href="/?tab=flagged" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
                     View Flagged Feed →
                   </Link>
                 </div>

@@ -1,9 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useDeferredValue } from 'react'
 import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage } from '@/lib/utils'
 import { PBadge, SentimentDot } from './SrcTag'
+
+// Module-level cache — the multi-MB feed is downloaded once per session,
+// not on every overlay open.
+let cachedFeed: Article[] | null = null
 
 interface SearchOverlayProps {
   onClose: () => void
@@ -20,10 +24,16 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     inputRef.current?.focus()
-    api.feed('all').then(res => {
-      setAllArticles(res?.articles ?? [])
+    if (cachedFeed) {
+      setAllArticles(cachedFeed)
       setLoading(false)
-    })
+    } else {
+      api.feed('all').then(res => {
+        cachedFeed = res?.articles ?? []
+        setAllArticles(cachedFeed)
+        setLoading(false)
+      }).catch(() => setLoading(false))
+    }
     return () => { document.body.style.overflow = '' }
   }, [])
 
@@ -36,7 +46,9 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  const q = query.toLowerCase().trim()
+  // Deferred value keeps typing responsive while filtering 10k articles
+  const deferredQuery = useDeferredValue(query)
+  const q = deferredQuery.toLowerCase().trim()
   const results = q.length < 2 ? [] : allArticles.filter(a =>
     (a.title && typeof a.title === 'string' && a.title.toLowerCase().includes(q)) ||
     (a.rephrased_article && typeof a.rephrased_article === 'string' && a.rephrased_article.toLowerCase().includes(q)) ||

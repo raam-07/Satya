@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { api } from './api'
+import { slugify, partySlugify } from './utils'
 
 interface ManifestCtx {
   parties:   Set<string>   // slugs: 'bjp', 'inc', 'aap'
@@ -65,9 +66,11 @@ export function ManifestProvider({ children }: { children: ReactNode }) {
     }).catch(() => setLoaded(true))
   }, [])
 
-  const partySlug    = (n: string) => n.toLowerCase().replace(/\s+/g, '_')
-  const ministerSlug = (n: string) => n.toLowerCase().replace(/\s+/g, '_')
-  const stateSlug    = (n: string) => n.toLowerCase().replace(/\s+/g, '_')
+  // Shared slugify keeps these consistent with the aggregator's filenames
+  // (dots stripped: 'M.K. Stalin' → 'mk_stalin')
+  const partySlug    = (n: string) => partySlugify(n)
+  const ministerSlug = (n: string) => slugify(n)
+  const stateSlug    = (n: string) => slugify(n)
 
   return (
     <ManifestContext.Provider value={{

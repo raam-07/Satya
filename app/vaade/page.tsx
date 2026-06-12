@@ -48,7 +48,7 @@ export default async function VaadePage() {
         {/* Progress bar */}
         <div className="px-4 md:px-6 pb-4">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[9px] font-mono text-[var(--text3)] tracking-widest">PROMISE KEPT RATE</span>
+            <span className="text-[9px] font-mono text-[var(--text3)] tracking-widest">PROMISE KEPT RATE (EXCL. VOID)</span>
             <span className="text-[9px] font-mono font-bold" style={{ color: keptPct >= 50 ? '#1B7050' : '#B02828' }}>
               {keptPct}%
             </span>

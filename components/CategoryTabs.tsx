@@ -25,8 +25,8 @@ export function CategoryTabs({ activeTab, onChangeTab }: CategoryTabsProps) {
   return (
     <div
       ref={scrollRef}
-      className="flex overflow-x-auto bg-white border-b no-scrollbar"
-      style={{ borderColor: 'var(--border-md)', scrollbarWidth: 'none' }}
+      className="flex overflow-x-auto border-b no-scrollbar"
+      style={{ borderColor: 'var(--border-md)', scrollbarWidth: 'none', background: 'var(--surface)' }}
     >
       {TABS.map(tab => {
         const isActive = activeTab === tab.id

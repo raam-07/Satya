@@ -28,7 +28,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         </p>
       </div>
       
-      <div className="bg-white">
+      <div style={{ background: 'var(--surface)' }}>
         {query ? (
           <ArticleList
             articles={filtered}

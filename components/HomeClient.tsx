@@ -73,7 +73,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     <div>
 
       {/* Sticky Category Tabs */}
-      <div className="sticky top-0 z-30 shadow-sm bg-white">
+      <div className="sticky top-0 z-30 shadow-sm" style={{ background: 'var(--surface)' }}>
         <CategoryTabs activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
 

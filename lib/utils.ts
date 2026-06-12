@@ -1,5 +1,23 @@
 import React from 'react'
 
+// Slug generator — MUST match the aggregator's Python slugify():
+// lowercase, spaces → _, dots removed, all other non [a-z0-9_] stripped.
+// 'M.K. Stalin' → 'mk_stalin', 'S. Jaishankar' → 's_jaishankar'
+export function slugify(name: string): string {
+  return name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '')
+}
+
+// Party aliases whose dashboard lives under a different canonical slug
+const PARTY_SLUG_ALIASES: Record<string, string> = {
+  congress: 'inc',
+  trinamool: 'tmc',
+}
+
+export function partySlugify(party: string): string {
+  const s = slugify(party)
+  return PARTY_SLUG_ALIASES[s] ?? s
+}
+
 // Strip " - Source Name" from end of titles
 export function cleanTitle(title: string): string {
   return title.replace(/\s[-|]\s[^-|]+$/, '').trim()
@@ -12,6 +30,8 @@ export function formatDate(scraped_at?: string): string {
     const d = new Date(scraped_at.replace(' ', 'T'))
     const now = new Date()
     const diffMs = now.getTime() - d.getTime()
+    // Future timestamp (clock skew / timezone) — show the date, not 'Just now'
+    if (diffMs < -60000) return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
     const diffHrs = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
     if (diffHrs < 1) return 'Just now'

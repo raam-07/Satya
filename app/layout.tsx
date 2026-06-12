@@ -4,8 +4,6 @@ import { Shell } from '@/components/Shell'
 import { ManifestProvider } from '@/lib/ManifestContext'
 import { ToastProvider } from '@/lib/ToastContext'
 
-export const dynamic = 'force-dynamic'
-
 export const metadata: Metadata = {
   title: 'SatyaDheesh — सत्याधीश | India\'s Ground Truth Record',
   description: 'Unfiltered, sourced civic intelligence for Indian citizens.',

@@ -124,14 +124,20 @@ export function VaadeClient({ data }: VaadeClientProps) {
                       )}
                     </div>
 
-                    {/* Promise text — tappable */}
-                    <Link
-                      href={`/vaade/${p.id ?? i}`}
-                      className="block text-[13px] md:text-[14px] font-medium leading-relaxed mb-1.5 hover:text-[var(--accent)] transition-colors"
-                      style={{ color: 'var(--text1)' }}
-                    >
-                      {p.promise}
-                    </Link>
+                    {/* Promise text — tappable only when a real id exists */}
+                    {p.id ? (
+                      <Link
+                        href={`/vaade/${p.id}`}
+                        className="block text-[13px] md:text-[14px] font-medium leading-relaxed mb-1.5 hover:text-[var(--accent)] transition-colors"
+                        style={{ color: 'var(--text1)' }}
+                      >
+                        {p.promise}
+                      </Link>
+                    ) : (
+                      <span className="block text-[13px] md:text-[14px] font-medium leading-relaxed mb-1.5" style={{ color: 'var(--text1)' }}>
+                        {p.promise}
+                      </span>
+                    )}
 
                     {p.source_url && (
                       <div className="mb-2 text-[10px] font-mono text-[var(--text3)] flex items-center gap-1 flex-wrap">
