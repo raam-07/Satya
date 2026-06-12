@@ -83,6 +83,17 @@ export default async function PromisePage({ params }: { params: { id: string } }
             <p className="text-[18px] md:text-[22px] font-bold font-serif leading-relaxed" style={{ color: 'var(--text1)' }}>
               {promise.promise}
             </p>
+            {promise.supporting_quote && (
+              <blockquote
+                className="mt-3 pl-4 border-l-2 text-[13px] italic leading-relaxed"
+                style={{ borderColor: 'var(--border-hi)', color: 'var(--text2)' }}
+              >
+                &ldquo;{promise.supporting_quote}&rdquo;
+                <span className="block not-italic text-[10px] font-mono mt-1" style={{ color: 'var(--text3)' }}>
+                  — verbatim from the source article
+                </span>
+              </blockquote>
+            )}
             {promise.source_url && (
               <div className="mt-3 text-[11px] font-mono text-[var(--text3)] flex items-center gap-1.5 flex-wrap">
                 <span>Original Source:</span>

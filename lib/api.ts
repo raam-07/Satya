@@ -161,6 +161,7 @@ export interface PoliticalPromise {
   archived_url?: string          // Wayback Machine snapshot (set by link checker)
   url_status?: 'ok' | 'dead'     // liveness of source_url
   source_quality?: string        // 'homepage_only' = needs a better source
+  supporting_quote?: string      // verbatim sentence from the source article
   evidence_count?: number
   gemma_suggestion?: string
   gemma_reasoning?: string
