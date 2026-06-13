@@ -279,14 +279,14 @@ export default async function DataPage() {
             <div className="mt-4 md:mt-0 space-y-4">
               <div>
                 <div className="text-[9px] font-mono tracking-widest uppercase mb-2" style={{ color: 'var(--text3)' }}>
-                  Data Pipeline
+                  Platform Methodology
                 </div>
                 <div className="space-y-1.5">
                   {[
-                    'Scrape → classify → structure → publish every 5 minutes',
-                    'AI classification: category, sentiment, party, ministers, states',
-                    'Promise scoring via Gemma reasoning model',
-                    'All data linked to original primary sources',
+                    'Real-time news processing and organization',
+                    'Multi-dimensional tagging by party, leader, and region',
+                    'Evidence-based promise verification and status updates',
+                    'Direct linking to verified primary source articles',
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--accent)' }} />
@@ -312,7 +312,7 @@ export default async function DataPage() {
       {/* Footer note */}
       <div className="px-4 md:px-6 py-4 border-t text-center" style={{ borderColor: 'var(--border)' }}>
         <p className="text-[10px] font-mono text-[var(--text3)]">
-          SatyaDheesh · सत्याधीश · Truth · Open civic intelligence for India · Data updated every 5 minutes
+          SatyaDheesh · सत्याधीश · Truth · Open civic intelligence for India · Data updated continuously
         </p>
       </div>
     </div>
