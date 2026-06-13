@@ -154,7 +154,7 @@ export const serverApi = {
         args: [todayStart]
       },
       {
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
               FROM articles a
               LEFT JOIN sources s ON a.source_id = s.id
@@ -296,7 +296,7 @@ export const serverApi = {
 
     // Fetch articles
     const articlesRes = await db.execute({
-      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                    a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
             FROM articles a
             LEFT JOIN sources s ON a.source_id = s.id
@@ -382,7 +382,7 @@ export const serverApi = {
 
     // Fetch articles
     const articlesRes = await db.execute({
-      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                    a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
             FROM articles a
             LEFT JOIN sources s ON a.source_id = s.id
@@ -449,7 +449,7 @@ export const serverApi = {
 
     // Fetch articles
     const articlesRes = await db.execute({
-      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                    a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
             FROM articles a
             LEFT JOIN sources s ON a.source_id = s.id
@@ -500,7 +500,7 @@ export const serverApi = {
 
   async topic(name: string): Promise<TopicData | null> {
     const articlesRes = await db.execute({
-      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                    a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
             FROM articles a
             LEFT JOIN sources s ON a.source_id = s.id
@@ -524,7 +524,7 @@ export const serverApi = {
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
     const articlesRes = await db.execute({
-      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                    a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
             FROM articles a
             LEFT JOIN sources s ON a.source_id = s.id
@@ -599,7 +599,7 @@ export const serverApi = {
 
   async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     let query = `
-      SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+      SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
              a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
       FROM articles a
       LEFT JOIN sources s ON a.source_id = s.id
