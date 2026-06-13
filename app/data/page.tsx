@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
 import Link from 'next/link'
+import { HardRefreshButton } from '@/components/HardRefreshButton'
 
 function Bar({ value, max, color }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0
@@ -39,10 +40,15 @@ export default async function DataPage() {
   return (
     <div className="md:max-w-5xl md:mx-auto">
       {/* Header */}
-      <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
-        <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Civic Intelligence</span>
-        <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">Data</h1>
-        <p className="text-[13px] text-[var(--text2)] mt-1">India by the numbers — sourced, structured, transparent.</p>
+      <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" style={{ borderColor: 'var(--border-md)' }}>
+        <div>
+          <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Civic Intelligence</span>
+          <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">Data</h1>
+          <p className="text-[13px] text-[var(--text2)] mt-1">India by the numbers — sourced, structured, transparent.</p>
+        </div>
+        <div className="flex-shrink-0">
+          <HardRefreshButton />
+        </div>
       </div>
 
       {/* Key metrics */}

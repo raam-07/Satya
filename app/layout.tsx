@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: 'Unfiltered, sourced civic intelligence for Indian citizens.',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverApi } from '@/lib/api.server';
 
-export const revalidate = 60; // Cache API responses for 60 seconds
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,6 +10,10 @@ export async function GET(req: NextRequest) {
 
   try {
     switch (type) {
+      case 'refresh':
+        const { clearCache } = await import('@/lib/api.server');
+        clearCache();
+        return NextResponse.json({ success: true });
       case 'indiaOverview':
         return NextResponse.json(await serverApi.indiaOverview());
       case 'manifest':
