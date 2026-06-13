@@ -645,5 +645,15 @@ export const serverApi = {
       total: articles.length,
       articles
     };
+  },
+
+  async articleContent(id: number): Promise<{ content?: string } | null> {
+    const res = await db.execute({
+      sql: 'SELECT content FROM articles WHERE id = ?',
+      args: [id]
+    });
+    if (!res.rows.length) return null;
+    const content = decompressText(res.rows[0].content);
+    return { content: content || undefined };
   }
 };

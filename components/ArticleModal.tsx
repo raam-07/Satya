@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { Article } from '@/lib/api'
+import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown, slugify, partySlugify } from '@/lib/utils'
 import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from './SrcTag'
 
@@ -37,6 +37,9 @@ interface ArticleModalProps {
 
 export function ArticleModal({ article, onClose }: ArticleModalProps) {
   const router = useRouter()
+  const [fullContent, setFullContent] = useState<string | null>(null)
+  const [contentLoading, setContentLoading] = useState(false)
+  const [contentExpanded, setContentExpanded] = useState(false)
 
   useEffect(() => {
     if (article) document.body.style.overflow = 'hidden'
@@ -49,6 +52,37 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
+
+  // Lazy-load full article content when modal opens
+  useEffect(() => {
+    if (!article?.id) {
+      setFullContent(null)
+      setContentExpanded(false)
+      return
+    }
+
+    // If content was already in the article object (e.g. from a direct DB query), use it
+    if (article.content) {
+      setFullContent(article.content)
+      return
+    }
+
+    let cancelled = false
+    setContentLoading(true)
+    setFullContent(null)
+    setContentExpanded(false)
+
+    api.articleContent(article.id).then(res => {
+      if (!cancelled) {
+        setFullContent(res?.content || null)
+        setContentLoading(false)
+      }
+    }).catch(() => {
+      if (!cancelled) setContentLoading(false)
+    })
+
+    return () => { cancelled = true }
+  }, [article?.id, article?.content])
 
   if (!article) return null
 
@@ -156,18 +190,42 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
               </p>
             )}
 
-            {/* Original Full Text */}
-            {article.content && (
+            {/* Original Full Text — lazy loaded */}
+            {contentLoading && (
               <div className="mb-5 border border-[var(--border-md)] rounded-sm p-4 bg-[var(--bg)]">
                 <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-2" style={{ color: 'var(--text3)' }}>
-                  Original Full Article
+                  Loading Original Article…
                 </div>
-                <div 
-                  className="text-[12.5px] leading-relaxed max-h-72 overflow-y-auto whitespace-pre-line font-sans"
-                  style={{ color: 'var(--text2)' }}
+                <div className="space-y-2">
+                  <div className="h-3 rounded animate-pulse" style={{ background: 'var(--bg-alt)', width: '100%' }} />
+                  <div className="h-3 rounded animate-pulse" style={{ background: 'var(--bg-alt)', width: '92%' }} />
+                  <div className="h-3 rounded animate-pulse" style={{ background: 'var(--bg-alt)', width: '85%' }} />
+                </div>
+              </div>
+            )}
+            {fullContent && (
+              <div className="mb-5 border border-[var(--border-md)] rounded-sm bg-[var(--bg)] overflow-hidden">
+                <button
+                  onClick={() => setContentExpanded(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--bg-alt)]"
                 >
-                  {article.content}
-                </div>
+                  <span className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--text3)' }}>
+                    Original Full Article
+                  </span>
+                  <span className="text-[11px] font-mono transition-transform" style={{ color: 'var(--text3)', transform: contentExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    ▼
+                  </span>
+                </button>
+                {contentExpanded && (
+                  <div className="px-4 pb-4">
+                    <div 
+                      className="text-[12.5px] leading-relaxed max-h-72 overflow-y-auto whitespace-pre-line font-sans"
+                      style={{ color: 'var(--text2)' }}
+                    >
+                      {fullContent}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

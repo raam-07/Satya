@@ -290,5 +290,13 @@ export const api = {
       return serverApi.feed(type);
     }
     return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type);
+  },
+
+  async articleContent(id: number): Promise<{ content?: string } | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.articleContent(id);
+    }
+    return fetchClientJSON<{ content?: string }>('articleContent', String(id));
   }
 };
