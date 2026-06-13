@@ -119,98 +119,105 @@ export const serverApi = {
     const ruling_party = entities.india?.central_government?.ruling_party || '';
     const ruling_coalition = entities.india?.central_government?.ruling_coalition || '';
 
-    // Query stats
-    const totalRes = await db.execute("SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed')");
-    const total = Number(totalRes.rows[0]?.c || 0);
-
     const sevenDaysAgo = Math.floor(Date.now() / 1000) - (7 * 24 * 3600);
-    const last7dRes = await db.execute({
-      sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
-      args: [sevenDaysAgo]
-    });
-    const last7d = Number(last7dRes.rows[0]?.c || 0);
-
     const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
-    const last30dRes = await db.execute({
-      sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
-      args: [thirtyDaysAgo]
-    });
-    const last30d = Number(last30dRes.rows[0]?.c || 0);
-
-    const flagged30dRes = await db.execute({
-      sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?",
-      args: [thirtyDaysAgo]
-    });
-    const flagged30d = Number(flagged30dRes.rows[0]?.c || 0);
-
     const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
-    const flaggedTodayRes = await db.execute({
-      sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?",
-      args: [todayStart]
-    });
+
+    const [
+      totalRes,
+      last7dRes,
+      last30dRes,
+      flagged30dRes,
+      flaggedTodayRes,
+      storiesRes,
+      catBreakdownRes,
+      flagCatsRes,
+      ministerRes,
+      partyRes,
+      stateRes
+    ] = await db.batch([
+      "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed')",
+      {
+        sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
+        args: [sevenDaysAgo]
+      },
+      {
+        sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?",
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?",
+        args: [todayStart]
+      },
+      {
+        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
+                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+              FROM articles a
+              LEFT JOIN sources s ON a.source_id = s.id
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.category IN ('politics', 'economy', 'crime', 'international')
+              ORDER BY a.scraped_at DESC LIMIT 10`,
+        args: []
+      },
+      {
+        sql: `SELECT category, COUNT(*) as c FROM articles 
+              WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?
+              GROUP BY category`,
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: `SELECT civic_flag_category, COUNT(*) as c FROM articles 
+              WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?
+              GROUP BY civic_flag_category`,
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.ministers_mentioned) j
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+              GROUP BY j.value ORDER BY c DESC LIMIT 20`,
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.party_mentioned) j
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.states_mentioned) j
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+        args: [thirtyDaysAgo]
+      }
+    ]);
+
+    const total = Number(totalRes.rows[0]?.c || 0);
+    const last7d = Number(last7dRes.rows[0]?.c || 0);
+    const last30d = Number(last30dRes.rows[0]?.c || 0);
+    const flagged30d = Number(flagged30dRes.rows[0]?.c || 0);
     const flaggedToday = Number(flaggedTodayRes.rows[0]?.c || 0);
 
-    // Top Stories (Last 7 days, limit 10)
-    const storiesRes = await db.execute({
-      sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.content, a.rephrased_article,
-                   a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-            FROM articles a
-            LEFT JOIN sources s ON a.source_id = s.id
-            WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.category IN ('politics', 'economy', 'crime', 'international')
-            ORDER BY a.scraped_at DESC LIMIT 10`,
-      args: []
-    });
     const topStories = storiesRes.rows.map(row => mapRowToArticle(row));
 
-    // Category breakdown
-    const catBreakdownRes = await db.execute({
-      sql: `SELECT category, COUNT(*) as c FROM articles 
-            WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?
-            GROUP BY category`,
-      args: [thirtyDaysAgo]
-    });
     const category_breakdown_30d: Record<string, number> = {};
     catBreakdownRes.rows.forEach(r => {
       if (r.category) category_breakdown_30d[String(r.category)] = Number(r.c);
     });
 
-    // Top Flag Categories
-    const flagCatsRes = await db.execute({
-      sql: `SELECT civic_flag_category, COUNT(*) as c FROM articles 
-            WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?
-            GROUP BY civic_flag_category`,
-      args: [thirtyDaysAgo]
-    });
     const top_flag_categories: Record<string, number> = {};
     flagCatsRes.rows.forEach(r => {
       if (r.civic_flag_category) top_flag_categories[String(r.civic_flag_category)] = Number(r.c);
     });
 
-    // Top Ministers, Parties, States
-    const ministerRes = await db.execute({
-      sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.ministers_mentioned) j
-            WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-            GROUP BY j.value ORDER BY c DESC LIMIT 20`,
-      args: [thirtyDaysAgo]
-    });
     const top_ministers_30d: Record<string, number> = {};
     ministerRes.rows.forEach(r => { top_ministers_30d[String(r.val)] = Number(r.c); });
 
-    const partyRes = await db.execute({
-      sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.party_mentioned) j
-            WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-            GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-      args: [thirtyDaysAgo]
-    });
     const top_parties_30d: Record<string, number> = {};
     partyRes.rows.forEach(r => { top_parties_30d[String(r.val)] = Number(r.c); });
 
-    const stateRes = await db.execute({
-      sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.states_mentioned) j
-            WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-            GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-      args: [thirtyDaysAgo]
-    });
     const top_states_30d: Record<string, number> = {};
     stateRes.rows.forEach(r => { top_states_30d[String(r.val)] = Number(r.c); });
 
