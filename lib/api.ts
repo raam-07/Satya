@@ -1,5 +1,3 @@
-const BASE = 'https://raw.githubusercontent.com/raam-07/Satya-API/main/api'
-
 // ── Article (same shape everywhere) ─────────────────────────────────────────
 export interface Article {
   id: number
@@ -151,17 +149,17 @@ export interface PoliticalPromise {
   id?: string
   person?: string
   party?: string
-  promise?: string          // NOTE: field is "promise" not "text"
+  promise?: string
   category?: string
   status?: 'kept' | 'broken' | 'ongoing' | 'void'
   made_on?: string
   deadline?: string
   source_url?: string
   source_description?: string
-  archived_url?: string          // Wayback Machine snapshot (set by link checker)
-  url_status?: 'ok' | 'dead'     // liveness of source_url
-  source_quality?: string        // 'homepage_only' = needs a better source
-  supporting_quote?: string      // verbatim sentence from the source article
+  archived_url?: string
+  url_status?: 'ok' | 'dead'
+  source_quality?: string
+  supporting_quote?: string
   evidence_count?: number
   gemma_suggestion?: string
   gemma_reasoning?: string
@@ -194,58 +192,103 @@ export interface PromisesSummary {
     kept?: PoliticalPromise[]
     void?: PoliticalPromise[]
   }
-  by_person?: Record<string, number>
-  by_party?: Record<string, number>
+  by_person?: Record<string, any>
+  by_party?: Record<string, any>
 }
 
 // ── manifest.json ────────────────────────────────────────────────────────────
 export interface Manifest {
   generated_at?: string
-  // Can be a string[] (legacy) or a nested object { parties: {...}, ministers: {...}, states: {...} }
   endpoints?: string[] | Record<string, unknown>
   stats?: Record<string, number>
 }
 
-// ── Fetch helper ─────────────────────────────────────────────────────────────
-async function fetchJSON<T>(path: string): Promise<T | null> {
+// ── Client Fetch Helper ──────────────────────────────────────────────────────
+async function fetchClientJSON<T>(type: string, param: string = ''): Promise<T | null> {
   try {
-    const url = `${BASE}/${path}`
-
-    const res = await fetch(url, {
-      next: { revalidate: 60 } // Revalidate cache every 60 seconds (Incremental Static Regeneration)
-    })
-    if (!res.ok) return null
-    return res.json()
+    // Determine absolute base URL if on server context (safeguard)
+    const base = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000') : '';
+    const res = await fetch(`${base}/api/data?type=${type}&param=${encodeURIComponent(param)}`, {
+      next: { revalidate: 60 }
+    });
+    if (!res.ok) return null;
+    return res.json();
   } catch {
-    return null
+    return null;
   }
 }
 
+// ── Hybrid API Wrapper (Sever direct connection, Client route proxy) ──
 export const api = {
-  indiaOverview: () => fetchJSON<IndiaOverview>('india_overview.json'),
-  manifest:      () => fetchJSON<Manifest>('manifest.json'),
-  party:         (name: string) => fetchJSON<PartyData>(`party_${name}.json`),
-  minister:      (name: string) => fetchJSON<Minister>(`minister_${name}.json`),
-  state:         (name: string) => fetchJSON<StateData>(`state_${name}.json`),
-  topic:         (name: string) => fetchJSON<TopicData>(`topic_${name}.json`),
-  promises:      () => fetchJSON<PromisesSummary>('promises_summary.json'),
-  category:      (name: string) => fetchJSON<{ articles?: Article[] }>(`category_${name}.json`),
-  feed: (type: string) => {
-    const files: Record<string, string> = {
-      all:           'feed.json',
-      flagged:       'feed_flagged.json',
-      politics:      'feed_politics.json',
-      governance:    'feed_politics.json',
-      crime:         'feed_crime.json',
-      justice:       'feed_crime.json',
-      economy:       'feed_economy.json',
-      international: 'feed_international.json',
-      world:         'feed_international.json',
-      health:        'feed_health.json',
-      corruption:    'feed_topic_corruption.json',
-      farmers:       'feed_topic_farmers.json',
+  async indiaOverview(): Promise<IndiaOverview | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.indiaOverview();
     }
-    const file = files[type] ?? 'feed.json'
-    return fetchJSON<{ generated_at?: string; total?: number; articles?: Article[] }>(file)
+    return fetchClientJSON<IndiaOverview>('indiaOverview');
+  },
+
+  async manifest(): Promise<Manifest | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.manifest();
+    }
+    return fetchClientJSON<Manifest>('manifest');
+  },
+
+  async party(name: string): Promise<PartyData | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.party(name);
+    }
+    return fetchClientJSON<PartyData>('party', name);
+  },
+
+  async minister(name: string): Promise<Minister | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.minister(name);
+    }
+    return fetchClientJSON<Minister>('minister', name);
+  },
+
+  async state(name: string): Promise<StateData | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.state(name);
+    }
+    return fetchClientJSON<StateData>('state', name);
+  },
+
+  async topic(name: string): Promise<TopicData | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.topic(name);
+    }
+    return fetchClientJSON<TopicData>('topic', name);
+  },
+
+  async promises(): Promise<PromisesSummary | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.promises();
+    }
+    return fetchClientJSON<PromisesSummary>('promises');
+  },
+
+  async category(name: string): Promise<{ articles?: Article[] } | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.category(name);
+    }
+    return fetchClientJSON<{ articles?: Article[] }>('category', name);
+  },
+
+  async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.feed(type);
+    }
+    return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type);
   }
-}
+};
