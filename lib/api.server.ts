@@ -22,7 +22,9 @@ async function loadEntities(): Promise<any> {
     } catch {}
   }
   try {
-    const res = await fetch('https://raw.githubusercontent.com/raam-07/satya-entity-library/main/entities.json');
+    const res = await fetch('https://raw.githubusercontent.com/raam-07/satya-entity-library/main/entities.json', {
+      next: { revalidate: 900 }
+    });
     return await res.json();
   } catch {
     return null;
@@ -37,7 +39,9 @@ async function loadPromisesRegistry(): Promise<any> {
     } catch {}
   }
   try {
-    const res = await fetch('https://raw.githubusercontent.com/raam-07/Satya-promise-tracker/main/promises.json');
+    const res = await fetch('https://raw.githubusercontent.com/raam-07/Satya-promise-tracker/main/promises.json', {
+      next: { revalidate: 900 }
+    });
     return await res.json();
   } catch {
     return null;
