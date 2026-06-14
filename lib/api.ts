@@ -150,6 +150,7 @@ export interface PoliticalPromise {
   person?: string
   party?: string
   promise?: string
+  promise_type?: 'specific' | 'policy' | 'vision'
   category?: string
   status?: 'kept' | 'broken' | 'ongoing' | 'void'
   made_on?: string

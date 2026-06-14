@@ -7,6 +7,7 @@ import type { PoliticalPromise, PromisesSummary } from '@/lib/api'
 import { renderMarkdown } from '@/lib/utils'
 
 type FilterId = 'all' | 'broken' | 'ongoing' | 'kept' | 'void' | 'bjp' | 'inc' | 'aap'
+type CategoryFilterId = 'all' | 'specific' | 'policy' | 'vision'
 
 const FILTERS: { id: FilterId; label: string }[] = [
   { id: 'all',     label: 'All' },
@@ -17,6 +18,13 @@ const FILTERS: { id: FilterId; label: string }[] = [
   { id: 'bjp',     label: 'BJP' },
   { id: 'inc',     label: 'INC' },
   { id: 'aap',     label: 'AAP' },
+]
+
+const CATEGORIES: { id: CategoryFilterId; label: string; desc: string }[] = [
+  { id: 'all',      label: 'All Categories', desc: 'All political promises' },
+  { id: 'specific', label: 'Specific',       desc: 'Clear, measurable commitments' },
+  { id: 'policy',   label: 'Policy',         desc: 'Government actions, plans & schemes' },
+  { id: 'vision',   label: 'Vision',         desc: 'Broad goals, ideals & slogans' },
 ]
 
 const STATUS_COLOR: Record<string, string> = {
@@ -31,6 +39,7 @@ interface VaadeClientProps {
 }
 
 export function VaadeClient({ data }: VaadeClientProps) {
+  const [activeCategory, setActiveCategory] = useState<CategoryFilterId>('all')
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
 
   const byStatus = data?.by_status ?? {}
@@ -41,7 +50,14 @@ export function VaadeClient({ data }: VaadeClientProps) {
     ...(byStatus.void    ?? []),
   ]
 
-  const filteredPromises = allPromises.filter(p => {
+  // Filter 1: Group by category first
+  const categoryPromises = allPromises.filter(p => {
+    if (activeCategory === 'all') return true
+    return p.promise_type === activeCategory
+  })
+
+  // Filter 2: Apply status/party filters within the selected category
+  const filteredPromises = categoryPromises.filter(p => {
     if (activeFilter === 'all')     return true
     if (activeFilter === 'broken')  return p.status === 'broken'
     if (activeFilter === 'ongoing') return p.status === 'ongoing'
@@ -53,10 +69,48 @@ export function VaadeClient({ data }: VaadeClientProps) {
 
   return (
     <div>
-      {/* Filter chips */}
+      {/* Category selector tabs */}
+      <div className="grid grid-cols-4 border-b" style={{ borderColor: 'var(--border-md)' }}>
+        {CATEGORIES.map(cat => {
+          const isActive = activeCategory === cat.id
+          return (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setActiveCategory(cat.id)
+                setActiveFilter('all') // Reset status filter when category shifts to prevent empty states
+              }}
+              className="flex flex-col items-center py-3.5 px-1 border-r last:border-r-0 transition-colors"
+              style={{
+                borderColor: 'var(--border-md)',
+                background: isActive ? 'var(--bg-alt)' : 'transparent',
+              }}
+            >
+              <span
+                className="text-[10px] md:text-[11px] font-bold tracking-wider uppercase font-mono text-center"
+                style={{ color: isActive ? 'var(--accent)' : 'var(--text2)' }}
+              >
+                {cat.label}
+              </span>
+              <span className="text-[7.5px] font-mono text-[var(--text3)] mt-0.5 text-center px-1 hidden md:inline">
+                {cat.desc}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Filter chips (Dynamic counts relative to active category) */}
       <div className="flex overflow-x-auto gap-2 px-4 md:px-6 py-3 border-b no-scrollbar" style={{ borderColor: 'var(--border-md)' }}>
         {FILTERS.map(f => {
           const isActive = activeFilter === f.id
+          const count = f.id === 'all' ? categoryPromises.length :
+                        f.id === 'broken' ? categoryPromises.filter(p => p.status === 'broken').length :
+                        f.id === 'ongoing' ? categoryPromises.filter(p => p.status === 'ongoing').length :
+                        f.id === 'kept' ? categoryPromises.filter(p => p.status === 'kept').length :
+                        f.id === 'void' ? categoryPromises.filter(p => p.status === 'void').length :
+                        categoryPromises.filter(p => p.party?.toLowerCase() === f.id).length
+
           return (
             <button
               key={f.id}
@@ -69,15 +123,9 @@ export function VaadeClient({ data }: VaadeClientProps) {
               }}
             >
               {f.label}
-              {f.id !== 'all' && (
-                <span className="ml-1.5 font-bold">
-                  {f.id === 'broken'  ? byStatus.broken?.length ?? 0 :
-                   f.id === 'ongoing' ? byStatus.ongoing?.length ?? 0 :
-                   f.id === 'kept'    ? byStatus.kept?.length ?? 0 :
-                   f.id === 'void'    ? byStatus.void?.length ?? 0 :
-                   allPromises.filter(p => p.party?.toLowerCase() === f.id).length}
-                </span>
-              )}
+              <span className="ml-1.5 font-bold">
+                {count}
+              </span>
             </button>
           )
         })}
@@ -113,6 +161,19 @@ export function VaadeClient({ data }: VaadeClientProps) {
                       {p.status && <StatusBadge status={p.status} />}
                       {p.party  && <PBadge party={p.party} />}
                       {p.person && <span className="text-[10px] font-mono" style={{ color: 'var(--text2)' }}>{p.person}</span>}
+                      
+                      {/* Promise Type Badge */}
+                      {p.promise_type && (
+                        <span className="text-[9px] font-mono tracking-widest uppercase border rounded-sm px-1.5 py-0.5 font-bold"
+                          style={{
+                            borderColor: p.promise_type === 'specific' ? 'rgba(27,112,80,0.3)' : p.promise_type === 'policy' ? 'rgba(191,74,7,0.3)' : 'rgba(107,114,128,0.3)',
+                            color: p.promise_type === 'specific' ? '#1B7050' : p.promise_type === 'policy' ? '#BF4A07' : '#6B7280',
+                            background: p.promise_type === 'specific' ? 'rgba(27,112,80,0.04)' : p.promise_type === 'policy' ? 'rgba(191,74,7,0.04)' : 'rgba(107,114,128,0.04)',
+                          }}>
+                          {p.promise_type}
+                        </span>
+                      )}
+
                       {p.category && (
                         <span className="text-[9px] font-mono tracking-widest uppercase border rounded-sm px-1.5 py-0.5"
                           style={{ borderColor: 'var(--border-md)', color: 'var(--text3)' }}>

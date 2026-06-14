@@ -71,6 +71,16 @@ export default async function PromisesPage() {
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         {p.party && <PBadge party={p.party} />}
                         {p.person && <span className="text-[10px] font-mono text-[var(--text2)]">{p.person}</span>}
+                        {p.promise_type && (
+                          <span className="text-[9px] font-mono tracking-widest uppercase border rounded-sm px-1.5 py-0.5 font-bold"
+                            style={{
+                              borderColor: p.promise_type === 'specific' ? 'rgba(27,112,80,0.3)' : p.promise_type === 'policy' ? 'rgba(191,74,7,0.3)' : 'rgba(107,114,128,0.3)',
+                              color: p.promise_type === 'specific' ? '#1B7050' : p.promise_type === 'policy' ? '#BF4A07' : '#6B7280',
+                              background: p.promise_type === 'specific' ? 'rgba(27,112,80,0.04)' : p.promise_type === 'policy' ? 'rgba(191,74,7,0.04)' : 'rgba(107,114,128,0.04)',
+                            }}>
+                            {p.promise_type}
+                          </span>
+                        )}
                         {p.category && (
                           <span className="text-[9px] font-mono tracking-widest uppercase text-[var(--text3)] border border-[var(--border-md)] rounded-sm px-1.5 py-0.5">
                             {p.category.replace(/_/g, ' ')}

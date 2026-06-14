@@ -70,9 +70,21 @@ export default async function PromisePage({ params }: { params: { id: string } }
             <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>· Due {promise.deadline}</span>
           )}
         </div>
-        <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'var(--text3)' }}>
-          {promise.category?.replace(/_/g, ' ') ?? 'Promise'}
-        </span>
+        <div className="flex items-center gap-2 mt-2">
+          {promise.promise_type && (
+            <span className="text-[9px] font-mono tracking-widest uppercase border rounded-sm px-1.5 py-0.5 font-bold"
+              style={{
+                borderColor: promise.promise_type === 'specific' ? 'rgba(27,112,80,0.3)' : promise.promise_type === 'policy' ? 'rgba(191,74,7,0.3)' : 'rgba(107,114,128,0.3)',
+                color: promise.promise_type === 'specific' ? '#1B7050' : promise.promise_type === 'policy' ? '#BF4A07' : '#6B7280',
+                background: promise.promise_type === 'specific' ? 'rgba(27,112,80,0.04)' : promise.promise_type === 'policy' ? 'rgba(191,74,7,0.04)' : 'rgba(107,114,128,0.04)',
+              }}>
+              {promise.promise_type} Promise
+            </span>
+          )}
+          <span className="text-[9px] font-mono tracking-widest uppercase text-[var(--text3)] border border-[var(--border-md)] rounded-sm px-1.5 py-0.5">
+            {promise.category?.replace(/_/g, ' ') ?? 'Promise'}
+          </span>
+        </div>
       </div>
 
       {/* Promise text */}
