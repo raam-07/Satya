@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/ToastContext'
+import { event } from '@/lib/gtag'
 
 export function HardRefreshButton() {
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -21,6 +22,13 @@ export function HardRefreshButton() {
       })
       
       if (res.ok) {
+        // Track the cache bypass custom event
+        event({
+          action: 'hard_refresh',
+          category: 'engagement',
+          label: 'Cache Bypass Triggered'
+        })
+
         showToast('Cache cleared! Fetching fresh data...')
         
         // Trigger Next.js router refresh to load fresh Server Component data
