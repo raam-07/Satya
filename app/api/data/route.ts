@@ -32,6 +32,10 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(await serverApi.category(param));
       case 'feed':
         return NextResponse.json(await serverApi.feed(param));
+      case 'search':
+        return NextResponse.json(await serverApi.search(param));
+      case 'source':
+        return NextResponse.json(await serverApi.source(param));
       case 'articleContent':
         const id = parseInt(param, 10);
         if (isNaN(id)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });

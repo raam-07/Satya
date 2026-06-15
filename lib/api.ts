@@ -299,5 +299,21 @@ export const api = {
       return serverApi.articleContent(id);
     }
     return fetchClientJSON<{ content?: string }>('articleContent', String(id));
+  },
+
+  async search(query: string): Promise<{ articles?: Article[] } | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.search(query);
+    }
+    return fetchClientJSON<{ articles?: Article[] }>('search', query);
+  },
+
+  async source(name: string): Promise<{ articles?: Article[] } | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.source(name);
+    }
+    return fetchClientJSON<{ articles?: Article[] }>('source', name);
   }
 };

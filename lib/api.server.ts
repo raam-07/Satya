@@ -302,13 +302,37 @@ export const serverApi = {
       const entities = await loadEntities();
       if (!entities) return null;
 
-      const parties = (entities.india?.parties || []).map((p: any) => p.name);
-      const states = (entities.india?.states || []).map((s: any) => s.name);
-      const ministers = [
+      const partiesList = (entities.india?.parties || []);
+      const statesList = (entities.india?.states || []);
+      const ministersList = [
         ...(entities.india?.cabinet_ministers || []),
         ...(entities.india?.state_chief_ministers || []),
-        ...(entities.india?.opposition_leaders || [])
-      ].map((m: any) => m.name);
+        ...(entities.india?.opposition_leaders || []),
+        ...(entities.india?.generic_politicians || [])
+      ];
+
+      const partiesEndpoints: Record<string, string> = {};
+      partiesList.forEach((p: any) => {
+        const s = p.name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '');
+        const PARTY_SLUG_ALIASES: Record<string, string> = {
+          congress: 'inc',
+          trinamool: 'tmc',
+        };
+        const slug = PARTY_SLUG_ALIASES[s] ?? s;
+        partiesEndpoints[slug] = `party_${slug}.json`;
+      });
+
+      const ministersEndpoints: Record<string, string> = {};
+      ministersList.forEach((m: any) => {
+        const slug = m.name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '');
+        ministersEndpoints[slug] = `minister_${slug}.json`;
+      });
+
+      const statesEndpoints: Record<string, string> = {};
+      statesList.forEach((s: any) => {
+        const slug = s.name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '');
+        statesEndpoints[slug] = `state_${slug}.json`;
+      });
 
       return {
         generated_at: new Date().toISOString(),
@@ -322,12 +346,15 @@ export const serverApi = {
           feed_health: "feed_health.json",
           feed_corruption: "feed_topic_corruption.json",
           feed_farmers: "feed_topic_farmers.json",
-          india_overview: "india_overview.json"
+          india_overview: "india_overview.json",
+          parties: partiesEndpoints,
+          ministers: ministersEndpoints,
+          states: statesEndpoints
         },
         stats: {
-          parties_count: parties.length,
-          states_count: states.length,
-          ministers_count: ministers.length,
+          parties_count: partiesList.length,
+          states_count: statesList.length,
+          ministers_count: ministersList.length,
           topics_count: 5
         }
       };
@@ -345,25 +372,41 @@ export const serverApi = {
 
       const partyName = partyInfo.name;
 
-      // Fetch articles
-      const articlesRes = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
-                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-              FROM articles a
-              LEFT JOIN sources s ON a.source_id = s.id
-              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.party_mentioned LIKE ?
-              ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [`%${partyName}%`]
-      });
-      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
-
+      // Fetch articles and stats in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
-      const sentimentRes = await db.execute({
-        sql: `SELECT sentiment, COUNT(*) as c FROM articles 
-              WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ? AND scraped_at >= ?
-              GROUP BY sentiment`,
-        args: [`%${partyName}%`, thirtyDaysAgo]
-      });
+
+      const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
+        {
+          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                       a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                FROM articles a
+                LEFT JOIN sources s ON a.source_id = s.id
+                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.party_mentioned LIKE ?
+                ORDER BY a.scraped_at DESC LIMIT 100`,
+          args: [`%${partyName}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ?`,
+          args: [`%${partyName}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ? AND scraped_at >= ?`,
+          args: [`%${partyName}%`, thirtyDaysAgo]
+        },
+        {
+          sql: `SELECT sentiment, COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ? AND scraped_at >= ?
+                GROUP BY sentiment`,
+          args: [`%${partyName}%`, thirtyDaysAgo]
+        }
+      ]);
+
+      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
+      const total_articles = Number(totalRes.rows[0]?.c || 0);
+      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
+
       const sentimentStats: Record<string, number> = {};
       sentimentRes.rows.forEach(r => {
         if (r.sentiment) sentimentStats[String(r.sentiment)] = Number(r.c);
@@ -405,8 +448,8 @@ export const serverApi = {
         ruling_states: partyInfo.ruling_states || [],
         color: partyInfo.color || '',
         stats: {
-          total_articles: recent_articles.length,
-          articles_last_30d: recent_articles.filter(a => a.scraped_at && new Date(a.scraped_at).getTime() >= thirtyDaysAgo * 1000).length
+          total_articles,
+          articles_last_30d
         },
         ministers,
         promises: partyPromises,
@@ -433,25 +476,41 @@ export const serverApi = {
 
       const canonicalName = ministerInfo.name;
 
-      // Fetch articles
-      const articlesRes = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
-                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-              FROM articles a
-              LEFT JOIN sources s ON a.source_id = s.id
-              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.ministers_mentioned LIKE ?
-              ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [`%${canonicalName}%`]
-      });
-      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
-
+      // Fetch articles and stats in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
-      const sentimentRes = await db.execute({
-        sql: `SELECT sentiment, COUNT(*) as c FROM articles 
-              WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ? AND scraped_at >= ?
-              GROUP BY sentiment`,
-        args: [`%${canonicalName}%`, thirtyDaysAgo]
-      });
+
+      const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
+        {
+          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                       a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                FROM articles a
+                LEFT JOIN sources s ON a.source_id = s.id
+                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.ministers_mentioned LIKE ?
+                ORDER BY a.scraped_at DESC LIMIT 100`,
+          args: [`%${canonicalName}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ?`,
+          args: [`%${canonicalName}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ? AND scraped_at >= ?`,
+          args: [`%${canonicalName}%`, thirtyDaysAgo]
+        },
+        {
+          sql: `SELECT sentiment, COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ? AND scraped_at >= ?
+                GROUP BY sentiment`,
+          args: [`%${canonicalName}%`, thirtyDaysAgo]
+        }
+      ]);
+
+      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
+      const total_articles = Number(totalRes.rows[0]?.c || 0);
+      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
+
       const sentimentStats: Record<string, number> = {};
       sentimentRes.rows.forEach(r => {
         if (r.sentiment) sentimentStats[String(r.sentiment)] = Number(r.c);
@@ -472,6 +531,7 @@ export const serverApi = {
         generated_at: new Date().toISOString(),
         name: canonicalName,
         role: ministerInfo.role || '',
+        relationship: ministerInfo.relationship || '',
         ministry: ministerInfo.ministry || '',
         party: ministerInfo.party || '',
         state: ministerInfo.state || '',
@@ -483,8 +543,8 @@ export const serverApi = {
         wikipedia: ministerInfo.wikipedia || '',
         affidavit_url: ministerInfo.affidavit_url || '',
         stats: {
-          total_articles: recent_articles.length,
-          articles_last_30d: recent_articles.filter(a => a.scraped_at && new Date(a.scraped_at).getTime() >= thirtyDaysAgo * 1000).length
+          total_articles,
+          articles_last_30d
         },
         promises: ministerPromises,
         recent_articles
@@ -502,37 +562,50 @@ export const serverApi = {
 
       const stateName = stateInfo.name;
 
-      // Fetch articles
-      const articlesRes = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
-                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-              FROM articles a
-              LEFT JOIN sources s ON a.source_id = s.id
-              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ?
-              ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [`%${stateName}%`]
-      });
-      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
-
+      // Fetch articles, counts, and aggregations in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
 
-      // Top cities
-      const cityRes = await db.execute({
-        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.cities_mentioned) j
-              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ? AND a.scraped_at >= ?
-              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-        args: [`%${stateName}%`, thirtyDaysAgo]
-      });
+      const [articlesRes, totalRes, last30dRes, cityRes, topicRes] = await db.batch([
+        {
+          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                       a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                FROM articles a
+                LEFT JOIN sources s ON a.source_id = s.id
+                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ?
+                ORDER BY a.scraped_at DESC LIMIT 100`,
+          args: [`%${stateName}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND states_mentioned LIKE ?`,
+          args: [`%${stateName}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND states_mentioned LIKE ? AND scraped_at >= ?`,
+          args: [`%${stateName}%`, thirtyDaysAgo]
+        },
+        {
+          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.cities_mentioned) j
+                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ? AND a.scraped_at >= ?
+                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+          args: [`%${stateName}%`, thirtyDaysAgo]
+        },
+        {
+          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.topic_tags) j
+                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ? AND a.scraped_at >= ?
+                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+          args: [`%${stateName}%`, thirtyDaysAgo]
+        }
+      ]);
+
+      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
+      const total_articles = Number(totalRes.rows[0]?.c || 0);
+      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
+
       const top_cities_30d: Record<string, number> = {};
       cityRes.rows.forEach(r => { top_cities_30d[String(r.val)] = Number(r.c); });
 
-      // Top topics
-      const topicRes = await db.execute({
-        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.topic_tags) j
-              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ? AND a.scraped_at >= ?
-              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-        args: [`%${stateName}%`, thirtyDaysAgo]
-      });
       const top_topics_30d: Record<string, number> = {};
       topicRes.rows.forEach(r => { top_topics_30d[String(r.val)] = Number(r.c); });
 
@@ -544,8 +617,8 @@ export const serverApi = {
         cm: stateInfo.cm || '',
         region: stateInfo.region || '',
         stats: {
-          total_articles: recent_articles.length,
-          articles_last_30d: recent_articles.filter(a => a.scraped_at && new Date(a.scraped_at).getTime() >= thirtyDaysAgo * 1000).length
+          total_articles,
+          articles_last_30d
         },
         top_cities_30d,
         top_topics_30d,
@@ -556,24 +629,40 @@ export const serverApi = {
 
   async topic(name: string): Promise<TopicData | null> {
     return cached(`topic:${name.toLowerCase()}`, async () => {
-      const articlesRes = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
-                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-              FROM articles a
-              LEFT JOIN sources s ON a.source_id = s.id
-              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.topic_tags LIKE ?
-              ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [`%${name}%`]
-      });
-      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
+
+      const [articlesRes, totalRes, last30dRes] = await db.batch([
+        {
+          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                       a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                FROM articles a
+                LEFT JOIN sources s ON a.source_id = s.id
+                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.topic_tags LIKE ?
+                ORDER BY a.scraped_at DESC LIMIT 100`,
+          args: [`%${name}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND topic_tags LIKE ?`,
+          args: [`%${name}%`]
+        },
+        {
+          sql: `SELECT COUNT(*) as c FROM articles 
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND topic_tags LIKE ? AND scraped_at >= ?`,
+          args: [`%${name}%`, thirtyDaysAgo]
+        }
+      ]);
+
+      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
+      const total_articles = Number(totalRes.rows[0]?.c || 0);
+      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
 
       return {
         generated_at: new Date().toISOString(),
         topic: name,
         stats: {
-          total_articles: recent_articles.length,
-          articles_last_30d: recent_articles.filter(a => a.scraped_at && new Date(a.scraped_at).getTime() >= thirtyDaysAgo * 1000).length
+          total_articles,
+          articles_last_30d
         },
         recent_articles
       };
@@ -723,6 +812,47 @@ export const serverApi = {
       if (!res.rows.length) return null;
       const content = decompressText(res.rows[0].content);
       return { content: content || undefined };
+    });
+  },
+
+  async search(query: string): Promise<{ articles?: Article[] } | null> {
+    return cached(`search:${query.toLowerCase()}`, async () => {
+      const q = `%${query.toLowerCase()}%`;
+      const res = await db.execute({
+        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+              FROM articles a
+              LEFT JOIN sources s ON a.source_id = s.id
+              WHERE a.status IN ('classified', 'entity_processed', 'processed')
+                AND (
+                  LOWER(a.title) LIKE ? OR
+                  LOWER(a.category) LIKE ? OR
+                  LOWER(a.party_mentioned) LIKE ? OR
+                  LOWER(a.ministers_mentioned) LIKE ? OR
+                  LOWER(a.topic_tags) LIKE ?
+                )
+              ORDER BY a.scraped_at DESC LIMIT 100`,
+        args: [q, q, q, q, q]
+      });
+      const articles = res.rows.map(row => mapRowToArticle(row));
+      return { articles };
+    });
+  },
+
+  async source(name: string): Promise<{ articles?: Article[] } | null> {
+    return cached(`source:${name.toLowerCase()}`, async () => {
+      const res = await db.execute({
+        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+              FROM articles a
+              LEFT JOIN sources s ON a.source_id = s.id
+              WHERE a.status IN ('classified', 'entity_processed', 'processed')
+                AND LOWER(s.name) = LOWER(?)
+              ORDER BY a.scraped_at DESC LIMIT 100`,
+        args: [name]
+      });
+      const articles = res.rows.map(row => mapRowToArticle(row));
+      return { articles };
     });
   }
 };

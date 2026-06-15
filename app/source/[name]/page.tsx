@@ -5,14 +5,9 @@ import { ArticleList } from '@/components/ArticleList'
 export default async function SourcePage({ params }: { params: { name: string } }) {
   const sourceName = decodeURIComponent(params.name)
 
-  // Fetch only the master feed to minimize network requests
-  const mainFeed = await api.feed('all')
-  const allArticles = mainFeed?.articles ?? []
-
-  // Filter by source (case-insensitive)
-  const articles = allArticles.filter(
-    a => a.source && typeof a.source === 'string' && a.source.toLowerCase() === sourceName.toLowerCase()
-  )
+  // Fetch articles directly from the database using the source resolver
+  const sourceData = await api.source(sourceName)
+  const articles = sourceData?.articles ?? []
 
   return (
     <div className="md:max-w-4xl md:mx-auto">
