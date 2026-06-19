@@ -1,9 +1,21 @@
 'use client'
+import { useEffect, useState } from 'react'
 
 export function Masthead() {
-  const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-  })
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const today = mounted
+    ? new Date().toLocaleDateString('en-IN', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '\u00a0'
 
   return (
     <div className="bg-white border-b" style={{ borderColor: 'var(--border-md)' }}>
