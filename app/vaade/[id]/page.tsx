@@ -102,33 +102,66 @@ export default async function PromisePage({ params }: { params: { id: string } }
               >
                 &ldquo;{promise.supporting_quote}&rdquo;
                 <span className="block not-italic text-[10px] font-mono mt-1" style={{ color: 'var(--text3)' }}>
-                  — verbatim from the source article
+                  — verbatim from the source
                 </span>
               </blockquote>
             )}
             {promise.source_url && (
-              <div className="mt-3 text-[11px] font-mono text-[var(--text3)] flex items-center gap-1.5 flex-wrap">
-                <span>Original Source:</span>
-                <a
-                  href={promise.url_status === 'dead' && promise.archived_url ? promise.archived_url : promise.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  {promise.source_description || 'Manifesto/Official Announcement'}
-                  {promise.url_status === 'dead' && promise.archived_url ? ' (archived copy)' : ''} ↗
-                </a>
-                {promise.url_status === 'ok' && promise.archived_url && (
-                  <a
-                    href={promise.archived_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                    style={{ color: 'var(--text3)' }}
-                  >
-                    · archived ↗
-                  </a>
+              <div className="mt-3 text-[11px] font-mono text-[var(--text3)] space-y-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span>Source:</span>
+                  {promise.url_status === 'dead' ? (
+                    <span className="line-through opacity-60">
+                      {promise.source_description || 'Manifesto/Announcement'}
+                    </span>
+                  ) : (
+                    <a
+                      href={promise.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      {promise.source_description || 'Manifesto/Announcement'} ↗
+                    </a>
+                  )}
+                </div>
+
+                {promise.archived_url && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span>
+                      Archived copy — {promise.archive_source || 'unknown'}
+                      {(() => {
+                        const m = promise.archived_url.match(/\/web\/(\d{4})(\d{2})(\d{2})\d{6}\//);
+                        return m ? `, captured ${m[1]}-${m[2]}-${m[3]}` : '';
+                      })()}
+                      :
+                    </span>
+                    <a
+                      href={promise.archived_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline hover:text-[var(--accent)] transition-colors"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      View Archive ↗
+                    </a>
+                  </div>
+                )}
+
+                {promise.url_status === 'dead' && promise.search_fallback_url && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span>Original link unavailable —</span>
+                    <a
+                      href={promise.search_fallback_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline hover:text-[var(--accent)] transition-colors font-bold"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      search for this article ↗
+                    </a>
+                  </div>
                 )}
               </div>
             )}

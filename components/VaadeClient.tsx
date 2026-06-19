@@ -200,20 +200,75 @@ export function VaadeClient({ data }: VaadeClientProps) {
                       </span>
                     )}
 
+                    {p.supporting_quote && (
+                      <blockquote
+                        className="mb-2 pl-3 border-l-2 text-[12px] italic leading-relaxed"
+                        style={{ borderColor: 'var(--border-hi)', color: 'var(--text2)' }}
+                      >
+                        &ldquo;{p.supporting_quote}&rdquo;
+                        <span className="block not-italic text-[9px] font-mono mt-0.5" style={{ color: 'var(--text3)' }}>
+                          — verbatim from the source
+                        </span>
+                      </blockquote>
+                    )}
+
                     {p.source_url && (
-                      <div className="mb-2 text-[10px] font-mono text-[var(--text3)] flex items-center gap-1 flex-wrap">
-                        <span>Source:</span>
-                        <a
-                          href={p.url_status === 'dead' && p.archived_url ? p.archived_url : p.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
-                          style={{ color: 'var(--accent)' }}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          {p.source_description || 'Manifesto/Announcement'}
-                          {p.url_status === 'dead' && p.archived_url ? ' (archived)' : ''} ↗
-                        </a>
+                      <div className="mb-3 text-[10px] font-mono text-[var(--text3)] space-y-1" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>Source:</span>
+                          {p.url_status === 'dead' ? (
+                            <span className="line-through opacity-60">
+                              {p.source_description || 'Manifesto/Announcement'}
+                            </span>
+                          ) : (
+                            <a
+                              href={p.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline hover:text-[var(--accent)] transition-colors"
+                              style={{ color: 'var(--accent)' }}
+                            >
+                              {p.source_description || 'Manifesto/Announcement'} ↗
+                            </a>
+                          )}
+                        </div>
+
+                        {p.archived_url && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>
+                              Archived copy — {p.archive_source || 'unknown'}
+                              {(() => {
+                                const m = p.archived_url.match(/\/web\/(\d{4})(\d{2})(\d{2})\d{6}\//);
+                                return m ? `, captured ${m[1]}-${m[2]}-${m[3]}` : '';
+                              })()}
+                              :
+                            </span>
+                            <a
+                              href={p.archived_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline hover:text-[var(--accent)] transition-colors"
+                              style={{ color: 'var(--accent)' }}
+                            >
+                              View Archive ↗
+                            </a>
+                          </div>
+                        )}
+
+                        {p.url_status === 'dead' && p.search_fallback_url && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>Original link unavailable —</span>
+                            <a
+                              href={p.search_fallback_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline hover:text-[var(--accent)] transition-colors font-bold"
+                              style={{ color: 'var(--accent)' }}
+                            >
+                              search for this article ↗
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
 

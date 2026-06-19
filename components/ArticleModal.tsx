@@ -266,23 +266,81 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
               </div>
             )}
 
-            {/* Source + original link */}
-            <div className="flex items-center justify-between gap-4 pt-4 border-t mb-6" style={{ borderColor: 'var(--border)' }}>
-              {article.source && <SrcTag label={article.source} />}
-              {article.url && (
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="flex items-center gap-1 text-[10px] font-mono transition-colors hover:underline"
-                  style={{ color: 'var(--text3)' }}
+            {/* Source + original link + archive link + search fallback + supporting quote */}
+            <div className="pt-4 border-t mb-6 space-y-3" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                {article.source && <SrcTag label={article.source} />}
+                
+                {article.url && (
+                  <div className="text-[10px] font-mono flex items-center gap-1">
+                    <span>Source:</span>
+                    {article.url_status === 'dead' ? (
+                      <span className="line-through opacity-60">original link</span>
+                    ) : (
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="hover:underline hover:text-[var(--accent)] transition-colors inline-flex items-center gap-0.5"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        original link ↗
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {article.archived_url && (
+                <div className="text-[10px] font-mono flex items-center gap-1.5 flex-wrap text-[var(--text3)]">
+                  <span>
+                    Archived copy — {article.archive_source || 'unknown'}
+                    {(() => {
+                      const m = article.archived_url.match(/\/web\/(\d{4})(\d{2})(\d{2})\d{6}\//);
+                      return m ? `, captured ${m[1]}-${m[2]}-${m[3]}` : '';
+                    })()}
+                    :
+                  </span>
+                  <a
+                    href={article.archived_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="hover:underline hover:text-[var(--accent)] transition-colors"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    View Archive ↗
+                  </a>
+                </div>
+              )}
+
+              {article.url_status === 'dead' && article.search_fallback_url && (
+                <div className="text-[10px] font-mono flex items-center gap-1.5 flex-wrap text-[var(--text3)]">
+                  <span>Original link unavailable —</span>
+                  <a
+                    href={article.search_fallback_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="hover:underline hover:text-[var(--accent)] transition-colors font-bold"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    search for this article ↗
+                  </a>
+                </div>
+              )}
+
+              {article.supporting_quote && (
+                <blockquote
+                  className="mt-3 pl-4 border-l-2 text-[12px] italic leading-relaxed bg-[var(--bg-alt)] py-2 pr-3 rounded-sm"
+                  style={{ borderColor: 'var(--border-hi)', color: 'var(--text2)' }}
                 >
-                  View original source
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 8L8 2M8 2H4M8 2V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
+                  &ldquo;{article.supporting_quote}&rdquo;
+                  <span className="block not-italic text-[9px] font-mono mt-1" style={{ color: 'var(--text3)' }}>
+                    — verbatim from the source
+                  </span>
+                </blockquote>
               )}
             </div>
 

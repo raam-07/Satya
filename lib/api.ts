@@ -21,6 +21,11 @@ export interface Article {
   civic_flag_score?: number
   civic_flag_category?: string
   civic_flag_reason?: string
+  url_status?: 'ok' | 'dead'
+  archived_url?: string
+  archive_source?: 'wayback' | 'archivetoday' | 'none'
+  search_fallback_url?: string
+  supporting_quote?: string
 }
 
 // ── india_overview.json ──────────────────────────────────────────────────────
@@ -156,9 +161,12 @@ export interface PoliticalPromise {
   made_on?: string
   deadline?: string
   source_url?: string
+  url?: string
   source_description?: string
   archived_url?: string
   url_status?: 'ok' | 'dead'
+  archive_source?: 'wayback' | 'archivetoday' | 'none'
+  search_fallback_url?: string
   source_quality?: string
   supporting_quote?: string
   evidence_count?: number
@@ -175,6 +183,9 @@ export interface PoliticalPromise {
     content?: string
     archived_url?: string
     url_status?: 'ok' | 'dead'
+    archive_source?: 'wayback' | 'archivetoday' | 'none'
+    search_fallback_url?: string
+    supporting_quote?: string
   }[]
 }
 

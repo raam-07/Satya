@@ -20,6 +20,10 @@ interface Props {
     content?: string
     archived_url?: string
     url_status?: 'ok' | 'dead'
+    archive_source?: 'wayback' | 'archivetoday' | 'none'
+    search_fallback_url?: string
+    supporting_quote?: string
+    quote?: string
   }[]
 }
 
@@ -35,7 +39,7 @@ export function VaadeRelatedArticles({ party, person, category, preloadedEvidenc
       const mapped: Article[] = preloadedEvidence.map((e, idx) => ({
         id: idx,
         title: e.title,
-        url: e.url_status === 'dead' && e.archived_url ? e.archived_url : e.url,
+        url: e.url,
         source: e.source,
         scraped_at: e.scraped_at,
         rephrased_article: e.rephrased ?? '',
@@ -44,6 +48,11 @@ export function VaadeRelatedArticles({ party, person, category, preloadedEvidenc
         sentiment: 'neutral',
         party_mentioned: party ? [party] : [],
         ministers_mentioned: person ? [person] : [],
+        url_status: e.url_status,
+        archived_url: e.archived_url,
+        archive_source: e.archive_source,
+        search_fallback_url: e.search_fallback_url,
+        supporting_quote: e.supporting_quote || e.quote,
       }))
       setArticles(mapped)
       setLoading(false)
