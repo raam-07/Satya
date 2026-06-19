@@ -4,9 +4,10 @@ import { NetasClient } from '@/components/NetasClient'
 const PARTY_IDS = ['bjp', 'inc', 'aap', 'tmc', 'dmk', 'sp']
 
 export default async function NetasPage() {
-  const [overview, manifest, ...partyData] = await Promise.all([
+  const [overview, manifest, politiciansData, ...partyData] = await Promise.all([
     api.indiaOverview(),
     api.manifest(),
+    api.politicians(),
     ...PARTY_IDS.map(id => api.party(id).catch(() => null)),
   ])
 
@@ -31,7 +32,13 @@ export default async function NetasPage() {
         <p className="text-[13px] text-[var(--text2)] mt-1">Parties, ministers, and their records.</p>
       </div>
 
-      <NetasClient partyData={partyData} overview={overview} manifestMinisters={manifestMinisters} manifestStates={manifestStates} />
+      <NetasClient
+        partyData={partyData}
+        overview={overview}
+        manifestMinisters={manifestMinisters}
+        manifestStates={manifestStates}
+        politicians={politiciansData || []}
+      />
     </div>
   )
 }

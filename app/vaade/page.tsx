@@ -28,15 +28,19 @@ export default async function VaadePage() {
       {/* Scorecard */}
       <div className="border-b" style={{ borderColor: 'var(--border-md)' }}>
         {/* Big numbers */}
-        <div className="grid grid-cols-5 divide-x" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="grid grid-cols-3 md:grid-cols-6" style={{ borderColor: 'var(--border-md)' }}>
           {[
-            { label: 'BROKEN',  val: broken,  color: '#B02828' },
-            { label: 'ONGOING', val: ongoing, color: '#BF4A07' },
-            { label: 'KEPT',    val: kept,    color: '#1B7050' },
-            { label: 'VOID',    val: voidVal,  color: '#6B7280' },
-            { label: 'TOTAL',   val: stats.total_promises ?? (kept + broken + ongoing + voidVal), color: 'var(--text1)' },
+            { label: 'CRITICAL', val: stats.critical ?? 0, color: '#DC2626' },
+            { label: 'BROKEN',   val: broken,             color: '#B02828' },
+            { label: 'ONGOING',  val: ongoing,            color: '#BF4A07' },
+            { label: 'KEPT',     val: kept,               color: '#1B7050' },
+            { label: 'VOID',     val: voidVal,            color: '#6B7280' },
+            { label: 'TOTAL',    val: stats.total_promises ?? (kept + broken + ongoing + voidVal), color: 'var(--text1)' },
           ].map(({ label, val, color }) => (
-            <div key={label} className="flex flex-col items-center py-5 px-2">
+            <div
+              key={label}
+              className="flex flex-col items-center py-5 px-2 border-r border-b border-[var(--border-md)] [&:nth-child(3n)]:border-r-0 md:[&:nth-child(3n)]:border-r md:last:border-r-0 [&:nth-child(n+4)]:border-b-0 md:border-b-0"
+            >
               <div className="text-[28px] md:text-[36px] font-black font-mono leading-none" style={{ color }}>
                 {val}
               </div>

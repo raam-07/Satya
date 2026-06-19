@@ -59,7 +59,21 @@ export default async function PromisePage({ params }: { params: { id: string } }
         </Link>
         <div className="flex items-center gap-2 mt-3 mb-2 flex-wrap">
           {promise.status && <StatusBadge status={promise.status} />}
-          {promise.party  && <PBadge party={promise.party} />}
+          {promise.importance === 'critical' && (
+            <span
+              className="text-[8.5px] font-bold tracking-[0.09em] rounded-[2px] px-[6px] py-[2px] font-mono text-white flex items-center gap-1 group relative cursor-help"
+              style={{ background: '#DC2626' }}
+              title={promise.importance_reason || 'Critical Promise'}
+            >
+              CRITICAL
+              {promise.importance_reason && (
+                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-48 bg-gray-900 text-white text-[9px] leading-snug p-2 rounded shadow-lg z-50 font-normal normal-case tracking-normal">
+                  {promise.importance_reason}
+                </span>
+              )}
+            </span>
+          )}
+          {promise.party  && <PBadge party={promise.party} verified={promise.party_verified} />}
           {promise.person && (
             <span className="text-[10px] font-mono" style={{ color: 'var(--text2)' }}>{promise.person}</span>
           )}
@@ -183,6 +197,60 @@ export default async function PromisePage({ params }: { params: { id: string } }
               Suggestion: {promise.gemma_suggestion}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Verdict Trajectory Timeline */}
+      {promise.status_history && promise.status_history.length > 0 && (
+        <div className="px-4 md:px-6 py-5 border-b" style={{ borderColor: 'var(--border-md)' }}>
+          <div className="text-[9px] font-mono tracking-widest uppercase mb-4" style={{ color: 'var(--text3)' }}>
+            Verdict Trajectory
+          </div>
+          <div className="relative pl-6 border-l border-[var(--border-md)] ml-3 space-y-6">
+            {[...promise.status_history]
+              .sort((a, b) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime())
+              .map((h, idx) => {
+                const color = STATUS_COLOR[h.status] ?? 'var(--text3)';
+                return (
+                  <div key={idx} className="relative">
+                    {/* Timeline Dot */}
+                    <div
+                      className="absolute -left-[31px] top-0.5 w-3.5 h-3.5 rounded-full border bg-[var(--surface)] flex items-center justify-center"
+                      style={{ borderColor: color }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                    </div>
+
+                    {/* Timeline Content */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider font-mono mr-2.5" style={{ color }}>
+                          {h.status}
+                        </span>
+                        {h.evidence_url ? (
+                          <a
+                            href={h.evidence_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] hover:underline"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            View evidence ↗
+                          </a>
+                        ) : (
+                          <span className="text-[10px]" style={{ color: 'var(--text3)' }}>
+                            (no source link)
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>
+                        {h.changed_at}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </div>
       )}
 

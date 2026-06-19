@@ -154,10 +154,18 @@ export interface PoliticalPromise {
   id?: string
   person?: string
   party?: string
+  party_verified?: boolean
   promise?: string
   promise_type?: 'specific' | 'policy' | 'vision'
   category?: string
   status?: 'kept' | 'broken' | 'ongoing' | 'void'
+  importance?: 'critical' | 'minor' // 'major' is omitted/reserved as it is unused by backend
+  importance_reason?: string
+  status_history?: {
+    status: string
+    changed_at: string
+    evidence_url?: string
+  }[]
   made_on?: string
   deadline?: string
   source_url?: string
@@ -197,6 +205,7 @@ export interface PromisesSummary {
     broken?: number
     ongoing?: number
     void?: number
+    critical?: number
   }
   by_status?: {
     broken?: PoliticalPromise[]
@@ -246,6 +255,14 @@ export const api = {
       return serverApi.manifest();
     }
     return fetchClientJSON<Manifest>('manifest');
+  },
+
+  async politicians(): Promise<any[] | null> {
+    if (typeof window === 'undefined') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.politicians();
+    }
+    return fetchClientJSON<any[]>('politicians');
   },
 
   async party(name: string): Promise<PartyData | null> {

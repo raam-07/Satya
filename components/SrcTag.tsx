@@ -30,22 +30,30 @@ const PARTY_STYLES: Record<string, { bg: string; text: string; border: string }>
 }
 const DEFAULT_STYLE = { bg: '#F3F4F6', text: '#374151', border: '#D1D5DB' }
 
-export function PBadge({ party }: { party?: string }) {
+export function PBadge({ party, verified }: { party?: string; verified?: boolean }) {
   const { hasParty, partySlug } = useManifest()
   const { showToast } = useToast()
   if (!party) return null
 
-  const s = PARTY_STYLES[party] ?? DEFAULT_STYLE
+  const isUnverified = party.toLowerCase() === 'unconfirmed' || verified === false
+
+  const s = isUnverified ? DEFAULT_STYLE : (PARTY_STYLES[party] ?? DEFAULT_STYLE)
   const baseStyle = {
-    background: s.bg, color: s.text,
-    border: `1px solid ${s.border}`,
-    fontSize: 9, fontWeight: 700,
-    letterSpacing: '0.09em', borderRadius: 2,
-    padding: '1px 5px', whiteSpace: 'nowrap' as const,
+    background: s.bg,
+    color: s.text,
+    border: isUnverified ? '1px dashed #9CA3AF' : `1px solid ${s.border}`,
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: '0.09em',
+    borderRadius: 2,
+    padding: '1px 5px',
+    whiteSpace: 'nowrap' as const,
     cursor: 'pointer',
   }
 
-  if (hasParty(party)) {
+  const label = isUnverified ? `${party} (unverified)` : party
+
+  if (hasParty(party) && !isUnverified) {
     return (
       <Link
         href={`/party/${partySlug(party)}`}
@@ -53,17 +61,25 @@ export function PBadge({ party }: { party?: string }) {
         className="font-mono"
         style={baseStyle}
       >
-        {party}
+        {label}
       </Link>
     )
   }
   return (
     <button
-      className="font-mono"
+      className="font-mono flex items-center gap-1"
       style={baseStyle}
-      onClick={e => { e.stopPropagation(); showToast(`Data for ${party} coming soon`) }}
+      onClick={e => {
+        e.stopPropagation()
+        if (isUnverified) {
+          showToast(`This political entity's party affiliation is unverified.`)
+        } else {
+          showToast(`Data for ${party} coming soon`)
+        }
+      }}
     >
-      {party}
+      {label}
+      {isUnverified && <span title="Unverified Party">⚠️</span>}
     </button>
   )
 }

@@ -48,6 +48,16 @@ async function loadPromisesRegistry(): Promise<any> {
   }
 }
 
+function getAllPoliticians(entities: any): any[] {
+  if (!entities?.india) return [];
+  return [
+    ...(entities.india.cabinet_ministers || []),
+    ...(entities.india.state_chief_ministers || []),
+    ...(entities.india.opposition_leaders || []),
+    ...(entities.india.generic_politicians || [])
+  ];
+}
+
 // --- Zlib Decompression Helper ---
 function decompressText(blob: any): string {
   if (!blob) return '';
@@ -304,12 +314,7 @@ export const serverApi = {
 
       const partiesList = (entities.india?.parties || []);
       const statesList = (entities.india?.states || []);
-      const ministersList = [
-        ...(entities.india?.cabinet_ministers || []),
-        ...(entities.india?.state_chief_ministers || []),
-        ...(entities.india?.opposition_leaders || []),
-        ...(entities.india?.generic_politicians || [])
-      ];
+      const ministersList = getAllPoliticians(entities);
 
       const partiesEndpoints: Record<string, string> = {};
       partiesList.forEach((p: any) => {
@@ -413,11 +418,7 @@ export const serverApi = {
       });
 
       // Filter ministers
-      const ministers = [
-        ...(entities.india?.cabinet_ministers || []),
-        ...(entities.india?.state_chief_ministers || []),
-        ...(entities.india?.opposition_leaders || [])
-      ]
+      const ministers = getAllPoliticians(entities)
         .filter((m: any) => m.party === partyName)
         .map((m: any) => ({
           name: m.name,
@@ -464,12 +465,7 @@ export const serverApi = {
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
 
-      const allMinisters = [
-        ...(entities.india?.cabinet_ministers || []),
-        ...(entities.india?.state_chief_ministers || []),
-        ...(entities.india?.opposition_leaders || []),
-        ...(entities.india?.generic_politicians || [])
-      ];
+      const allMinisters = getAllPoliticians(entities);
 
       const ministerInfo = allMinisters.find((m: any) => m.name.toLowerCase() === name.toLowerCase() || m.aliases?.some((a: string) => a.toLowerCase() === name.toLowerCase()));
       if (!ministerInfo) return null;
@@ -693,16 +689,22 @@ export const serverApi = {
       const byStatus: Record<string, any[]> = { kept: [], broken: [], ongoing: [], void: [] };
       const byPerson: Record<string, any[]> = {};
       const byParty: Record<string, any[]> = {};
+      let criticalCount = 0;
 
       for (const p of (registry.promises || [])) {
         const status = p.status || 'ongoing';
         const person = p.person || '';
         const party = p.party || '';
 
+        if (p.importance === 'critical') {
+          criticalCount++;
+        }
+
         const light = {
           id: p.id,
           person,
           party,
+          party_verified: p.party_verified,
           promise: p.promise,
           category: p.category || '',
           status,
@@ -721,7 +723,10 @@ export const serverApi = {
           evidence_count: p.evidence_articles?.length || 0,
           evidence_articles: p.evidence_articles || [],
           gemma_suggestion: p.gemma_suggestion,
-          gemma_reasoning: p.gemma_reasoning
+          gemma_reasoning: p.gemma_reasoning,
+          importance: p.importance,
+          importance_reason: p.importance_reason,
+          status_history: p.status_history
         };
 
         if (byStatus[status]) byStatus[status].push(light);
@@ -745,7 +750,8 @@ export const serverApi = {
           kept: byStatus.kept.length,
           broken: byStatus.broken.length,
           ongoing: byStatus.ongoing.length,
-          void: byStatus.void.length
+          void: byStatus.void.length,
+          critical: criticalCount
         },
         by_status: byStatus as any,
         by_person: byPerson,
@@ -856,6 +862,21 @@ export const serverApi = {
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
       return { articles };
+    });
+  },
+
+  async politicians(): Promise<any[] | null> {
+    return cached('politicians', async () => {
+      const entities = await loadEntities();
+      if (!entities) return null;
+      const list = getAllPoliticians(entities);
+      return list.map((m: any) => ({
+        name: m.name,
+        role: m.role || '',
+        party: m.party || '',
+        state: m.state || '',
+        party_verified: m.party_verified
+      }));
     });
   }
 };

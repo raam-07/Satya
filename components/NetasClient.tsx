@@ -14,18 +14,7 @@ const PARTY_CONFIG = [
   { id: 'sp',  name: 'SP',  fullName: 'Samajwadi Party',              accent: '#7C3AED', bg: '#F5F3FF', border: '#C4B5FD' },
 ]
 
-const KEY_MINISTERS = [
-  { slug: 'narendra_modi',      name: 'Narendra Modi',      role: 'Prime Minister',             party: 'BJP' },
-  { slug: 'amit_shah',          name: 'Amit Shah',          role: 'Home Minister',              party: 'BJP' },
-  { slug: 'rajnath_singh',      name: 'Rajnath Singh',      role: 'Defence Minister',           party: 'BJP' },
-  { slug: 'nirmala_sitharaman', name: 'Nirmala Sitharaman', role: 'Finance Minister',           party: 'BJP' },
-  { slug: 's_jaishankar',       name: 'S. Jaishankar',      role: 'External Affairs Minister',  party: 'BJP' },
-  { slug: 'rahul_gandhi',       name: 'Rahul Gandhi',       role: 'Leader of Opposition',       party: 'INC' },
-  { slug: 'arvind_kejriwal',    name: 'Arvind Kejriwal',    role: 'National Convenor',          party: 'AAP' },
-  { slug: 'mamata_banerjee',    name: 'Mamata Banerjee',    role: 'Chief Minister, West Bengal', party: 'TMC' },
-  { slug: 'mk_stalin',          name: 'M.K. Stalin',        role: 'Chief Minister, Tamil Nadu', party: 'DMK' },
-  { slug: 'akhilesh_yadav',     name: 'Akhilesh Yadav',     role: 'President, Samajwadi Party', party: 'SP'  },
-]
+// KEY_MINISTERS removed in favor of dynamic entities list
 
 const PARTY_ACCENT: Record<string, string> = {
   BJP: '#BF4A07', INC: '#1D4ED8', AAP: '#92400E', TMC: '#15803D', DMK: '#B91C1C', SP: '#7C3AED',
@@ -60,39 +49,32 @@ interface NetasClientProps {
   overview: IndiaOverview | null
   manifestMinisters?: Set<string>
   manifestStates?: Set<string>
+  politicians: {
+    name: string
+    role: string
+    party: string
+    state: string
+    party_verified?: boolean
+  }[]
 }
 
-export function NetasClient({ partyData, overview, manifestMinisters, manifestStates }: NetasClientProps) {
+export function NetasClient({ partyData, overview, manifestMinisters, manifestStates, politicians }: NetasClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('parties')
 
   const topMins   = overview?.top_ministers_30d ?? {}
   const topStates = overview?.top_states_30d ?? {}
 
-  // Build minister list: start from manifest (all available), sort by coverage
+  // Build minister list dynamically using politicians from entities.json and coverage counts
   const ministerList = (() => {
     const coverageMap: Record<string, number> = topMins as Record<string, number>
-    // Coverage map keys are canonical display names ('S. Jaishankar').
-    // Dedupe against the manifest BY SLUG, not by reconstructed name, so
-    // 'S. Jaishankar' and manifest slug 's_jaishankar' are one entry.
-    const entries = Object.keys(coverageMap).map(name => ({
-      name,
-      slug: slugify(name),
-      count: Number(coverageMap[name] ?? 0),
-    }))
-    const seenSlugs = new Set(entries.map(e => e.slug))
-    if (manifestMinisters) {
-      for (const slug of Array.from(manifestMinisters)) {
-        if (!seenSlugs.has(slug)) {
-          entries.push({
-            name: slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-            slug,
-            count: 0,
-          })
-          seenSlugs.add(slug)
-        }
+    return politicians.map(p => {
+      const coverageCount = coverageMap[p.name] ?? coverageMap[p.name.replace(/\./g, '')] ?? 0;
+      return {
+        ...p,
+        slug: slugify(p.name),
+        count: Number(coverageCount)
       }
-    }
-    return entries.sort((a, b) => b.count - a.count)
+    }).sort((a, b) => b.count - a.count);
   })()
 
   // Build states list: manifest covers all states (27+); sort by coverage
@@ -208,69 +190,53 @@ export function NetasClient({ partyData, overview, manifestMinisters, manifestSt
       {/* Ministers tab */}
       {activeTab === 'ministers' && (
         <div className="px-4 md:px-6 py-5">
-          {/* All ministers from manifest, sorted by news coverage */}
-          <div className="mb-6">
-            <div className="text-[9px] font-mono tracking-widest uppercase mb-3" style={{ color: 'var(--text3)' }}>
-              Most Covered (30 days)
-            </div>
-            <div className="border rounded-sm overflow-hidden" style={{ borderColor: 'var(--border-md)' }}>
-              {ministerList.slice(0, 12).map(({ name, slug, count }) => (
-                <Link
-                  key={slug}
-                  href={`/minister/${slug}`}
-                  className="flex items-center justify-between px-4 py-3 border-b last:border-b-0 hover:bg-[var(--bg-alt)] transition-colors group"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <span className="text-[13px] font-medium group-hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text1)' }}>
-                    {name}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    {count > 0 && (
-                      <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>{count} articles</span>
-                    )}
-                    <span style={{ color: 'var(--text3)' }}>→</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Key ministers hardcoded list */}
           <div>
             <div className="text-[9px] font-mono tracking-widest uppercase mb-3" style={{ color: 'var(--text3)' }}>
-              Key Figures
+              Ministers & Key Figures
             </div>
             <div className="border rounded-sm overflow-hidden" style={{ borderColor: 'var(--border-md)' }}>
-              {KEY_MINISTERS.map((m) => (
-                <Link
-                  key={m.slug}
-                  href={`/minister/${m.slug}`}
-                  className="flex items-center gap-4 px-4 py-3.5 border-b last:border-b-0 hover:bg-[var(--bg-alt)] transition-colors group"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-[12px] font-bold"
-                    style={{ background: PARTY_ACCENT[m.party] ?? '#8A7F72' }}
+              {ministerList.map((m) => {
+                const isUnverified = m.party?.toLowerCase() === 'unconfirmed' || m.party_verified === false
+                return (
+                  <Link
+                    key={m.slug}
+                    href={`/minister/${m.slug}`}
+                    className="flex items-center gap-4 px-4 py-3.5 border-b last:border-b-0 hover:bg-[var(--bg-alt)] transition-colors group"
+                    style={{ borderColor: 'var(--border)' }}
                   >
-                    {m.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold group-hover:text-[var(--accent)] transition-colors truncate" style={{ color: 'var(--text1)' }}>
-                      {m.name}
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-[12px] font-bold"
+                      style={{ background: PARTY_ACCENT[m.party] ?? '#8A7F72' }}
+                    >
+                      {m.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </div>
-                    <div className="text-[11px] truncate" style={{ color: 'var(--text3)' }}>{m.role}</div>
-                  </div>
-                  <span
-                    className="text-[9px] font-mono font-bold tracking-widest rounded-[2px] px-[5px] py-[1px] flex-shrink-0"
-                    style={{
-                      color: PARTY_ACCENT[m.party] ?? '#8A7F72',
-                      background: (PARTY_BG[m.party] ?? '#F3F4F6'),
-                    }}
-                  >
-                    {m.party}
-                  </span>
-                </Link>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold group-hover:text-[var(--accent)] transition-colors truncate flex items-center gap-2" style={{ color: 'var(--text1)' }}>
+                        {m.name}
+                        {m.count > 0 && (
+                          <span className="text-[9px] font-mono font-normal opacity-60">({m.count} articles)</span>
+                        )}
+                      </div>
+                      <div className="text-[11px] truncate" style={{ color: 'var(--text3)' }}>
+                        {m.role}{m.state ? ` · ${m.state}` : ''}
+                      </div>
+                    </div>
+                    {m.party && (
+                      <span
+                        className="text-[9px] font-mono font-bold tracking-widest rounded-[2px] px-[5px] py-[1px] flex-shrink-0 flex items-center gap-1"
+                        style={{
+                          color: isUnverified ? '#8A7F72' : (PARTY_ACCENT[m.party] ?? '#8A7F72'),
+                          background: isUnverified ? '#F3F4F6' : (PARTY_BG[m.party] ?? '#F3F4F6'),
+                          border: isUnverified ? '1px dashed #D1D5DB' : 'none'
+                        }}
+                      >
+                        {m.party}
+                        {isUnverified && <span title="Unverified Party">⚠️</span>}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </div>

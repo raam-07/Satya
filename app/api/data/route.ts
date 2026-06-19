@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(await serverApi.indiaOverview());
       case 'manifest':
         return NextResponse.json(await serverApi.manifest());
+      case 'politicians':
+        return NextResponse.json(await serverApi.politicians());
       case 'party':
         return NextResponse.json(await serverApi.party(param));
       case 'minister':

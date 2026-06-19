@@ -27,6 +27,35 @@ const CATEGORIES: { id: CategoryFilterId; label: string; desc: string }[] = [
   { id: 'vision',   label: 'Vision',         desc: 'Broad goals, ideals & slogans' },
 ]
 
+const TOPIC_CATEGORIES = [
+  { id: 'all', label: 'All Topics' },
+  { id: 'jobs/employment', label: 'Jobs & Employment' },
+  { id: 'economy', label: 'Economy' },
+  { id: 'farmers/agriculture', label: 'Farmers & Agriculture' },
+  { id: 'health', label: 'Health' },
+  { id: 'education', label: 'Education' },
+  { id: 'infrastructure', label: 'Infrastructure' },
+  { id: 'welfare', label: 'Welfare' },
+  { id: 'corruption/governance', label: 'Corruption & Governance' },
+  { id: 'law_and_order', label: 'Law & Order' },
+  { id: 'other', label: 'Other' },
+]
+
+function normalizeCategory(cat?: string): string {
+  if (!cat) return 'other'
+  const c = cat.toLowerCase().trim()
+  if (c === 'farmer_agriculture' || c === 'farmers_agriculture' || c === 'farmers/agriculture') {
+    return 'farmers/agriculture'
+  }
+  if (c === 'corruption_scam' || c === 'corruption/governance' || c === 'corruption_governance') {
+    return 'corruption/governance'
+  }
+  if (c === 'jobs_employment' || c === 'jobs/employment') {
+    return 'jobs/employment'
+  }
+  return c
+}
+
 const STATUS_COLOR: Record<string, string> = {
   kept:    '#1B7050',
   broken:  '#B02828',
@@ -40,7 +69,9 @@ interface VaadeClientProps {
 
 export function VaadeClient({ data }: VaadeClientProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryFilterId>('all')
+  const [activeTopic, setActiveTopic] = useState<string>('all')
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
+  const [criticalOnly, setCriticalOnly] = useState<boolean>(false)
 
   const byStatus = data?.by_status ?? {}
   const allPromises: PoliticalPromise[] = [
@@ -50,14 +81,22 @@ export function VaadeClient({ data }: VaadeClientProps) {
     ...(byStatus.void    ?? []),
   ]
 
-  // Filter 1: Group by category first
+  // Filter 1: Group by promise type category first
   const categoryPromises = allPromises.filter(p => {
     if (activeCategory === 'all') return true
     return p.promise_type === activeCategory
   })
 
-  // Filter 2: Apply status/party filters within the selected category
-  const filteredPromises = categoryPromises.filter(p => {
+  // Filter 2: Filter by topic category
+  const topicPromises = categoryPromises.filter(p => {
+    if (activeTopic === 'all') return true
+    return normalizeCategory(p.category) === activeTopic
+  })
+
+  // Filter 3: Apply status, party, and critical toggle filters within selected categories
+  const filteredPromises = topicPromises.filter(p => {
+    if (criticalOnly && p.importance !== 'critical') return false
+
     if (activeFilter === 'all')     return true
     if (activeFilter === 'broken')  return p.status === 'broken'
     if (activeFilter === 'ongoing') return p.status === 'ongoing'
@@ -78,7 +117,9 @@ export function VaadeClient({ data }: VaadeClientProps) {
               key={cat.id}
               onClick={() => {
                 setActiveCategory(cat.id)
+                setActiveTopic('all')
                 setActiveFilter('all') // Reset status filter when category shifts to prevent empty states
+                setCriticalOnly(false)
               }}
               className="flex flex-col items-center py-3.5 px-1 border-r last:border-r-0 transition-colors"
               style={{
@@ -100,16 +141,46 @@ export function VaadeClient({ data }: VaadeClientProps) {
         })}
       </div>
 
-      {/* Filter chips (Dynamic counts relative to active category) */}
+      {/* Topic Category selector chips */}
+      <div className="flex overflow-x-auto gap-2 px-4 md:px-6 py-2.5 bg-[var(--surface-alt)] border-b no-scrollbar" style={{ borderColor: 'var(--border-md)', background: 'var(--bg-alt)' }}>
+        {TOPIC_CATEGORIES.map(topic => {
+          const isActive = activeTopic === topic.id
+          const count = topic.id === 'all' ? categoryPromises.length :
+                        categoryPromises.filter(p => normalizeCategory(p.category) === topic.id).length
+
+          return (
+            <button
+              key={topic.id}
+              onClick={() => {
+                setActiveTopic(topic.id)
+                setActiveFilter('all') // Reset status filter to prevent empty states
+              }}
+              className="flex-shrink-0 px-3 py-1 rounded-full text-[10px] font-mono tracking-wide border transition-all"
+              style={{
+                borderColor: isActive ? 'var(--accent)' : 'var(--border)',
+                color: isActive ? 'var(--accent)' : 'var(--text2)',
+                background: isActive ? 'rgba(191,74,7,0.06)' : 'var(--surface)',
+              }}
+            >
+              {topic.label}
+              <span className="ml-1 opacity-60 font-bold">
+                ({count})
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Filter chips (Dynamic counts relative to active category and topic) */}
       <div className="flex overflow-x-auto gap-2 px-4 md:px-6 py-3 border-b no-scrollbar" style={{ borderColor: 'var(--border-md)' }}>
         {FILTERS.map(f => {
           const isActive = activeFilter === f.id
-          const count = f.id === 'all' ? categoryPromises.length :
-                        f.id === 'broken' ? categoryPromises.filter(p => p.status === 'broken').length :
-                        f.id === 'ongoing' ? categoryPromises.filter(p => p.status === 'ongoing').length :
-                        f.id === 'kept' ? categoryPromises.filter(p => p.status === 'kept').length :
-                        f.id === 'void' ? categoryPromises.filter(p => p.status === 'void').length :
-                        categoryPromises.filter(p => p.party?.toLowerCase() === f.id).length
+          const count = f.id === 'all' ? topicPromises.length :
+                        f.id === 'broken' ? topicPromises.filter(p => p.status === 'broken').length :
+                        f.id === 'ongoing' ? topicPromises.filter(p => p.status === 'ongoing').length :
+                        f.id === 'kept' ? topicPromises.filter(p => p.status === 'kept').length :
+                        f.id === 'void' ? topicPromises.filter(p => p.status === 'void').length :
+                        topicPromises.filter(p => p.party?.toLowerCase() === f.id).length
 
           return (
             <button
@@ -129,6 +200,24 @@ export function VaadeClient({ data }: VaadeClientProps) {
             </button>
           )
         })}
+      </div>
+
+      {/* Control bar with Critical only toggle */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-2 bg-[var(--surface)] border-b" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="text-[10px] font-mono tracking-wider text-[var(--text3)] uppercase">
+          Showing {filteredPromises.length} promise{filteredPromises.length !== 1 ? 's' : ''}
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={criticalOnly}
+            onChange={(e) => setCriticalOnly(e.target.checked)}
+            className="w-3.5 h-3.5 rounded-sm accent-[var(--accent)] cursor-pointer"
+          />
+          <span className="text-[10.5px] font-mono font-bold uppercase tracking-wider text-[var(--text2)] flex items-center gap-1">
+            ⚠️ Critical only
+          </span>
+        </label>
       </div>
 
       {/* Promise list */}
@@ -159,7 +248,21 @@ export function VaadeClient({ data }: VaadeClientProps) {
                     {/* Meta row */}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       {p.status && <StatusBadge status={p.status} />}
-                      {p.party  && <PBadge party={p.party} />}
+                      {p.importance === 'critical' && (
+                        <span
+                          className="text-[8.5px] font-bold tracking-[0.09em] rounded-[2px] px-[6px] py-[2px] font-mono text-white flex items-center gap-1 group relative cursor-help"
+                          style={{ background: '#DC2626' }}
+                          title={p.importance_reason || 'Critical Promise'}
+                        >
+                          CRITICAL
+                          {p.importance_reason && (
+                            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-48 bg-gray-900 text-white text-[9px] leading-snug p-2 rounded shadow-lg z-50 font-normal normal-case tracking-normal">
+                              {p.importance_reason}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {p.party  && <PBadge party={p.party} verified={p.party_verified} />}
                       {p.person && <span className="text-[10px] font-mono" style={{ color: 'var(--text2)' }}>{p.person}</span>}
                       
                       {/* Promise Type Badge */}
