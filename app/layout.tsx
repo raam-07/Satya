@@ -8,6 +8,17 @@ import { ToastProvider } from '@/lib/ToastContext'
 export const metadata: Metadata = {
   title: 'SatyaDheesh — सत्याधीश | India\'s Ground Truth Record',
   description: 'Unfiltered, sourced civic intelligence for Indian citizens.',
+  icons: {
+    icon: [
+      { url: '/favicons/satyadheesh-gavel-angled.svg', type: 'image/svg+xml' },
+      { url: '/favicons/gavel-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicons/gavel-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/favicons/gavel-180.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/site.webmanifest',
 }
 
 export const dynamic = 'force-dynamic'
