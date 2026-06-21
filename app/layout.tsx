@@ -6,6 +6,7 @@ import { ManifestProvider } from '@/lib/ManifestContext'
 import { ToastProvider } from '@/lib/ToastContext'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://satyadheesh.in'),
   title: 'SatyaDheesh — सत्याधीश | India\'s Ground Truth Record',
   description: 'Unfiltered, sourced civic intelligence for Indian citizens.',
   icons: {
