@@ -70,11 +70,29 @@ export default function AboutPage() {
       </section>
 
       {/* Design principle */}
-      <section className="border border-[var(--border-md)] rounded-sm p-5 bg-[var(--surface)]">
+      <section className="mb-8 border border-[var(--border-md)] rounded-sm p-5 bg-[var(--surface)]">
         <p className="text-[13px] font-serif italic text-[var(--text2)] leading-relaxed border-l-2 border-accent pl-4">
           "Every single data point must show where it came from. No opinions. Only sourced facts."
         </p>
         <p className="text-[10px] font-mono text-[var(--text3)] mt-3">— Core Design Principle</p>
+      </section>
+
+      {/* AI & Legal Disclaimer */}
+      <section className="mb-8 p-5 border border-dashed border-[var(--border-md)] rounded-sm bg-[var(--surface)]">
+        <h2 className="text-[12px] font-mono tracking-widest uppercase text-[#B02828] mb-3">
+          AI Ingestion & Legal Disclaimer
+        </h2>
+        <div className="text-[11px] leading-relaxed text-[var(--text2)] space-y-2.5">
+          <p>
+            <strong>Automated Processing:</strong> SatyaDheesh operates as an automated aggregator that uses artificial intelligence models to scrape, tag, categorize, and cross-reference civic news. Because classification is handled programmatically, parsing errors or misalignments can occasionally occur.
+          </p>
+          <p>
+            <strong>No Editorial Claims:</strong> This platform does not write, edit, or assert independent news claims. All records are derived from third-party verified publishers and are directly linked to their primary source URLs, which remain the sole editorial authority and owner of the content.
+          </p>
+          <p>
+            <strong>Disputes and Corrections:</strong> We value accountability and accuracy. If you identify a classification error, incorrect promise mapping, or outdated evidence link, please email us directly at <a href="mailto:thesatyadheesh@gmail.com" className="text-[var(--accent)] hover:underline">thesatyadheesh@gmail.com</a> for correction.
+          </p>
+        </div>
       </section>
 
       <div className="mt-10 pt-6 border-t border-[var(--border)] text-center space-y-4">

@@ -281,6 +281,9 @@ export default async function DataPage() {
                 The promise tracker monitors political commitments made by parties and leaders, scores them against
                 evidence, and surfaces them alongside current news so accountability travels with the story.
               </p>
+              <p>
+                <strong className="text-[var(--text1)]">Disclaimer:</strong> Data is aggregated and categorized automatically by AI algorithms from third-party verified news outlets. While we monitor for quality, automated classification can occasionally make errors. SatyaDheesh does not assert independent claims; original linked sources remain the sole authority of their respective publishers.
+              </p>
             </div>
             <div className="mt-4 md:mt-0 space-y-4">
               <div>
