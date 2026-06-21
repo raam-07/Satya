@@ -25,15 +25,17 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  const gaIdsString = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  const gaIds = gaIdsString ? gaIdsString.split(',').map(id => id.trim()) : []
+  const primaryId = gaIds[0]
 
   return (
     <html lang="en">
       <head>
-        {gaId && (
+        {primaryId && (
           <>
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${primaryId}`}
               strategy="afterInteractive"
             />
             <Script id="google-analytics" strategy="afterInteractive">
@@ -41,9 +43,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', '${gaId}', {
-                  page_path: window.location.pathname,
-                });
+                ${gaIds.map(id => `
+                  gtag('config', '${id}', {
+                    page_path: window.location.pathname,
+                  });
+                `).join('\n')}
               `}
             </Script>
           </>
