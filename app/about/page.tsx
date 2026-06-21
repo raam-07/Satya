@@ -77,10 +77,18 @@ export default function AboutPage() {
         <p className="text-[10px] font-mono text-[var(--text3)] mt-3">— Core Design Principle</p>
       </section>
 
-      <div className="mt-10 pt-6 border-t border-[var(--border)] text-center">
+      <div className="mt-10 pt-6 border-t border-[var(--border)] text-center space-y-4">
         <p className="text-[10px] font-mono text-[var(--text3)] tracking-wider">
           SatyaDheesh is an independent, non-partisan civic project. Not affiliated with any political party or media house.
         </p>
+        <div className="pt-2">
+          <a
+            href="mailto:thesatyadheesh@gmail.com"
+            className="inline-flex items-center justify-center px-5 py-2 border border-[var(--accent)] text-[11px] font-mono tracking-wider text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors duration-200 uppercase rounded-sm"
+          >
+            Contact Us
+          </a>
+        </div>
       </div>
     </div>
   )

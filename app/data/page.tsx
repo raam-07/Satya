@@ -310,6 +310,20 @@ export default async function DataPage() {
                   The Wire · Scroll · NewsLaundry · ANI · PTI · and more
                 </p>
               </div>
+              <div>
+                <div className="text-[9px] font-mono tracking-widest uppercase mb-2" style={{ color: 'var(--text3)' }}>
+                  Contact Us
+                </div>
+                <p className="text-[11px] leading-relaxed mb-2" style={{ color: 'var(--text2)' }}>
+                  For feedback, data corrections, or general inquiries:
+                </p>
+                <a
+                  href="mailto:thesatyadheesh@gmail.com"
+                  className="inline-flex items-center justify-center px-4 py-1.5 border border-[var(--accent)] text-[10px] font-mono tracking-wider text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors duration-200 uppercase rounded-sm"
+                >
+                  Email Us
+                </a>
+              </div>
             </div>
           </div>
         </div>
