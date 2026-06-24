@@ -6,11 +6,4 @@ const dbToken = process.env.SATYA_DB_TOKEN;
 export const db = createClient({
   url: dbUrl,
   authToken: dbToken,
-  // Disable Next.js fetch caching for database queries
-  fetch: (input, init) => {
-    return fetch(input, {
-      ...init,
-      cache: "no-store",
-    });
-  },
 });

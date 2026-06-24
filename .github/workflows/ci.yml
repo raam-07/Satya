@@ -1,0 +1,37 @@
+name: CI — build & type check
+
+# Catches compile errors, type errors, and runtime issues like
+# DYNAMIC_SERVER_USAGE (surfaced when `next build` statically generates pages)
+# BEFORE they reach Render.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build (static generation catches DYNAMIC_SERVER_USAGE)
+        run: npm run build
+        env:
+          # Read-only Turso creds so static generation can fetch data.
+          # Add these as repo secrets: Settings → Secrets and variables → Actions.
+          SATYA_DB_URL: ${{ secrets.SATYA_DB_URL }}
+          SATYA_DB_TOKEN: ${{ secrets.SATYA_DB_TOKEN }}
