@@ -225,7 +225,8 @@ export default async function DataPage() {
                 <Link href="/netas" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
                   All netas →
                 </Link>
-                   <div className="space-y-2.5">
+              </div>
+              <div className="space-y-2.5">
                 {Object.entries(topMins)
                   .sort(([, a], [, b]) => Number(b) - Number(a))
                   .slice(0, 8)
