@@ -242,7 +242,7 @@ async function fetchClientJSON<T>(type: string, param: string = ''): Promise<T |
 // ── Hybrid API Wrapper (Sever direct connection, Client route proxy) ──
 export const api = {
   async indiaOverview(): Promise<IndiaOverview | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.indiaOverview();
     }
@@ -250,7 +250,7 @@ export const api = {
   },
 
   async manifest(): Promise<Manifest | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.manifest();
     }
@@ -258,7 +258,7 @@ export const api = {
   },
 
   async politicians(): Promise<any[] | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.politicians();
     }
@@ -266,7 +266,7 @@ export const api = {
   },
 
   async party(name: string): Promise<PartyData | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.party(name);
     }
@@ -274,7 +274,7 @@ export const api = {
   },
 
   async minister(name: string): Promise<Minister | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.minister(name);
     }
@@ -282,7 +282,7 @@ export const api = {
   },
 
   async state(name: string): Promise<StateData | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.state(name);
     }
@@ -290,7 +290,7 @@ export const api = {
   },
 
   async topic(name: string): Promise<TopicData | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.topic(name);
     }
@@ -298,7 +298,7 @@ export const api = {
   },
 
   async promises(): Promise<PromisesSummary | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.promises();
     }
@@ -306,7 +306,7 @@ export const api = {
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.category(name);
     }
@@ -314,7 +314,7 @@ export const api = {
   },
 
   async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.feed(type);
     }
@@ -322,7 +322,7 @@ export const api = {
   },
 
   async articleContent(id: number): Promise<{ content?: string } | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.articleContent(id);
     }
@@ -330,7 +330,7 @@ export const api = {
   },
 
   async search(query: string): Promise<{ articles?: Article[] } | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.search(query);
     }
@@ -338,7 +338,7 @@ export const api = {
   },
 
   async source(name: string): Promise<{ articles?: Article[] } | null> {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.source(name);
     }
