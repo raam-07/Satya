@@ -265,9 +265,9 @@ export function NetasClient({ partyData, overview, manifestMinisters, manifestSt
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {s.count > 0 && (
+                  {s.count > 0 ? (
                     <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>{s.count} articles</span>
-                  )}
+                  ) : null}
                   <span style={{ color: 'var(--text3)' }}>→</span>
                 </div>
               </Link>

@@ -69,7 +69,9 @@ export default async function StatePage({ params }: { params: { name: string } }
             </span>
           )}
           {state.capital && <span>Capital: <strong className="text-[var(--text1)]">{state.capital}</strong></span>}
-          {state.stats?.total_articles && <span className="font-mono text-[var(--text3)]">{state.stats.total_articles} articles</span>}
+          {state.stats?.total_articles ? (
+            <span className="font-mono text-[var(--text3)]">{state.stats.total_articles} articles</span>
+          ) : null}
         </div>
       </div>
 
