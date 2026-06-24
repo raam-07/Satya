@@ -1,6 +1,35 @@
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { ArticleList } from '@/components/ArticleList'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
+
+export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
+  const sourceName = decodeURIComponent(params.name)
+
+  const title = `${sourceName} — articles & verified coverage | SatyaDheesh`
+  const description = `Explore verified articles, fact checks, and source coverage published by ${sourceName} on SatyaDheesh.`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://satyadheesh.in/source/${params.name}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://satyadheesh.in/source/${params.name}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    }
+  }
+}
 
 export default async function SourcePage({ params }: { params: { name: string } }) {
   const sourceName = decodeURIComponent(params.name)
@@ -9,8 +38,14 @@ export default async function SourcePage({ params }: { params: { name: string } 
   const sourceData = await api.source(sourceName)
   const articles = sourceData?.articles ?? []
 
+  const breadcrumbData = makeBreadcrumbJsonLd([
+    { name: 'Home', item: 'https://satyadheesh.in/' },
+    { name: sourceName, item: `https://satyadheesh.in/source/${params.name}` }
+  ])
+
   return (
     <div className="md:max-w-4xl md:mx-auto">
+      <JsonLd data={breadcrumbData} />
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <Link

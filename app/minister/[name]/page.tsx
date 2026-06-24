@@ -1,8 +1,60 @@
 import { api } from '@/lib/api'
 import Link from 'next/link'
-import { PBadge } from '@/components/SrcTag'
+import { PBadge, StatusBadge } from '@/components/SrcTag'
 import { ArticleList } from '@/components/ArticleList'
-import { renderMarkdown } from '@/lib/utils'
+import { renderMarkdown, slugify } from '@/lib/utils'
+import { JsonLd, makeBreadcrumbJsonLd, checkUrlResolves } from '@/components/JsonLd'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
+
+export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
+  const minister = await api.minister(params.name).catch(() => null)
+  const displayName = params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const name = minister?.name ?? displayName
+
+  const promises = minister?.promises ?? []
+  const kept = promises.filter(p => p.status === 'kept').length
+  const broken = promises.filter(p => p.status === 'broken').length
+  const ongoing = promises.filter(p => p.status === 'ongoing').length
+
+  const roleParty = minister
+    ? [minister.role, minister.party].filter(Boolean).join(', ')
+    : 'Political Leader'
+
+  const title = `${name} — promises kept, broken & pending | SatyaDheesh`
+  const description = minister
+    ? `Track the political promise record of ${name} (${roleParty}) on SatyaDheesh: ${kept} kept, ${broken} broken, and ${ongoing} pending.`
+    : `Track political promises, kept or broken, and verification record of ${name} on SatyaDheesh.`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://satyadheesh.in/minister/${params.name}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://satyadheesh.in/minister/${params.name}`,
+      type: 'profile',
+      images: [
+        {
+          url: `https://satyadheesh.in/minister/${params.name}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: `${name} promise scorecard`,
+        }
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`https://satyadheesh.in/minister/${params.name}/opengraph-image`],
+    }
+  }
+}
 
 export default async function MinisterPage({ params }: { params: { name: string } }) {
   const displayName = params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -27,8 +79,59 @@ export default async function MinisterPage({ params }: { params: { name: string 
         .filter(Boolean).join(' · ')
     : null
 
+  const name = minister?.name ?? displayName
+  const promises = minister?.promises ?? []
+  const kept = promises.filter(p => p.status === 'kept').length
+  const broken = promises.filter(p => p.status === 'broken').length
+  const ongoing = promises.filter(p => p.status === 'ongoing').length
+
+  // Wikipedia validation HEAD check
+  const isWikiResolves = minister?.wikipedia ? await checkUrlResolves(minister.wikipedia) : false
+  const sameAs: string[] = []
+  if (isWikiResolves && minister?.wikipedia) {
+    sameAs.push(minister.wikipedia)
+  }
+
+  const breadcrumbData = makeBreadcrumbJsonLd([
+    { name: 'Home', item: 'https://satyadheesh.in/' },
+    { name: 'Netas', item: 'https://satyadheesh.in/netas' },
+    { name: name, item: `https://satyadheesh.in/minister/${params.name}` }
+  ])
+
+  const personData = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": name,
+    "jobTitle": minister?.role || 'Political Leader',
+    "affiliation": minister?.party ? {
+      "@type": "Organization",
+      "name": minister.party
+    } : undefined,
+    "sameAs": sameAs.length > 0 ? sameAs : undefined
+  }
+
+  const faqData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+      "@type": "Question",
+      "name": `Has ${name} kept their promises?`,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": promises.length > 0
+          ? `Out of ${promises.length} tracked promises, ${name} has kept ${kept}, broken ${broken}, and ${ongoing} are ongoing.`
+          : `There are currently no tracked promises for ${name} on SatyaDheesh.`
+      }
+    }]
+  }
+
   return (
     <div className="md:max-w-4xl md:mx-auto">
+      {/* Structured Data */}
+      <JsonLd data={breadcrumbData} />
+      <JsonLd data={personData} />
+      <JsonLd data={faqData} />
+
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <Link href="/netas" className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'var(--text3)' }}>
@@ -38,7 +141,7 @@ export default async function MinisterPage({ params }: { params: { name: string 
           {minister?.party && <PBadge party={minister.party} />}
         </div>
         <h1 className="text-[22px] md:text-[26px] font-black font-serif" style={{ color: 'var(--text1)' }}>
-          {minister?.name ?? displayName}
+          {name}
         </h1>
         {intro && (
           <p className="text-[12px] mt-1 font-mono" style={{ color: 'var(--text3)' }}>{intro}</p>
@@ -64,7 +167,9 @@ export default async function MinisterPage({ params }: { params: { name: string 
               {minister.state && (
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-mono text-[var(--text3)]">State / Region</span>
-                  <span className="font-semibold text-[var(--text1)]">{minister.state}</span>
+                  <Link href={`/state/${slugify(minister.state)}`} className="font-semibold text-[var(--text1)] hover:underline hover:text-[var(--accent)] transition-colors">
+                    {minister.state}
+                  </Link>
                 </div>
               )}
               {minister.wikipedia && (
@@ -174,6 +279,31 @@ export default async function MinisterPage({ params }: { params: { name: string 
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Promises Section */}
+      {minister && minister.promises && minister.promises.length > 0 && (
+        <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
+          <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-3">Tracked Promises</h2>
+          <div className="divide-y divide-[var(--border)]">
+            {minister.promises.map((p) => (
+              <Link key={p.id} href={`/vaade/${p.id}`} className="block py-3 hover:bg-[var(--bg-alt)] transition-colors group">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5"><StatusBadge status={p.status} /></span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-[var(--text1)] group-hover:text-[var(--accent)] transition-colors leading-snug">
+                      {p.promise}
+                    </p>
+                    {p.made_on && (
+                      <span className="text-[10px] font-mono text-[var(--text3)] block mt-1">Made {p.made_on}</span>
+                    )}
+                  </div>
+                  <span className="text-[12px] text-[var(--text3)] self-center ml-2">→</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       )}

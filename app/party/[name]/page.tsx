@@ -2,6 +2,44 @@ import { api } from '@/lib/api'
 import { ArticleList } from '@/components/ArticleList'
 import { StatusBadge, PBadge } from '@/components/SrcTag'
 import Link from 'next/link'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
+import type { Metadata } from 'next'
+import { slugify } from '@/lib/utils'
+
+export const revalidate = 300
+
+export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
+  const party = await api.party(params.name).catch(() => null)
+  const partyName = party?.full_name || party?.party || params.name.toUpperCase()
+  
+  const title = `${partyName} — promises & performance | SatyaDheesh`
+  
+  let description = `${partyName} (${party?.coalition || ''}) promise tracker and political performance on SatyaDheesh.`
+  if (party?.promises) {
+    const kept = party.promises.filter(p => p.status === 'kept').length
+    const broken = party.promises.filter(p => p.status === 'broken').length
+    const ongoing = party.promises.filter(p => p.status === 'ongoing').length
+    description = `${partyName} (${party.coalition || ''}) promise tracker: ${kept} kept, ${broken} broken, and ${ongoing} ongoing political promises.`
+  }
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://satyadheesh.in/party/${params.name}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://satyadheesh.in/party/${params.name}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    }
+  }
+}
 
 export default async function PartyPage({ params }: { params: { name: string } }) {
   const party = await api.party(params.name)
@@ -16,8 +54,14 @@ export default async function PartyPage({ params }: { params: { name: string } }
   const ongoing = promises.filter(p => p.status === 'ongoing').length
   const voidVal = promises.filter(p => p.status === 'void').length
 
+  const breadcrumbData = makeBreadcrumbJsonLd([
+    { name: 'Home', item: 'https://satyadheesh.in/' },
+    { name: party.full_name || party.party || 'Party', item: `https://satyadheesh.in/party/${params.name}` }
+  ])
+
   return (
     <div className="md:max-w-6xl md:mx-auto">
+      <JsonLd data={breadcrumbData} />
       {/* Header */}
       <div className="border-b border-[var(--border-md)] px-4 md:px-6 py-5 bg-[var(--surface)]">
         <div className="flex items-start gap-4 flex-wrap">
@@ -62,7 +106,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
           <div className="mt-3 flex flex-wrap gap-2 items-center">
             <span className="text-[10px] font-mono text-[var(--text3)] uppercase tracking-wider">Ruling states:</span>
             {party.ruling_states.map(state => (
-              <Link key={state} href={`/state/${state.toLowerCase().replace(/\s+/g, '_')}`}
+              <Link key={state} href={`/state/${slugify(state)}`}
                 className="text-[10px] font-mono border border-[var(--border-md)] rounded-sm px-2 py-0.5 text-[var(--text2)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
                 {state}
               </Link>
@@ -70,7 +114,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
           </div>
         )}
       </div>
-
+ 
       {/* Body */}
       <div className="flex flex-col md:grid md:grid-cols-3">
         {/* Ministers */}
@@ -80,7 +124,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
           </div>
           <div className="divide-y divide-[var(--border)]">
             {(party.ministers ?? []).map((m, i) => (
-              <Link key={i} href={`/minister/${m.name ? m.name.toLowerCase().replace(/\s+/g, '_') : '#'}`}
+              <Link key={i} href={`/minister/${m.name ? slugify(m.name) : '#'}`}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-alt)] transition-colors group">
                 <div className="w-8 h-8 rounded-full bg-[var(--bg-alt)] flex items-center justify-center text-[12px] font-bold text-[var(--text2)] flex-shrink-0">
                   {m.name?.[0] ?? '?'}

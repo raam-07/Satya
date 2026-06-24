@@ -1,6 +1,10 @@
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { ArticleList } from '@/components/ArticleList'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
 
 // Display labels matching ArticleModal's TOPIC_LABELS
 const TOPIC_LABELS: Record<string, string> = {
@@ -14,6 +18,32 @@ const TOPIC_LABELS: Record<string, string> = {
   health:             'Health',
   education:          'Education',
   protest_opposition: 'Protests & Opposition',
+}
+
+export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
+  const slug = decodeURIComponent(params.name)
+  const displayName = TOPIC_LABELS[slug] ?? slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
+  const title = `${displayName} — political news & promises | SatyaDheesh`
+  const description = `Explore recent articles, news, and political promises related to ${displayName} in India on SatyaDheesh. Sourced and verified fact checks.`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://satyadheesh.in/topic/${params.name}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://satyadheesh.in/topic/${params.name}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    }
+  }
 }
 
 export default async function TopicPage({ params }: { params: { name: string } }) {
@@ -39,8 +69,14 @@ export default async function TopicPage({ params }: { params: { name: string } }
     topicData?.stats?.total_articles ??
     (topicData?.stats?.articles_last_30d ?? mergedArticles.length)
 
+  const breadcrumbData = makeBreadcrumbJsonLd([
+    { name: 'Home', item: 'https://satyadheesh.in/' },
+    { name: displayName, item: `https://satyadheesh.in/topic/${params.name}` }
+  ])
+
   return (
     <div className="md:max-w-4xl md:mx-auto">
+      <JsonLd data={breadcrumbData} />
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <Link

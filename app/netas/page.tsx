@@ -1,5 +1,16 @@
 import { api } from '@/lib/api'
 import { NetasClient } from '@/components/NetasClient'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
+
+export const metadata: Metadata = {
+  title: "Indian Political Leaders & Neta Profiles | SatyaDheesh",
+  description: "Explore profiles of Indian cabinet ministers, opposition leaders, and chief ministers. Track criminal cases, controversies, and promise records.",
+  alternates: {
+    canonical: 'https://satyadheesh.in/netas',
+  }
+}
 
 const PARTY_IDS = ['bjp', 'inc', 'aap', 'tmc', 'dmk', 'sp']
 

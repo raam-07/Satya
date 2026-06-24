@@ -1,5 +1,16 @@
 import { api } from '@/lib/api'
 import { StatusBadge, PBadge } from '@/components/SrcTag'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
+
+export const metadata: Metadata = {
+  title: "Tracked Political Promises — Status & Evidence | SatyaDheesh",
+  description: "Complete list of tracked political promises grouped by verdict. Sourced and fact-checked status reports of Indian leaders.",
+  alternates: {
+    canonical: 'https://satyadheesh.in/promises',
+  }
+}
 
 export default async function PromisesPage() {
   const data = await api.promises()

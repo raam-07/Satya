@@ -1,6 +1,18 @@
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { HardRefreshButton } from '@/components/HardRefreshButton'
+import type { Metadata } from 'next'
+import { slugify } from '@/lib/utils'
+
+export const revalidate = 300
+
+export const metadata: Metadata = {
+  title: "Civic Intelligence & Platform Data | SatyaDheesh",
+  description: "Platform metrics and political statistics for India: tracked articles, promise scorecard, most covered parties, and active civic alerts.",
+  alternates: {
+    canonical: 'https://satyadheesh.in/data',
+  }
+}
 
 function Bar({ value, max, color }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0
@@ -213,15 +225,14 @@ export default async function DataPage() {
                 <Link href="/netas" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
                   All netas →
                 </Link>
-              </div>
-              <div className="space-y-2.5">
+                   <div className="space-y-2.5">
                 {Object.entries(topMins)
                   .sort(([, a], [, b]) => Number(b) - Number(a))
                   .slice(0, 8)
                   .map(([name, count]) => (
                     <div key={name} className="flex items-center gap-3">
                       <Link
-                        href={`/minister/${name.toLowerCase().replace(/\s+/g, '_')}`}
+                        href={`/minister/${slugify(name)}`}
                         className="text-[11px] text-[var(--text1)] hover:text-[var(--accent)] transition-colors truncate w-40 flex-shrink-0"
                       >
                         {name}
@@ -233,7 +244,7 @@ export default async function DataPage() {
               </div>
             </div>
           )}
-
+ 
           {/* Top states in news */}
           {Object.keys(topState).length > 0 && (
             <div className="px-4 md:px-6 py-5">
@@ -245,7 +256,7 @@ export default async function DataPage() {
                   .map(([state, count]) => (
                     <div key={state} className="flex items-center gap-3">
                       <Link
-                        href={`/state/${state.toLowerCase().replace(/\s+/g, '_')}`}
+                        href={`/state/${slugify(state)}`}
                         className="text-[11px] text-[var(--text1)] hover:text-[var(--accent)] transition-colors truncate w-40 flex-shrink-0"
                       >
                         {state}

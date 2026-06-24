@@ -3,7 +3,66 @@ import Link from 'next/link'
 import { PBadge, StatusBadge } from '@/components/SrcTag'
 import { VaadeRelatedArticles } from '@/components/VaadeRelatedArticles'
 import type { PoliticalPromise } from '@/lib/api'
-import { renderMarkdown } from '@/lib/utils'
+import { renderMarkdown, slugify } from '@/lib/utils'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const promiseId = decodeURIComponent(params.id)
+  const data = await api.promises()
+  const allPromises: PoliticalPromise[] = [
+    ...(data?.by_status?.broken  ?? []),
+    ...(data?.by_status?.ongoing ?? []),
+    ...(data?.by_status?.kept    ?? []),
+    ...(data?.by_status?.void   ?? []),
+  ]
+  const promise = allPromises.find(p => String(p.id) === promiseId)
+
+  if (!promise) {
+    return {
+      title: 'Promise Not Found | SatyaDheesh',
+    }
+  }
+
+  const cleanPromise = promise.promise && promise.promise.length > 25
+    ? promise.promise.substring(0, 22) + '...'
+    : promise.promise;
+
+  const title = `"${cleanPromise}" — ${promise.person} | SatyaDheesh`
+  let description = `Promise: "${promise.promise}" | Verdict: ${promise.status?.toUpperCase()}. Sourced status of this promise made by ${promise.person}.`
+  if (description.length > 155) {
+    description = description.substring(0, 152) + '...'
+  }
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://satyadheesh.in/vaade/${params.id}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://satyadheesh.in/vaade/${params.id}`,
+      images: [
+        {
+          url: `https://satyadheesh.in/vaade/${params.id}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: `Promise from ${promise.person}: ${promise.status}`,
+        }
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`https://satyadheesh.in/vaade/${params.id}/opengraph-image`],
+    }
+  }
+}
 
 const STATUS_COLOR: Record<string, string> = {
   kept:    '#1B7050',
@@ -50,8 +109,53 @@ export default async function PromisePage({ params }: { params: { id: string } }
 
   const statusColor = STATUS_COLOR[promise.status ?? ''] ?? 'var(--text3)'
 
+  const breadcrumbData = makeBreadcrumbJsonLd([
+    { name: 'Home', item: 'https://satyadheesh.in/' },
+    { name: 'Vaade', item: 'https://satyadheesh.in/vaade' },
+    { name: `Promise #${promiseId}`, item: `https://satyadheesh.in/vaade/${params.id}` }
+  ])
+
+  const RATING_MAP: Record<string, number> = {
+    kept: 5,
+    ongoing: 3,
+    void: 2,
+    broken: 1
+  }
+
+  const claimReviewData = {
+    "@context": "https://schema.org",
+    "@type": "ClaimReview",
+    "url": `https://satyadheesh.in/vaade/${params.id}`,
+    "author": {
+      "@type": "Organization",
+      "name": "SatyaDheesh",
+      "url": "https://satyadheesh.in"
+    },
+    "claimReviewed": promise.promise,
+    "itemReviewed": {
+      "@type": "Claim",
+      "author": {
+        "@type": "Person",
+        "name": promise.person,
+        "jobTitle": promise.role || 'Political Leader'
+      },
+      "datePublished": promise.made_on || undefined
+    },
+    "reviewRating": {
+      "@type": "Rating",
+      "ratingValue": RATING_MAP[promise.status ?? ''] || 3,
+      "bestRating": 5,
+      "worstRating": 1,
+      "alternateName": promise.status || 'ongoing'
+    }
+  }
+
   return (
     <div className="md:max-w-4xl md:mx-auto">
+      {/* Structured Data */}
+      <JsonLd data={breadcrumbData} />
+      <JsonLd data={claimReviewData} />
+
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <Link href="/vaade" className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'var(--text3)' }}>
@@ -75,7 +179,9 @@ export default async function PromisePage({ params }: { params: { id: string } }
           )}
           {promise.party  && <PBadge party={promise.party} verified={promise.party_verified} />}
           {promise.person && (
-            <span className="text-[10px] font-mono" style={{ color: 'var(--text2)' }}>{promise.person}</span>
+            <Link href={`/minister/${slugify(promise.person)}`} className="text-[10px] font-mono hover:underline hover:text-[var(--accent)] transition-colors">
+              {promise.person}
+            </Link>
           )}
           {promise.made_on && (
             <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>Made {promise.made_on}</span>

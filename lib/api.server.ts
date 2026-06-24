@@ -875,7 +875,8 @@ export const serverApi = {
         role: m.role || '',
         party: m.party || '',
         state: m.state || '',
-        party_verified: m.party_verified
+        party_verified: m.party_verified,
+        criminal_last_updated: m.criminal_last_updated
       }));
     });
   }

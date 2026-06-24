@@ -5,10 +5,12 @@ import { Shell } from '@/components/Shell'
 import { ManifestProvider } from '@/lib/ManifestContext'
 import { ToastProvider } from '@/lib/ToastContext'
 
+import { JsonLd } from '@/components/JsonLd'
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://satyadheesh.in'),
-  title: 'SatyaDheesh — सत्याधीश | India\'s Ground Truth Record',
-  description: 'Unfiltered, sourced civic intelligence for Indian citizens.',
+  title: 'SatyaDheesh — Track Every Political Promise in India',
+  description: "They promised. Did they deliver? SatyaDheesh holds India's leaders to their word — sourced verdicts on every promise. The record they hoped you'd forget.",
   icons: {
     icon: [
       { url: '/favicons/satyadheesh-gavel-angled.svg', type: 'image/svg+xml' },
@@ -20,9 +22,38 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
+  openGraph: {
+    title: 'SatyaDheesh — Track Every Political Promise in India',
+    description: "They promised. Did they deliver? SatyaDheesh holds India's leaders to their word — sourced verdicts on every promise. The record they hoped you'd forget.",
+    url: 'https://satyadheesh.in',
+    siteName: 'SatyaDheesh',
+    images: [
+      {
+        url: '/favicons/gavel-180.png',
+        width: 180,
+        height: 180,
+      }
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SatyaDheesh — Track Every Political Promise in India',
+    description: "They promised. Did they deliver? SatyaDheesh holds India's leaders to their word — sourced verdicts on every promise. The record they hoped you'd forget.",
+    images: ['/favicons/gavel-180.png'],
+  },
 }
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
+
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "SatyaDheesh",
+  "url": "https://satyadheesh.in",
+  "logo": "https://satyadheesh.in/favicons/gavel-180.png"
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const gaIdsString = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -32,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <JsonLd data={orgJsonLd} />
         {primaryId && (
           <>
             <Script

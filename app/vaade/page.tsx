@@ -1,6 +1,17 @@
 import { api } from '@/lib/api'
 import { PBadge } from '@/components/SrcTag'
 import { VaadeClient } from '@/components/VaadeClient'
+import type { Metadata } from 'next'
+
+export const revalidate = 300
+
+export const metadata: Metadata = {
+  title: "Political Promise Tracker & Accountability Scorecard | SatyaDheesh",
+  description: "Explore all tracked promises made by Indian political parties and leaders. Verified verdicts: kept, broken, or ongoing with news source evidence.",
+  alternates: {
+    canonical: 'https://satyadheesh.in/vaade',
+  }
+}
 
 export default async function VaadePage() {
   const data = await api.promises()

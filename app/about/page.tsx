@@ -1,3 +1,15 @@
+import type { Metadata } from 'next'
+
+export const revalidate = 3600
+
+export const metadata: Metadata = {
+  title: "About SatyaDheesh — India's Ground Truth Record | SatyaDheesh",
+  description: "SatyaDheesh is an independent, non-partisan civic intelligence platform tracking political accountability in India with evidence.",
+  alternates: {
+    canonical: 'https://satyadheesh.in/about',
+  }
+}
+
 export default function AboutPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
