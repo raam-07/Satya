@@ -194,7 +194,13 @@ async function getHeavyOverviewStats() {
     partyRes.rows.forEach(r => { top_parties_30d[String(r.val)] = Number(r.c); });
 
     const top_states_30d: Record<string, number> = {};
-    stateRes.rows.forEach(r => { top_states_30d[String(r.val)] = Number(r.c); });
+    stateRes.rows.forEach(r => {
+      let val = String(r.val);
+      if (val === "Andaman") val = "Andaman and Nicobar";
+      if (val === "Kashmir" || val === "Jammu" || val === "J&K" || val === "JK") val = "Jammu and Kashmir";
+      if (val === "UP") val = "Uttar Pradesh";
+      top_states_30d[val] = (top_states_30d[val] || 0) + Number(r.c);
+    });
 
     return { top_ministers_30d, top_parties_30d, top_states_30d };
   });
@@ -589,6 +595,17 @@ export const serverApi = {
       if (!stateInfo) return null;
 
       const stateName = stateInfo.name;
+      const aliases = stateInfo.aliases || [];
+      const searchTerms = [stateName, ...aliases];
+      if (stateName === "Andaman and Nicobar") searchTerms.push("Andaman");
+      if (stateName === "Jammu and Kashmir") { searchTerms.push("Jammu"); searchTerms.push("Kashmir"); }
+      if (stateName === "Uttar Pradesh") searchTerms.push("UP");
+
+      const uniqueSearchTerms = Array.from(new Set(searchTerms));
+
+      const likeClauseA = "(" + uniqueSearchTerms.map(() => "a.states_mentioned LIKE ?").join(" OR ") + ")";
+      const likeClausePlain = "(" + uniqueSearchTerms.map(() => "states_mentioned LIKE ?").join(" OR ") + ")";
+      const likeArgs = uniqueSearchTerms.map(term => `%${term}%`);
 
       // Fetch articles, counts, and aggregations in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
@@ -597,33 +614,33 @@ export const serverApi = {
         {
           sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                FROM articles a
-                LEFT JOIN sources s ON a.source_id = s.id
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ?
-                ORDER BY a.scraped_at DESC LIMIT 100`,
-          args: [`%${stateName}%`]
+                 FROM articles a
+                 LEFT JOIN sources s ON a.source_id = s.id
+                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND ${likeClauseA}
+                 ORDER BY a.scraped_at DESC LIMIT 100`,
+          args: [...likeArgs]
         },
         {
           sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND states_mentioned LIKE ?`,
-          args: [`%${stateName}%`]
+                 WHERE status IN ('classified', 'entity_processed', 'processed') AND ${likeClausePlain}`,
+          args: [...likeArgs]
         },
         {
           sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND states_mentioned LIKE ? AND scraped_at >= ?`,
-          args: [`%${stateName}%`, thirtyDaysAgo]
+                 WHERE status IN ('classified', 'entity_processed', 'processed') AND ${likeClausePlain} AND scraped_at >= ?`,
+          args: [...likeArgs, thirtyDaysAgo]
         },
         {
           sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.cities_mentioned) j
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ? AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [`%${stateName}%`, thirtyDaysAgo]
+                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND ${likeClauseA} AND a.scraped_at >= ?
+                 GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+          args: [...likeArgs, thirtyDaysAgo]
         },
         {
           sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.topic_tags) j
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.states_mentioned LIKE ? AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [`%${stateName}%`, thirtyDaysAgo]
+                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND ${likeClauseA} AND a.scraped_at >= ?
+                 GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+          args: [...likeArgs, thirtyDaysAgo]
         }
       ]);
 
