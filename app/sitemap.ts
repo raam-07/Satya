@@ -28,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (p.id) {
         const lastModStr = p.status_history?.length
           ? p.status_history[p.status_history.length - 1].changed_at
-          : p.status_last_reviewed || p.created_at || '2026-06-19'
+          : p.made_on || '2026-06-19'
         const lastModified = new Date(lastModStr)
         if (lastModified.getTime() > latestPromiseDate.getTime()) {
           latestPromiseDate = lastModified

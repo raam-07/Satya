@@ -749,6 +749,7 @@ export const serverApi = {
         const light = {
           id: p.id,
           person,
+          role: p.role,
           party,
           party_verified: p.party_verified,
           promise: p.promise,

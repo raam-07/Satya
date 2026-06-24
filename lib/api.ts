@@ -153,6 +153,7 @@ export interface TopicData {
 export interface PoliticalPromise {
   id?: string
   person?: string
+  role?: string
   party?: string
   party_verified?: boolean
   promise?: string
