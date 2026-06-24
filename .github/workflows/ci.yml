@@ -29,9 +29,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Build (static generation catches DYNAMIC_SERVER_USAGE)
+        # No DB creds on purpose: data fetches fail and pages build empty,
+        # but compile / type / dynamic-usage errors are still caught.
+        # This keeps CI from making ANY Turso reads (protects the free-tier limit).
         run: npm run build
-        env:
-          # Read-only Turso creds so static generation can fetch data.
-          # Add these as repo secrets: Settings → Secrets and variables → Actions.
-          SATYA_DB_URL: ${{ secrets.SATYA_DB_URL }}
-          SATYA_DB_TOKEN: ${{ secrets.SATYA_DB_TOKEN }}
