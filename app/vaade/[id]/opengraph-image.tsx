@@ -17,14 +17,45 @@ export default async function Image({ params }: { params: { id: string } }) {
   ]
   const promise = allPromises.find(p => String(p.id) === promiseId)
 
+  // Fetch fonts dynamically
+  const [dmSansData, playfairData] = await Promise.all([
+    fetch('https://fonts.gstatic.com/s/dmsans/v15/r05L5VVo-2xqiCDMD-ALk7GF.ttf').then((res) =>
+      res.arrayBuffer()
+    ).catch(() => null),
+    fetch('https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD7K2_7kVrHy087K3qPJ6mg95179wa1A.ttf').then((res) =>
+      res.arrayBuffer()
+    ).catch(() => null),
+  ])
+
+  const fonts: any[] = []
+  if (dmSansData) {
+    fonts.push({
+      name: 'DM Sans',
+      data: dmSansData,
+      weight: 400,
+      style: 'normal',
+    })
+  }
+  if (playfairData) {
+    fonts.push({
+      name: 'Playfair Display',
+      data: playfairData,
+      weight: 700,
+      style: 'normal',
+    })
+  }
+
+  const defaultFontFamily = dmSansData ? '"DM Sans"' : 'sans-serif'
+  const serifFontFamily = playfairData ? '"Playfair Display"' : (dmSansData ? '"DM Sans"' : 'serif')
+
   if (!promise) {
     return new ImageResponse(
       (
-        <div style={{ display: 'flex', width: '100%', height: '100%', background: '#1C1C1E', color: '#FFF', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        <div style={{ display: 'flex', width: '100%', height: '100%', background: '#1C1C1E', color: '#FFF', alignItems: 'center', justifyContent: 'center', fontFamily: defaultFontFamily }}>
           SatyaDheesh Promise Tracker
         </div>
       ),
-      { ...size }
+      { ...size, fonts }
     )
   }
 
@@ -38,9 +69,9 @@ export default async function Image({ params }: { params: { id: string } }) {
 
   return new ImageResponse(
     (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#0F0F10', color: '#FFF', padding: '60px', fontFamily: 'sans-serif', justifyContent: 'space-between', borderTop: `16px solid ${color}` }}>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#0F0F10', color: '#FFF', padding: '60px', fontFamily: defaultFontFamily, justifyContent: 'space-between', borderTop: `16px solid ${color}` }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', fontFamily: 'sans-serif' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <span style={{ background: color, color: '#FFF', fontSize: '18px', fontWeight: 'bold', padding: '6px 12px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               {promise.status}
             </span>
@@ -48,11 +79,11 @@ export default async function Image({ params }: { params: { id: string } }) {
               {promise.person} ({promise.party})
             </span>
           </div>
-          <div style={{ fontSize: '42px', fontWeight: 'bold', lineHeight: '1.35', color: '#FFF', marginTop: '10px' }}>
+          <div style={{ fontSize: '42px', fontWeight: 'bold', lineHeight: '1.35', color: '#FFF', marginTop: '10px', fontFamily: serifFontFamily }}>
             "{promise.promise}"
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #2C2C2E', paddingTop: '30px', fontFamily: 'sans-serif' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #2C2C2E', paddingTop: '30px' }}>
           <span style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '0.2em', color: '#D4AF37' }}>
             SATYADHEESH
           </span>
@@ -62,6 +93,6 @@ export default async function Image({ params }: { params: { id: string } }) {
         </div>
       </div>
     ),
-    { ...size }
+    { ...size, fonts }
   )
 }

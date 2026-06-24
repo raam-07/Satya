@@ -19,19 +19,50 @@ export default async function Image({ params }: { params: { name: string } }) {
   const role = minister?.role || 'Political Leader'
   const party = minister?.party || ''
 
+  // Fetch fonts dynamically
+  const [dmSansData, playfairData] = await Promise.all([
+    fetch('https://fonts.gstatic.com/s/dmsans/v15/r05L5VVo-2xqiCDMD-ALk7GF.ttf').then((res) =>
+      res.arrayBuffer()
+    ).catch(() => null),
+    fetch('https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD7K2_7kVrHy087K3qPJ6mg95179wa1A.ttf').then((res) =>
+      res.arrayBuffer()
+    ).catch(() => null),
+  ])
+
+  const fonts: any[] = []
+  if (dmSansData) {
+    fonts.push({
+      name: 'DM Sans',
+      data: dmSansData,
+      weight: 400,
+      style: 'normal',
+    })
+  }
+  if (playfairData) {
+    fonts.push({
+      name: 'Playfair Display',
+      data: playfairData,
+      weight: 700,
+      style: 'normal',
+    })
+  }
+
+  const defaultFontFamily = dmSansData ? '"DM Sans"' : 'sans-serif'
+  const serifFontFamily = playfairData ? '"Playfair Display"' : (dmSansData ? '"DM Sans"' : 'serif')
+
   return new ImageResponse(
     (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#0F0F10', color: '#FFF', padding: '60px', fontFamily: 'sans-serif', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#0F0F10', color: '#FFF', padding: '60px', fontFamily: defaultFontFamily, justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px' }}>
-            <span style={{ fontSize: '54px', fontWeight: 'bold', color: '#FFF' }}>
+            <span style={{ fontSize: '54px', fontWeight: 'bold', color: '#FFF', fontFamily: serifFontFamily }}>
               {name}
             </span>
-            <span style={{ fontSize: '22px', color: '#8E8E93', marginTop: '8px', fontFamily: 'sans-serif' }}>
+            <span style={{ fontSize: '22px', color: '#8E8E93', marginTop: '8px' }}>
               {[role, party].filter(Boolean).join(' · ')}
             </span>
           </div>
-          <div style={{ display: 'flex', gap: '30px', marginTop: '20px', fontFamily: 'sans-serif' }}>
+          <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', background: '#1C1C1E', padding: '20px 40px', borderRadius: '6px', borderLeft: '6px solid #1B7050' }}>
               <span style={{ fontSize: '36px', fontWeight: 'bold', color: '#1B7050' }}>{kept}</span>
               <span style={{ fontSize: '14px', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.15em', marginTop: '4px' }}>Kept</span>
@@ -46,7 +77,7 @@ export default async function Image({ params }: { params: { name: string } }) {
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #2C2C2E', paddingTop: '30px', fontFamily: 'sans-serif' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #2C2C2E', paddingTop: '30px' }}>
           <span style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '0.2em', color: '#D4AF37' }}>
             SATYADHEESH
           </span>
@@ -56,6 +87,6 @@ export default async function Image({ params }: { params: { name: string } }) {
         </div>
       </div>
     ),
-    { ...size }
+    { ...size, fonts }
   )
 }
