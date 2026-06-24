@@ -7,7 +7,7 @@ import { renderMarkdown, slugify } from '@/lib/utils'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const promiseId = decodeURIComponent(params.id)

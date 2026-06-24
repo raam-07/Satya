@@ -4,7 +4,7 @@ import { HardRefreshButton } from '@/components/HardRefreshButton'
 import type { Metadata } from 'next'
 import { slugify } from '@/lib/utils'
 
-export const revalidate = 300
+export const revalidate = false
 
 export const metadata: Metadata = {
   title: "Civic Intelligence & Platform Data | SatyaDheesh",

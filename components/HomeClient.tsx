@@ -16,9 +16,9 @@ interface HomeClientProps {
 export function HomeClient({ overview, initialArticles, initialTab = 'all' }: HomeClientProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [articles, setArticles] = useState<Article[]>(
-    initialTab === 'all' ? initialArticles : []
+    initialArticles
   )
-  const [loading, setLoading] = useState(initialTab !== 'all')
+  const [loading, setLoading] = useState(false)
   const [visibleCount, setVisibleCount] = useState(20)
   const [modalArticle, setModalArticle] = useState<Article | null>(null)
 
@@ -27,6 +27,16 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
 
   const openModal  = useCallback((a: Article) => setModalArticle(a), [])
   const closeModal = useCallback(() => setModalArticle(null), [])
+
+  // Read URL parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam && tabParam !== 'all') {
+      setActiveTab(tabParam)
+      setLoading(true)
+    }
+  }, [])
 
   useEffect(() => {
     // Check cache first — no network call needed
@@ -56,6 +66,17 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     return () => { active = false }
   }, [activeTab])
 
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId)
+    const url = new URL(window.location.href)
+    if (tabId === 'all') {
+      url.searchParams.delete('tab')
+    } else {
+      url.searchParams.set('tab', tabId)
+    }
+    window.history.replaceState(null, '', url.pathname + url.search)
+  }, [])
+
   const gov          = overview?.current_government
   const catBreakdown = overview?.category_breakdown_30d ?? {}
 
@@ -74,7 +95,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
 
       {/* Sticky Category Tabs */}
       <div className="sticky top-0 z-30 shadow-sm" style={{ background: 'var(--surface)' }}>
-        <CategoryTabs activeTab={activeTab} onChangeTab={setActiveTab} />
+        <CategoryTabs activeTab={activeTab} onChangeTab={handleTabChange} />
       </div>
 
       {/* ── Single column layout (mobile-first, all screens) ── */}

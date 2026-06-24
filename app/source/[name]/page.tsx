@@ -4,7 +4,7 @@ import { ArticleList } from '@/components/ArticleList'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const sourceName = decodeURIComponent(params.name)

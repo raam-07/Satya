@@ -3,7 +3,7 @@ import { PBadge } from '@/components/SrcTag'
 import { VaadeClient } from '@/components/VaadeClient'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 export const metadata: Metadata = {
   title: "Political Promise Tracker & Accountability Scorecard | SatyaDheesh",

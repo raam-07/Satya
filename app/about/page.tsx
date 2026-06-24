@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-export const revalidate = 3600
+export const revalidate = false
 
 export const metadata: Metadata = {
   title: "About SatyaDheesh — India's Ground Truth Record | SatyaDheesh",

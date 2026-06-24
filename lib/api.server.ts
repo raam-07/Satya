@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { db } from './db';
+import { slugify, partySlugify } from './utils';
+import { unstable_cache, revalidateTag } from 'next/cache';
 import type { 
   Article, 
   IndiaOverview, 
@@ -122,51 +124,85 @@ function mapRowToArticle(row: any): Article {
   };
 }
 
-// --- In-Memory TTL Cache (15 minutes) ---
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
-
-interface CacheEntry<T> {
-  data: T;
-  expiresAt: number;
-}
-
-const cache = new Map<string, CacheEntry<any>>();
+// --- Next.js unstable_cache & In-Memory Request Deduplication ---
 const inflight = new Map<string, Promise<any>>();
 
-async function cached<T>(key: string, fn: () => Promise<T>): Promise<T> {
-  // Return cached result if still fresh
-  const entry = cache.get(key);
-  if (entry && Date.now() < entry.expiresAt) {
-    return entry.data;
-  }
-
-  // Deduplicate concurrent requests for the same key
+async function cached<T>(key: string, tags: string[], fn: () => Promise<T>): Promise<T> {
   const existing = inflight.get(key);
   if (existing) return existing;
 
-  const promise = fn().then(result => {
-    if (result !== null && result !== undefined) {
-      cache.set(key, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
-    }
-    inflight.delete(key);
-    return result;
-  }).catch(err => {
-    inflight.delete(key);
-    throw err;
-  });
+  const promise = (async () => {
+    return unstable_cache(
+      async () => {
+        return fn();
+      },
+      [key],
+      { tags }
+    )();
+  })();
 
   inflight.set(key, promise);
-  return promise;
+  try {
+    const res = await promise;
+    inflight.delete(key);
+    return res;
+  } catch (err) {
+    inflight.delete(key);
+    throw err;
+  }
 }
 
 export function clearCache() {
-  cache.clear();
   inflight.clear();
+  try {
+    revalidateTag('articles');
+    revalidateTag('promises');
+    revalidateTag('entities');
+  } catch (e) {
+    console.error('Failed to revalidate in clearCache:', e);
+  }
+}
+
+async function getHeavyOverviewStats() {
+  return cached('heavyOverviewStats', ['articles'], async () => {
+    const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
+    const [ministerRes, partyRes, stateRes] = await db.batch([
+      {
+        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.ministers_mentioned) j
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+              GROUP BY j.value ORDER BY c DESC LIMIT 20`,
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.party_mentioned) j
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+        args: [thirtyDaysAgo]
+      },
+      {
+        sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.states_mentioned) j
+              WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+        args: [thirtyDaysAgo]
+      }
+    ]);
+
+    const top_ministers_30d: Record<string, number> = {};
+    ministerRes.rows.forEach(r => { top_ministers_30d[String(r.val)] = Number(r.c); });
+
+    const top_parties_30d: Record<string, number> = {};
+    partyRes.rows.forEach(r => { top_parties_30d[String(r.val)] = Number(r.c); });
+
+    const top_states_30d: Record<string, number> = {};
+    stateRes.rows.forEach(r => { top_states_30d[String(r.val)] = Number(r.c); });
+
+    return { top_ministers_30d, top_parties_30d, top_states_30d };
+  });
 }
 
 export const serverApi = {
   async indiaOverview(): Promise<IndiaOverview | null> {
-    return cached('indiaOverview', async () => {
+    return cached('indiaOverview', ['entities', 'promises', 'articles'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -188,10 +224,7 @@ export const serverApi = {
         flaggedTodayRes,
         storiesRes,
         catBreakdownRes,
-        flagCatsRes,
-        ministerRes,
-        partyRes,
-        stateRes
+        flagCatsRes
       ] = await db.batch([
         "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed')",
         {
@@ -230,24 +263,6 @@ export const serverApi = {
                 WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?
                 GROUP BY civic_flag_category`,
           args: [thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.ministers_mentioned) j
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 20`,
-          args: [thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.party_mentioned) j
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.states_mentioned) j
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [thirtyDaysAgo]
         }
       ]);
 
@@ -269,14 +284,8 @@ export const serverApi = {
         if (r.civic_flag_category) top_flag_categories[String(r.civic_flag_category)] = Number(r.c);
       });
 
-      const top_ministers_30d: Record<string, number> = {};
-      ministerRes.rows.forEach(r => { top_ministers_30d[String(r.val)] = Number(r.c); });
-
-      const top_parties_30d: Record<string, number> = {};
-      partyRes.rows.forEach(r => { top_parties_30d[String(r.val)] = Number(r.c); });
-
-      const top_states_30d: Record<string, number> = {};
-      stateRes.rows.forEach(r => { top_states_30d[String(r.val)] = Number(r.c); });
+      const heavyStats = await getHeavyOverviewStats();
+      const { top_ministers_30d, top_parties_30d, top_states_30d } = heavyStats;
 
       return {
         generated_at: new Date().toISOString(),
@@ -308,7 +317,7 @@ export const serverApi = {
   },
 
   async manifest(): Promise<Manifest | null> {
-    return cached('manifest', async () => {
+    return cached('manifest', ['entities'], async () => {
       const entities = await loadEntities();
       if (!entities) return null;
 
@@ -367,12 +376,23 @@ export const serverApi = {
   },
 
   async party(name: string): Promise<PartyData | null> {
-    return cached(`party:${name.toLowerCase()}`, async () => {
+    return cached(`party:${name.toLowerCase()}`, ['entities', 'promises', 'articles'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
 
-      const partyInfo = (entities.india?.parties || []).find((p: any) => p.name.toLowerCase() === name.toLowerCase() || p.aliases?.some((a: string) => a.toLowerCase() === name.toLowerCase()));
+      const searchSlug = slugify(name);
+      const partyInfo = (entities.india?.parties || []).find((p: any) => {
+        const pName = p.name.toLowerCase();
+        return pName === name.toLowerCase() ||
+               partySlugify(p.name) === searchSlug ||
+               slugify(p.name) === searchSlug ||
+               p.aliases?.some((a: string) => 
+                 a.toLowerCase() === name.toLowerCase() || 
+                 slugify(a) === searchSlug || 
+                 partySlugify(a) === searchSlug
+               );
+      });
       if (!partyInfo) return null;
 
       const partyName = partyInfo.name;
@@ -460,14 +480,20 @@ export const serverApi = {
   },
 
   async minister(name: string): Promise<Minister | null> {
-    return cached(`minister:${name.toLowerCase()}`, async () => {
+    return cached(`minister:${name.toLowerCase()}`, ['entities', 'promises', 'articles'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
 
       const allMinisters = getAllPoliticians(entities);
+      const searchSlug = slugify(name);
 
-      const ministerInfo = allMinisters.find((m: any) => m.name.toLowerCase() === name.toLowerCase() || m.aliases?.some((a: string) => a.toLowerCase() === name.toLowerCase()));
+      const ministerInfo = allMinisters.find((m: any) => {
+        const mName = m.name.toLowerCase();
+        return mName === name.toLowerCase() ||
+               slugify(m.name) === searchSlug ||
+               m.aliases?.some((a: string) => a.toLowerCase() === name.toLowerCase() || slugify(a) === searchSlug);
+      });
       if (!ministerInfo) return null;
 
       const canonicalName = ministerInfo.name;
@@ -549,11 +575,17 @@ export const serverApi = {
   },
 
   async state(name: string): Promise<StateData | null> {
-    return cached(`state:${name.toLowerCase()}`, async () => {
+    return cached(`state:${name.toLowerCase()}`, ['entities', 'articles'], async () => {
       const entities = await loadEntities();
       if (!entities) return null;
 
-      const stateInfo = (entities.india?.states || []).find((s: any) => s.name.toLowerCase() === name.toLowerCase() || s.aliases?.some((a: string) => a.toLowerCase() === name.toLowerCase()));
+      const searchSlug = slugify(name);
+      const stateInfo = (entities.india?.states || []).find((s: any) => {
+        const sName = s.name.toLowerCase();
+        return sName === name.toLowerCase() ||
+               slugify(s.name) === searchSlug ||
+               s.aliases?.some((a: string) => a.toLowerCase() === name.toLowerCase() || slugify(a) === searchSlug);
+      });
       if (!stateInfo) return null;
 
       const stateName = stateInfo.name;
@@ -624,8 +656,22 @@ export const serverApi = {
   },
 
   async topic(name: string): Promise<TopicData | null> {
-    return cached(`topic:${name.toLowerCase()}`, async () => {
+    return cached(`topic:${name.toLowerCase()}`, ['articles'], async () => {
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
+      const canonicalTags = [
+        'corruption_scam', 'crime_violence', 'economy', 'education', 'farmer_agriculture', 
+        'foreign_policy', 'health', 'infrastructure', 'political_gaffe', 'protest_opposition', 'rape_sexual_crime'
+      ];
+      const searchSlug = slugify(name);
+      const canonical = canonicalTags.find(tag => {
+        const sluggedTag = tag.toLowerCase();
+        return sluggedTag === searchSlug || 
+               sluggedTag.replace(/_/g, '') === searchSlug.replace(/_/g, '') ||
+               sluggedTag.includes(searchSlug) || 
+               searchSlug.includes(sluggedTag) ||
+               (searchSlug.startsWith('corruption') && tag === 'corruption_scam') ||
+               (searchSlug.startsWith('farmer') && tag === 'farmer_agriculture');
+      }) ?? name;
 
       const [articlesRes, totalRes, last30dRes] = await db.batch([
         {
@@ -635,17 +681,17 @@ export const serverApi = {
                 LEFT JOIN sources s ON a.source_id = s.id
                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.topic_tags LIKE ?
                 ORDER BY a.scraped_at DESC LIMIT 100`,
-          args: [`%${name}%`]
+          args: [`%${canonical}%`]
         },
         {
           sql: `SELECT COUNT(*) as c FROM articles 
                 WHERE status IN ('classified', 'entity_processed', 'processed') AND topic_tags LIKE ?`,
-          args: [`%${name}%`]
+          args: [`%${canonical}%`]
         },
         {
           sql: `SELECT COUNT(*) as c FROM articles 
                 WHERE status IN ('classified', 'entity_processed', 'processed') AND topic_tags LIKE ? AND scraped_at >= ?`,
-          args: [`%${name}%`, thirtyDaysAgo]
+          args: [`%${canonical}%`, thirtyDaysAgo]
         }
       ]);
 
@@ -666,7 +712,7 @@ export const serverApi = {
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
-    return cached(`category:${name.toLowerCase()}`, async () => {
+    return cached(`category:${name.toLowerCase()}`, ['articles'], async () => {
       const articlesRes = await db.execute({
         sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -682,7 +728,7 @@ export const serverApi = {
   },
 
   async promises(): Promise<PromisesSummary | null> {
-    return cached('promises', async () => {
+    return cached('promises', ['promises'], async () => {
       const registry = await loadPromisesRegistry();
       if (!registry) return null;
 
@@ -761,7 +807,7 @@ export const serverApi = {
   },
 
   async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
-    return cached(`feed:${type.toLowerCase()}`, async () => {
+    return cached(`feed:${type.toLowerCase()}`, ['articles'], async () => {
       let query = `
         SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -813,7 +859,7 @@ export const serverApi = {
   },
 
   async articleContent(id: number): Promise<{ content?: string } | null> {
-    return cached(`articleContent:${id}`, async () => {
+    return cached(`articleContent:${id}`, ['articles'], async () => {
       const res = await db.execute({
         sql: 'SELECT content FROM articles WHERE id = ?',
         args: [id]
@@ -825,7 +871,7 @@ export const serverApi = {
   },
 
   async search(query: string): Promise<{ articles?: Article[] } | null> {
-    return cached(`search:${query.toLowerCase()}`, async () => {
+    return cached(`search:${query.toLowerCase()}`, ['articles'], async () => {
       const q = `%${query.toLowerCase()}%`;
       const res = await db.execute({
         sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
@@ -849,16 +895,17 @@ export const serverApi = {
   },
 
   async source(name: string): Promise<{ articles?: Article[] } | null> {
-    return cached(`source:${name.toLowerCase()}`, async () => {
+    return cached(`source:${name.toLowerCase()}`, ['articles'], async () => {
+      const cleanName = name.replace(/_/g, ' ');
       const res = await db.execute({
         sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
               FROM articles a
               LEFT JOIN sources s ON a.source_id = s.id
               WHERE a.status IN ('classified', 'entity_processed', 'processed')
-                AND LOWER(s.name) = LOWER(?)
+                AND (LOWER(s.name) = LOWER(?) OR LOWER(s.name) = LOWER(?) OR REPLACE(LOWER(s.name), ' ', '_') = LOWER(?))
               ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [name]
+        args: [name, cleanName, name]
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
       return { articles };
@@ -866,7 +913,7 @@ export const serverApi = {
   },
 
   async politicians(): Promise<any[] | null> {
-    return cached('politicians', async () => {
+    return cached('politicians', ['entities'], async () => {
       const entities = await loadEntities();
       if (!entities) return null;
       const list = getAllPoliticians(entities);

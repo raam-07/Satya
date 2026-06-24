@@ -6,7 +6,7 @@ import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 import { slugify } from '@/lib/utils'
 
-export const revalidate = 300
+export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const party = await api.party(params.name).catch(() => null)

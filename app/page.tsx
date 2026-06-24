@@ -1,13 +1,9 @@
 import { api } from '@/lib/api'
 import { HomeClient } from '@/components/HomeClient'
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams?: { tab?: string }
-}) {
-  const initialTab = searchParams?.tab ?? 'all'
+export const revalidate = false
 
+export default async function HomePage() {
   const [overview, feedData] = await Promise.all([
     api.indiaOverview(),
     api.feed('all'),
@@ -19,7 +15,6 @@ export default async function HomePage({
     <HomeClient
       overview={overview}
       initialArticles={initialArticles}
-      initialTab={initialTab}
     />
   )
 }

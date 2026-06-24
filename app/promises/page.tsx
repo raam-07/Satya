@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import { StatusBadge, PBadge } from '@/components/SrcTag'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 export const metadata: Metadata = {
   title: "Tracked Political Promises — Status & Evidence | SatyaDheesh",

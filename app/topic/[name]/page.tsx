@@ -4,7 +4,7 @@ import { ArticleList } from '@/components/ArticleList'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 // Display labels matching ArticleModal's TOPIC_LABELS
 const TOPIC_LABELS: Record<string, string> = {

@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import { NetasClient } from '@/components/NetasClient'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 export const metadata: Metadata = {
   title: "Indian Political Leaders & Neta Profiles | SatyaDheesh",

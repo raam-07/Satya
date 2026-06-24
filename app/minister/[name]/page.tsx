@@ -6,7 +6,7 @@ import { renderMarkdown, slugify } from '@/lib/utils'
 import { JsonLd, makeBreadcrumbJsonLd, checkUrlResolves } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 
-export const revalidate = 300
+export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const minister = await api.minister(params.name).catch(() => null)
