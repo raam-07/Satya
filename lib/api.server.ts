@@ -176,13 +176,13 @@ async function getHeavyOverviewStats() {
       {
         sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.party_mentioned) j
               WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+              GROUP BY j.value ORDER BY c DESC`,
         args: [thirtyDaysAgo]
       },
       {
         sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.states_mentioned) j
               WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+              GROUP BY j.value ORDER BY c DESC`,
         args: [thirtyDaysAgo]
       }
     ]);
