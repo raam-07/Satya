@@ -172,7 +172,6 @@ export function clearCache() {
     revalidateTag('promises');
     revalidateTag('entities');
     revalidatePath('/', 'layout');
-    setLastRevalidatedAt(Date.now());
   } catch (e) {
     console.error('Failed to revalidate in clearCache:', e);
   }
