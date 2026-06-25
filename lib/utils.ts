@@ -27,7 +27,9 @@ export function cleanTitle(title: string): string {
 export function formatDate(scraped_at?: string): string {
   if (!scraped_at) return ''
   try {
-    const d = new Date(scraped_at.replace(' ', 'T'))
+    const normalized = scraped_at.replace(' ', 'T')
+    const finalStr = normalized.endsWith('Z') ? normalized : normalized + 'Z'
+    const d = new Date(finalStr)
     const now = new Date()
     const diffMs = now.getTime() - d.getTime()
     // Future timestamp (clock skew / timezone) — show the date, not 'Just now'
