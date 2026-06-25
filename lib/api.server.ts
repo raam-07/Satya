@@ -3,7 +3,7 @@ import path from 'path';
 import zlib from 'zlib';
 import { db } from './db';
 import { slugify, partySlugify } from './utils';
-import { unstable_cache, revalidateTag } from 'next/cache';
+import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
 import type { 
   Article, 
   IndiaOverview, 
@@ -158,6 +158,7 @@ export function clearCache() {
     revalidateTag('articles');
     revalidateTag('promises');
     revalidateTag('entities');
+    revalidatePath('/', 'layout');
   } catch (e) {
     console.error('Failed to revalidate in clearCache:', e);
   }

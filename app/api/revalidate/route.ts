@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,11 +16,13 @@ export async function POST(req: NextRequest) {
   try {
     if (tag) {
       revalidateTag(tag);
+      revalidatePath('/', 'layout');
       return NextResponse.json({ revalidated: true, tag, now: Date.now() });
     } else {
       revalidateTag('articles');
       revalidateTag('promises');
       revalidateTag('entities');
+      revalidatePath('/', 'layout');
       return NextResponse.json({ revalidated: true, tags: ['articles', 'promises', 'entities'], now: Date.now() });
     }
   } catch (err: any) {
