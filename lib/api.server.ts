@@ -152,6 +152,19 @@ async function cached<T>(key: string, tags: string[], fn: () => Promise<T>): Pro
   }
 }
 
+const globalRef = global as any;
+if (typeof globalRef.lastRevalidatedAt === 'undefined') {
+  globalRef.lastRevalidatedAt = 0;
+}
+
+export function getLastRevalidatedAt(): number {
+  return globalRef.lastRevalidatedAt;
+}
+
+export function setLastRevalidatedAt(val: number) {
+  globalRef.lastRevalidatedAt = val;
+}
+
 export function clearCache() {
   inflight.clear();
   try {
@@ -159,6 +172,7 @@ export function clearCache() {
     revalidateTag('promises');
     revalidateTag('entities');
     revalidatePath('/', 'layout');
+    setLastRevalidatedAt(Date.now());
   } catch (e) {
     console.error('Failed to revalidate in clearCache:', e);
   }
