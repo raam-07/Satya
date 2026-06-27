@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import './globals.css'
 import { Shell } from '@/components/Shell'
@@ -6,6 +6,13 @@ import { ManifestProvider } from '@/lib/ManifestContext'
 import { ToastProvider } from '@/lib/ToastContext'
 
 import { JsonLd } from '@/components/JsonLd'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://satyadheesh.in'),
