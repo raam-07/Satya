@@ -43,9 +43,7 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
   const pathname = usePathname()
 
   const isActive = (href: string) =>
-    href === '/'
-      ? pathname === '/'
-      : pathname.startsWith(href)
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   return (
     <nav
@@ -53,7 +51,6 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
       style={{ borderColor: 'var(--border-md)' }}
     >
       <div className="flex items-end h-14">
-        {/* Left 2 tabs */}
         {LEFT_TABS.map(tab => (
           <Link
             key={tab.href}
@@ -82,7 +79,6 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
           </button>
         </div>
 
-        {/* Right 2 tabs */}
         {RIGHT_TABS.map(tab => (
           <Link
             key={tab.href}
