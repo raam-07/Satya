@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 import { slugify, partySlugify } from '@/lib/utils'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-export const revalidate = false
+export const revalidate = 60
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const party = await api.party(params.name).catch(() => null)

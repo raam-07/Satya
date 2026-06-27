@@ -404,7 +404,11 @@ export const serverApi = {
       const searchSlug = slugify(name);
       const partyInfo = (entities.india?.parties || []).find((p: any) => {
         const pName = p.name.toLowerCase();
+        const pFullName = (p.full_name || '').toLowerCase();
         return pName === name.toLowerCase() ||
+               pFullName === name.toLowerCase() ||
+               slugify(p.full_name || '') === searchSlug ||
+               partySlugify(p.full_name || '') === searchSlug ||
                partySlugify(p.name) === searchSlug ||
                slugify(p.name) === searchSlug ||
                p.aliases?.some((a: string) => 

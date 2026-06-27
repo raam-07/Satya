@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import { slugify } from '@/lib/utils'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-export const revalidate = false
+export const revalidate = 60
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const sourceName = decodeURIComponent(params.name)
