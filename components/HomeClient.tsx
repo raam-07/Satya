@@ -44,7 +44,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
       feedCache.current.clear()
       setLoading(true)
       try {
-        const res = await api.feed(activeTab)
+        const res = await api.feed(activeTab, true)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
         setArticles(list)

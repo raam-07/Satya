@@ -226,11 +226,16 @@ export interface Manifest {
 }
 
 // ── Client Fetch Helper ──────────────────────────────────────────────────────
-async function fetchClientJSON<T>(type: string, param: string = ''): Promise<T | null> {
+async function fetchClientJSON<T>(type: string, param: string = '', forceRefresh: boolean = false): Promise<T | null> {
   try {
     // Determine absolute base URL if on server context (safeguard)
     const base = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000') : '';
-    const res = await fetch(`${base}/api/data?type=${type}&param=${encodeURIComponent(param)}`, {
+    let url = `${base}/api/data?type=${type}&param=${encodeURIComponent(param)}`;
+    if (forceRefresh) {
+      url += `&_=${Date.now()}`;
+    }
+    const res = await fetch(url, {
+      cache: forceRefresh ? 'no-store' : 'default',
       next: { revalidate: 60 }
     });
     if (!res.ok) return null;
@@ -242,12 +247,12 @@ async function fetchClientJSON<T>(type: string, param: string = ''): Promise<T |
 
 // ── Hybrid API Wrapper (Sever direct connection, Client route proxy) ──
 export const api = {
-  async indiaOverview(): Promise<IndiaOverview | null> {
+  async indiaOverview(forceRefresh: boolean = false): Promise<IndiaOverview | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.indiaOverview();
     }
-    return fetchClientJSON<IndiaOverview>('indiaOverview');
+    return fetchClientJSON<IndiaOverview>('indiaOverview', '', forceRefresh);
   },
 
   async manifest(): Promise<Manifest | null> {
@@ -306,12 +311,12 @@ export const api = {
     return fetchClientJSON<TopicData>('topic', name);
   },
 
-  async promises(): Promise<PromisesSummary | null> {
+  async promises(forceRefresh: boolean = false): Promise<PromisesSummary | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.promises();
     }
-    return fetchClientJSON<PromisesSummary>('promises');
+    return fetchClientJSON<PromisesSummary>('promises', '', forceRefresh);
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
@@ -322,12 +327,12 @@ export const api = {
     return fetchClientJSON<{ articles?: Article[] }>('category', name);
   },
 
-  async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+  async feed(type: string, forceRefresh: boolean = false): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.feed(type);
     }
-    return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type);
+    return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type, forceRefresh);
   },
 
   async articleContent(id: number): Promise<{ content?: string } | null> {
