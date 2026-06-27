@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { cleanTitle, formatDate, categoryLabel } from '@/lib/utils'
+import { cleanTitle, formatDate, categoryLabel, renderMarkdown } from '@/lib/utils'
 import { PBadge, SentimentDot, TappableMinister, TappableState } from '@/components/SrcTag'
 
 export const revalidate = false
@@ -123,6 +123,13 @@ export default async function NewsArticlePage({ params }: PageProps) {
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Summary */}
+          {article.rephrased_article && (
+            <p className="text-[14px] leading-relaxed border-l-2 pl-4 mb-5 font-sans" style={{ color: 'var(--text2)', borderColor: 'var(--accent)' }}>
+              {renderMarkdown(article.rephrased_article)}
+            </p>
           )}
 
           {/* Framing statement */}
