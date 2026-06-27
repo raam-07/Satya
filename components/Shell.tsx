@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
