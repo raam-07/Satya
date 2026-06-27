@@ -80,6 +80,8 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
       if (el.scrollTop === 0) {
         touchStartY.current = e.touches[0].clientY
         isPulling.current = true
+      } else {
+        isPulling.current = false
       }
     }
 
@@ -88,14 +90,15 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
       const currentY = e.touches[0].clientY
       const deltaY = currentY - touchStartY.current
 
-      if (deltaY > 0) {
-        // Resistance model for natural pull feel
-        const distance = Math.min(80, Math.pow(deltaY, 0.75))
+      if (deltaY > 5) {
+        // Deliberate pull down: apply resistance
+        const distance = Math.min(80, Math.pow(deltaY - 5, 0.75))
         setPullDistance(distance)
         if (e.cancelable) {
           e.preventDefault()
         }
-      } else {
+      } else if (deltaY < -5) {
+        // User is scrolling down the feed: disable pull gesture tracking
         isPulling.current = false
         setPullDistance(0)
       }
@@ -163,7 +166,7 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
         <div className="flex-shrink-0">
           <Masthead />
         </div>
-        <main className="flex-1 overflow-hidden relative bg-[var(--bg)] pb-16">
+        <main className="flex-1 overflow-hidden relative bg-[var(--bg)]">
           {/* Pull-to-refresh spinner overlay (shows only when pulling the feed) */}
           {activeTab === 'feed' && isTabPage && (
             <div 
@@ -198,10 +201,10 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
               {/* Tab: FEED */}
               <div 
                 ref={feedScrollRef}
-                className={`absolute inset-0 overflow-y-auto transition-all duration-200 ease-out ${
+                className={`absolute inset-0 overflow-y-auto pb-20 transition-all duration-200 ease-out ${
                   activeTab === 'feed' 
-                    ? 'opacity-100 translate-y-0 pointer-events-auto visible' 
-                    : 'opacity-0 translate-y-1 pointer-events-none invisible'
+                    ? 'opacity-100 translate-y-0 pointer-events-auto visible z-10' 
+                    : 'opacity-0 translate-y-1 pointer-events-none invisible z-0'
                 }`}
               >
                 {initialTabPath === '/' ? children : (visitedTabs['feed'] && <LazyFeed />)}
@@ -209,10 +212,10 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
 
               {/* Tab: NETAS */}
               <div 
-                className={`absolute inset-0 overflow-y-auto transition-all duration-200 ease-out ${
+                className={`absolute inset-0 overflow-y-auto pb-20 transition-all duration-200 ease-out ${
                   activeTab === 'netas' 
-                    ? 'opacity-100 translate-y-0 pointer-events-auto visible' 
-                    : 'opacity-0 translate-y-1 pointer-events-none invisible'
+                    ? 'opacity-100 translate-y-0 pointer-events-auto visible z-10' 
+                    : 'opacity-0 translate-y-1 pointer-events-none invisible z-0'
                 }`}
               >
                 {initialTabPath === '/netas' ? children : (visitedTabs['netas'] && <LazyNetas />)}
@@ -220,10 +223,10 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
 
               {/* Tab: VAADE */}
               <div 
-                className={`absolute inset-0 overflow-y-auto transition-all duration-200 ease-out ${
+                className={`absolute inset-0 overflow-y-auto pb-20 transition-all duration-200 ease-out ${
                   activeTab === 'vaade' 
-                    ? 'opacity-100 translate-y-0 pointer-events-auto visible' 
-                    : 'opacity-0 translate-y-1 pointer-events-none invisible'
+                    ? 'opacity-100 translate-y-0 pointer-events-auto visible z-10' 
+                    : 'opacity-0 translate-y-1 pointer-events-none invisible z-0'
                 }`}
               >
                 {initialTabPath === '/vaade' ? children : (visitedTabs['vaade'] && <LazyVaade />)}
@@ -231,17 +234,17 @@ export function Shell({ children, lastUpdated }: { children: React.ReactNode; la
 
               {/* Tab: DATA */}
               <div 
-                className={`absolute inset-0 overflow-y-auto transition-all duration-200 ease-out ${
+                className={`absolute inset-0 overflow-y-auto pb-20 transition-all duration-200 ease-out ${
                   activeTab === 'data' 
-                    ? 'opacity-100 translate-y-0 pointer-events-auto visible' 
-                    : 'opacity-0 translate-y-1 pointer-events-none invisible'
+                    ? 'opacity-100 translate-y-0 pointer-events-auto visible z-10' 
+                    : 'opacity-0 translate-y-1 pointer-events-none invisible z-0'
                 }`}
               >
                 {initialTabPath === '/data' ? children : (visitedTabs['data'] && <LazyData />)}
               </div>
             </>
           ) : (
-            <div className="absolute inset-0 overflow-y-auto">
+            <div className="absolute inset-0 overflow-y-auto pb-20">
               {children}
             </div>
           )}
