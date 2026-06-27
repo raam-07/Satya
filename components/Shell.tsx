@@ -6,6 +6,7 @@ import { SearchOverlay } from './SearchOverlay'
 import { ArticleModal } from './ArticleModal'
 import { Toast } from './Toast'
 import { SplashScreen } from './SplashScreen'
+import { PullToRefresh } from './PullToRefresh'
 import type { Article } from '@/lib/api'
 
 export function Shell({ children }: { children: React.ReactNode; lastUpdated?: string }) {
@@ -31,6 +32,8 @@ export function Shell({ children }: { children: React.ReactNode; lastUpdated?: s
       {showSplash && (
         <SplashScreen onComplete={() => setShowSplash(false)} />
       )}
+
+      <PullToRefresh />
 
       <div className="flex flex-col min-h-screen">
         <Masthead />

@@ -1,8 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { BackButton } from './BackButton'
+
+const TAB_PATHS = ['/', '/netas', '/vaade', '/data']
 
 export function Masthead() {
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
+  const isDetailPage = !TAB_PATHS.includes(pathname)
 
   useEffect(() => {
     setMounted(true)
@@ -46,7 +52,11 @@ export function Masthead() {
 
       {/* Status bar */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <span className="text-[9.5px] font-mono text-[var(--text2)] flex-1 truncate">{today}</span>
+        {isDetailPage ? (
+          <div className="flex-1"><BackButton /></div>
+        ) : (
+          <span className="text-[9.5px] font-mono text-[var(--text2)] flex-1 truncate">{today}</span>
+        )}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <div className="w-[5px] h-[5px] rounded-full" style={{ background: 'var(--green)', boxShadow: '0 0 4px #1b7050' }} />
           <span className="text-[9px] font-mono font-semibold tracking-widest" style={{ color: 'var(--green)' }}>LIVE</span>
