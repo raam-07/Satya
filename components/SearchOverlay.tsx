@@ -1,13 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useDeferredValue } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage } from '@/lib/utils'
 import { PBadge, SentimentDot } from './SrcTag'
-
-// Module-level cache — the multi-MB feed is downloaded once per session,
-// not on every overlay open.
-let cachedFeed: Article[] | null = null
 
 interface SearchOverlayProps {
   onClose: () => void
@@ -16,54 +12,53 @@ interface SearchOverlayProps {
 
 export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
   const [query, setQuery] = useState('')
-  const [allArticles, setAllArticles] = useState<Article[]>([])
-  const [loading, setLoading] = useState(true)
+  const [results, setResults] = useState<Article[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searched, setSearched] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const seq = useRef(0)
 
-  // Fetch feed on mount, focus input
+  // Lock scroll + focus input
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     inputRef.current?.focus()
-    if (cachedFeed) {
-      setAllArticles(cachedFeed)
-      setLoading(false)
-    } else {
-      api.feed('all').then(res => {
-        cachedFeed = res?.articles ?? []
-        setAllArticles(cachedFeed)
-        setLoading(false)
-      }).catch(() => setLoading(false))
-    }
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Escape key
+  // Escape closes
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  // Deferred value keeps typing responsive while filtering 10k articles
-  const deferredQuery = useDeferredValue(query)
-  const q = deferredQuery.toLowerCase().trim()
-  const results = q.length < 2 ? [] : allArticles.filter(a =>
-    (a.title && typeof a.title === 'string' && a.title.toLowerCase().includes(q)) ||
-    (a.rephrased_article && typeof a.rephrased_article === 'string' && a.rephrased_article.toLowerCase().includes(q)) ||
-    (a.category && typeof a.category === 'string' && a.category.toLowerCase().includes(q)) ||
-    (a.party_mentioned && Array.isArray(a.party_mentioned) && a.party_mentioned.some(p => p && typeof p === 'string' && p.toLowerCase().includes(q))) ||
-    (a.ministers_mentioned && Array.isArray(a.ministers_mentioned) && a.ministers_mentioned.some(m => m && typeof m === 'string' && m.toLowerCase().includes(q))) ||
-    (a.states_mentioned && Array.isArray(a.states_mentioned) && a.states_mentioned.some(s => s && typeof s === 'string' && s.toLowerCase().includes(q))) ||
-    (a.topic_tags && Array.isArray(a.topic_tags) && a.topic_tags.some(t => t && typeof t === 'string' && t.toLowerCase().includes(q)))
-  ).slice(0, 40)
+  // Debounced full-database search (covers ALL news, not just the recent feed).
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) {
+      setResults([])
+      setSearched(false)
+      setLoading(false)
+      return
+    }
+    const mySeq = ++seq.current
+    setLoading(true)
+    const t = setTimeout(async () => {
+      const res = await api.search(q)
+      if (mySeq !== seq.current) return // a newer query superseded this one
+      setResults(res?.articles ?? [])
+      setLoading(false)
+      setSearched(true)
+    }, 280)
+    return () => clearTimeout(t)
+  }, [query])
+
+  const q = query.trim()
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: 'var(--bg)' }}>
       {/* Search bar */}
       <div className="flex-shrink-0 border-b" style={{ borderColor: 'var(--border-md)' }}>
-        {/* Accent stripe */}
         <div className="h-[2px]" style={{ background: 'var(--accent)' }} />
         <div className="flex items-center gap-3 px-4 py-3">
           <span className="text-[var(--accent)] text-[18px] font-black font-serif tracking-[0.15em]">S</span>
@@ -73,9 +68,12 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search ministers, parties, topics, states..."
+            placeholder="Search all news — leaders, parties, topics, states..."
             className="flex-1 bg-transparent text-[16px] text-[var(--text1)] placeholder:text-[var(--text3)] outline-none font-sans"
           />
+          {loading && (
+            <div className="w-4 h-4 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin flex-shrink-0" />
+          )}
           <button
             onClick={onClose}
             className="flex-shrink-0 text-[var(--text3)] hover:text-[var(--text1)] transition-colors text-[22px] leading-none w-8 h-8 flex items-center justify-center"
@@ -87,31 +85,33 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto">
-        {loading && (
-          <div className="p-8 text-center">
-            <span className="text-[12px] font-mono text-[var(--text3)] animate-pulse">Loading index...</span>
-          </div>
-        )}
-
-        {!loading && q.length < 2 && (
+        {q.length < 2 && (
           <div className="p-8 text-center">
             <p className="text-[13px] font-mono text-[var(--text3)]">Type at least 2 characters to search</p>
             <p className="text-[11px] font-mono text-[var(--text3)] mt-2 opacity-60">
-              {allArticles.length.toLocaleString()} articles indexed
+              Searches the entire archive — every classified article.
             </p>
           </div>
         )}
 
-        {!loading && q.length >= 2 && results.length === 0 && (
+        {q.length >= 2 && loading && results.length === 0 && (
           <div className="p-8 text-center">
-            <p className="text-[13px] font-mono text-[var(--text3)]">No results for "{query}"</p>
+            <span className="text-[12px] font-mono text-[var(--text3)] animate-pulse">Searching…</span>
+          </div>
+        )}
+
+        {q.length >= 2 && !loading && searched && results.length === 0 && (
+          <div className="p-8 text-center">
+            <p className="text-[13px] font-mono text-[var(--text3)]">No results for &ldquo;{query}&rdquo;</p>
           </div>
         )}
 
         {results.length > 0 && (
           <div>
             <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-              <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest">{results.length} result{results.length !== 1 ? 's' : ''}</span>
+              <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest">
+                {results.length}{results.length === 80 ? '+' : ''} result{results.length !== 1 ? 's' : ''}
+              </span>
             </div>
             {results.map((article, i) => {
               const show = hasImage(article.image_url)

@@ -910,22 +910,48 @@ export const serverApi = {
 
   async search(query: string): Promise<{ articles?: Article[] } | null> {
     return cached(`search:${query.toLowerCase()}`, ['articles'], async () => {
-      const q = `%${query.toLowerCase()}%`;
+      const raw = query.trim().toLowerCase();
+      if (raw.length < 2) return { articles: [] };
+
+      // Multi-word: every token must appear in at least one field (AND across
+      // tokens, OR across fields) — so "modi farmers" finds articles about both.
+      const tokens = raw.split(/\s+/).filter(Boolean).slice(0, 6);
+      const fields = [
+        'a.title', 'a.rephrased_article', 'a.party_mentioned', 'a.ministers_mentioned',
+        'a.states_mentioned', 'a.cities_mentioned', 'a.topic_tags', 'a.category', 's.name'
+      ];
+
+      const whereArgs: any[] = [];
+      const tokenClauses = tokens.map(tok => {
+        const like = `%${tok}%`;
+        const ors = fields.map(f => { whereArgs.push(like); return `LOWER(${f}) LIKE ?`; }).join(' OR ');
+        return `(${ors})`;
+      }).join(' AND ');
+
+      // Relevance: title match ranks highest, then entity (minister/party/state)
+      // match, then everything else — ranked on the first token; recency breaks ties.
+      const t0 = `%${tokens[0]}%`;
+      const relevanceArgs = [t0, t0, t0, t0];
+
+      // Limit search to the last 30 days of scraped news.
+      const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
+
       const res = await db.execute({
         sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
-                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason,
+                     (CASE
+                        WHEN LOWER(a.title) LIKE ? THEN 3
+                        WHEN LOWER(a.ministers_mentioned) LIKE ? OR LOWER(a.party_mentioned) LIKE ? OR LOWER(a.states_mentioned) LIKE ? THEN 2
+                        ELSE 1
+                      END) AS relevance
               FROM articles a
               LEFT JOIN sources s ON a.source_id = s.id
               WHERE a.status IN ('classified', 'entity_processed', 'processed')
-                AND (
-                  LOWER(a.title) LIKE ? OR
-                  LOWER(a.category) LIKE ? OR
-                  LOWER(a.party_mentioned) LIKE ? OR
-                  LOWER(a.ministers_mentioned) LIKE ? OR
-                  LOWER(a.topic_tags) LIKE ?
-                )
-              ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [q, q, q, q, q]
+                AND a.scraped_at >= ?
+                AND ${tokenClauses}
+              ORDER BY relevance DESC, a.scraped_at DESC
+              LIMIT 80`,
+        args: [...relevanceArgs, thirtyDaysAgo, ...whereArgs]
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
       return { articles };
