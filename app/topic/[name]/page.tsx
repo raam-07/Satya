@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import { slugify } from '@/lib/utils'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-export const revalidate = 3600
+export const revalidate = false
 
 // Display labels matching ArticleModal's TOPIC_LABELS
 const TOPIC_LABELS: Record<string, string> = {

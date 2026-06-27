@@ -7,7 +7,7 @@ import { JsonLd, makeBreadcrumbJsonLd, checkUrlResolves } from '@/components/Jso
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-export const revalidate = 3600
+export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const minister = await api.minister(params.name).catch(() => null)

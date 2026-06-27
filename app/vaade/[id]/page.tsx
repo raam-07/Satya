@@ -8,7 +8,7 @@ import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-export const revalidate = 3600
+export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const promiseId = decodeURIComponent(params.id)
