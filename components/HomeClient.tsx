@@ -38,6 +38,27 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     }
   }, [])
 
+  // Listen for custom pull-to-refresh event
+  useEffect(() => {
+    const handleRefresh = async () => {
+      feedCache.current.clear()
+      setLoading(true)
+      try {
+        const res = await api.feed(activeTab)
+        const list = res?.articles ?? []
+        feedCache.current.set(activeTab, list)
+        setArticles(list)
+        setVisibleCount(20)
+      } catch (err) {
+        console.error('Error refreshing feed:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    window.addEventListener('satya-refresh-feed', handleRefresh)
+    return () => window.removeEventListener('satya-refresh-feed', handleRefresh)
+  }, [activeTab])
+
   useEffect(() => {
     // Check cache first — no network call needed
     const cached = feedCache.current.get(activeTab)

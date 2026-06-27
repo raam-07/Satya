@@ -1,6 +1,4 @@
 'use client'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 
 // Left side: FEED + NETAS | Center: S | Right: VAADE + DATA
 const LEFT_TABS = [
@@ -37,15 +35,18 @@ const RIGHT_TABS = [
 
 interface BottomNavProps {
   onSearchOpen: () => void
+  activeTab: string
+  onTabChange: (tab: string) => void
 }
 
-export function BottomNav({ onSearchOpen }: BottomNavProps) {
-  const pathname = usePathname()
-
-  const isActive = (href: string) =>
-    href === '/'
-      ? pathname === '/'
-      : pathname.startsWith(href)
+export function BottomNav({ onSearchOpen, activeTab, onTabChange }: BottomNavProps) {
+  const isActive = (href: string) => {
+    if (href === '/') return activeTab === 'feed'
+    if (href === '/netas') return activeTab === 'netas'
+    if (href === '/vaade') return activeTab === 'vaade'
+    if (href === '/data') return activeTab === 'data'
+    return false
+  }
 
   return (
     <nav
@@ -55,15 +56,19 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
       <div className="flex items-end h-14">
         {/* Left 2 tabs */}
         {LEFT_TABS.map(tab => (
-          <Link
+          <a
             key={tab.href}
             href={tab.href}
+            onClick={(e) => {
+              e.preventDefault()
+              onTabChange(tab.label.toLowerCase())
+            }}
             className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors"
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
             {tab.icon}
             <span className="text-[8px] font-mono tracking-wider">{tab.label}</span>
-          </Link>
+          </a>
         ))}
 
         {/* Center S button — dark, elevated */}
@@ -84,15 +89,19 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
 
         {/* Right 2 tabs */}
         {RIGHT_TABS.map(tab => (
-          <Link
+          <a
             key={tab.href}
             href={tab.href}
+            onClick={(e) => {
+              e.preventDefault()
+              onTabChange(tab.label.toLowerCase())
+            }}
             className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors"
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
             {tab.icon}
             <span className="text-[8px] font-mono tracking-wider">{tab.label}</span>
-          </Link>
+          </a>
         ))}
       </div>
     </nav>
