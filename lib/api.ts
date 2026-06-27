@@ -266,6 +266,14 @@ export const api = {
     return fetchClientJSON<any[]>('politicians');
   },
 
+  async article(id: number): Promise<Article | null> {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.article(id);
+    }
+    return fetchClientJSON<Article>('article', String(id));
+  },
+
   async party(name: string): Promise<PartyData | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
@@ -338,11 +346,11 @@ export const api = {
     return fetchClientJSON<{ articles?: Article[] }>('search', query);
   },
 
-  async source(name: string): Promise<{ articles?: Article[] } | null> {
+  async source(name: string): Promise<{ source?: string; articles?: Article[] } | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
       return serverApi.source(name);
     }
-    return fetchClientJSON<{ articles?: Article[] }>('source', name);
+    return fetchClientJSON<{ source?: string; articles?: Article[] }>('source', name);
   }
 };

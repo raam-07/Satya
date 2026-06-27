@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { api } from '@/lib/api'
+import { slugify, partySlugify } from '@/lib/slug'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://satyadheesh.in'
@@ -47,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const politicians = await api.politicians()
     if (politicians) {
       politicians.forEach(m => {
-        const slug = m.name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '')
+        const slug = slugify(m.name || '')
         const lastModStr = m.criminal_last_updated || '2026-06-18'
         dynamicRoutes.push({
           url: `${baseUrl}/minister/${slug}`,
@@ -63,8 +64,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const endpoints = manifest?.endpoints as any
     if (endpoints?.parties) {
       Object.keys(endpoints.parties).forEach(slug => {
+        const canonical = partySlugify(slug)
         dynamicRoutes.push({
-          url: `${baseUrl}/party/${slug}`,
+          url: `${baseUrl}/party/${canonical}`,
           lastModified: latestArticleDate,
           changeFrequency: 'weekly' as const,
           priority: 0.6,

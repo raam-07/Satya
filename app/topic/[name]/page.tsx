@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { ArticleList } from '@/components/ArticleList'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
+import { slugify } from '@/lib/utils'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
@@ -22,7 +24,18 @@ const TOPIC_LABELS: Record<string, string> = {
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const slug = decodeURIComponent(params.name)
-  const displayName = TOPIC_LABELS[slug] ?? slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const topicData = await api.topic(slug).catch(() => null)
+  if (!topicData) {
+    return {
+      title: 'Not Found | SatyaDheesh',
+      robots: {
+        index: false,
+      }
+    }
+  }
+
+  const canonicalSlug = slugify(topicData.topic || '')
+  const displayName = TOPIC_LABELS[canonicalSlug] ?? (topicData.topic || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
   const title = `${displayName} — political news & promises | SatyaDheesh`
   const description = `Explore recent articles, news, and political promises related to ${displayName} in India on SatyaDheesh. Sourced and verified fact checks.`
@@ -31,12 +44,12 @@ export async function generateMetadata({ params }: { params: { name: string } })
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/topic/${params.name}`,
+      canonical: `https://satyadheesh.in/topic/${canonicalSlug}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/topic/${params.name}`,
+      url: `https://satyadheesh.in/topic/${canonicalSlug}`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -51,27 +64,36 @@ export default async function TopicPage({ params }: { params: { name: string } }
 
   // Fetch the specific topic JSON first (fast and lightweight)
   const topicData = await api.topic(slug).catch(() => null)
-  let mergedArticles = topicData?.recent_articles ?? []
+  if (!topicData) {
+    notFound()
+  }
+
+  const canonicalSlug = slugify(topicData.topic || '')
+  if (decodeURIComponent(params.name) !== canonicalSlug) {
+    permanentRedirect(`/topic/${canonicalSlug}`)
+  }
+
+  let mergedArticles = topicData.recent_articles ?? []
 
   // If the topic JSON does not exist or has no articles, fetch feed as a fallback
   if (mergedArticles.length === 0) {
     const feedData = await api.feed('all')
     mergedArticles = (feedData?.articles ?? []).filter(
-      a => a.topic_tags?.some(t => t === slug || (t && typeof t === 'string' && t.toLowerCase() === slug.toLowerCase()))
+      a => a.topic_tags?.some(t => t === canonicalSlug || (t && typeof t === 'string' && t.toLowerCase() === canonicalSlug.toLowerCase()))
     )
   }
 
   const displayName =
-    TOPIC_LABELS[slug] ??
-    (topicData?.topic ?? slug).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    TOPIC_LABELS[canonicalSlug] ??
+    (topicData.topic || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
   const totalCount =
-    topicData?.stats?.total_articles ??
-    (topicData?.stats?.articles_last_30d ?? mergedArticles.length)
+    topicData.stats?.total_articles ??
+    (topicData.stats?.articles_last_30d ?? mergedArticles.length)
 
   const breadcrumbData = makeBreadcrumbJsonLd([
     { name: 'Home', item: 'https://satyadheesh.in/' },
-    { name: displayName, item: `https://satyadheesh.in/topic/${params.name}` }
+    { name: displayName, item: `https://satyadheesh.in/topic/${canonicalSlug}` }
   ])
 
   return (

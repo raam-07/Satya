@@ -3,25 +3,39 @@ import Link from 'next/link'
 import { ArticleList } from '@/components/ArticleList'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
+import { slugify } from '@/lib/utils'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const sourceName = decodeURIComponent(params.name)
+  const sourceData = await api.source(sourceName).catch(() => null)
+  if (!sourceData) {
+    return {
+      title: 'Not Found | SatyaDheesh',
+      robots: {
+        index: false,
+      }
+    }
+  }
 
-  const title = `${sourceName} — articles & verified coverage | SatyaDheesh`
-  const description = `Explore verified articles, fact checks, and source coverage published by ${sourceName} on SatyaDheesh.`
+  const canonicalName = sourceData.source || sourceName
+  const canonicalSlug = slugify(canonicalName)
+
+  const title = `${canonicalName} — articles & verified coverage | SatyaDheesh`
+  const description = `Explore verified articles, fact checks, and source coverage published by ${canonicalName} on SatyaDheesh.`
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/source/${params.name}`,
+      canonical: `https://satyadheesh.in/source/${canonicalSlug}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/source/${params.name}`,
+      url: `https://satyadheesh.in/source/${canonicalSlug}`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -36,11 +50,21 @@ export default async function SourcePage({ params }: { params: { name: string } 
 
   // Fetch articles directly from the database using the source resolver
   const sourceData = await api.source(sourceName)
-  const articles = sourceData?.articles ?? []
+  if (!sourceData) {
+    notFound()
+  }
+
+  const canonicalName = sourceData.source || sourceName
+  const canonicalSlug = slugify(canonicalName)
+  if (decodeURIComponent(params.name) !== canonicalSlug) {
+    permanentRedirect(`/source/${canonicalSlug}`)
+  }
+
+  const articles = sourceData.articles ?? []
 
   const breadcrumbData = makeBreadcrumbJsonLd([
     { name: 'Home', item: 'https://satyadheesh.in/' },
-    { name: sourceName, item: `https://satyadheesh.in/source/${params.name}` }
+    { name: canonicalName, item: `https://satyadheesh.in/source/${canonicalSlug}` }
   ])
 
   return (
@@ -58,7 +82,7 @@ export default async function SourcePage({ params }: { params: { name: string } 
         <div className="mt-2">
           <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Source</span>
           <h1 className="text-[22px] md:text-[26px] font-black font-serif mt-1" style={{ color: 'var(--text1)' }}>
-            {sourceName}
+            {canonicalName}
           </h1>
           <p className="text-[12px] mt-1" style={{ color: 'var(--text2)' }}>
             {articles.length} article{articles.length !== 1 ? 's' : ''} in current feed
@@ -68,7 +92,7 @@ export default async function SourcePage({ params }: { params: { name: string } 
 
       <ArticleList
         articles={articles}
-        emptyMessage={`No articles from ${sourceName} in the current feed`}
+        emptyMessage={`No articles from ${canonicalName} in the current feed`}
       />
     </div>
   )

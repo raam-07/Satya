@@ -120,7 +120,12 @@ function mapRowToArticle(row: any): Article {
     civic_flag: row.civic_flag === 1,
     civic_flag_score: row.civic_flag_score || undefined,
     civic_flag_category: row.civic_flag_category || undefined,
-    civic_flag_reason: row.civic_flag_reason || undefined
+    civic_flag_reason: row.civic_flag_reason || undefined,
+    url_status: row.url_status || undefined,
+    archived_url: row.archived_url || undefined,
+    archive_source: row.archive_source || undefined,
+    search_fallback_url: row.search_fallback_url || undefined,
+    supporting_quote: row.supporting_quote || undefined
   };
 }
 
@@ -347,12 +352,7 @@ export const serverApi = {
 
       const partiesEndpoints: Record<string, string> = {};
       partiesList.forEach((p: any) => {
-        const s = p.name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '');
-        const PARTY_SLUG_ALIASES: Record<string, string> = {
-          congress: 'inc',
-          trinamool: 'tmc',
-        };
-        const slug = PARTY_SLUG_ALIASES[s] ?? s;
+        const slug = partySlugify(p.name);
         partiesEndpoints[slug] = `party_${slug}.json`;
       });
 
@@ -702,7 +702,9 @@ export const serverApi = {
                searchSlug.includes(sluggedTag) ||
                (searchSlug.startsWith('corruption') && tag === 'corruption_scam') ||
                (searchSlug.startsWith('farmer') && tag === 'farmer_agriculture');
-      }) ?? name;
+      });
+
+      if (!canonical) return null;
 
       const [articlesRes, totalRes, last30dRes] = await db.batch([
         {
@@ -732,7 +734,7 @@ export const serverApi = {
 
       return {
         generated_at: new Date().toISOString(),
-        topic: name,
+        topic: canonical,
         stats: {
           total_articles,
           articles_last_30d
@@ -926,21 +928,30 @@ export const serverApi = {
     });
   },
 
-  async source(name: string): Promise<{ articles?: Article[] } | null> {
+  async source(name: string): Promise<{ source?: string; articles?: Article[] } | null> {
     return cached(`source:${name.toLowerCase()}`, ['articles'], async () => {
-      const cleanName = name.replace(/_/g, ' ');
+      // 1. Fetch all sources and match by slugified name in JS
+      const sourcesCheck = await db.execute("SELECT id, name FROM sources");
+      const matchedSource = sourcesCheck.rows.find(
+        (s: any) => slugify(String(s.name)) === slugify(name)
+      );
+      if (!matchedSource) return null;
+
+      const canonicalName = String(matchedSource.name);
+
+      // 2. Fetch recent articles from this source using source_id
       const res = await db.execute({
         sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
               FROM articles a
               LEFT JOIN sources s ON a.source_id = s.id
               WHERE a.status IN ('classified', 'entity_processed', 'processed')
-                AND (LOWER(s.name) = LOWER(?) OR LOWER(s.name) = LOWER(?) OR REPLACE(LOWER(s.name), ' ', '_') = LOWER(?))
+                AND a.source_id = ?
               ORDER BY a.scraped_at DESC LIMIT 100`,
-        args: [name, cleanName, name]
+        args: [Number(matchedSource.id)]
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
-      return { articles };
+      return { source: canonicalName, articles };
     });
   },
 
@@ -957,6 +968,46 @@ export const serverApi = {
         party_verified: m.party_verified,
         criminal_last_updated: m.criminal_last_updated
       }));
+    });
+  },
+
+  async article(id: number): Promise<Article | null> {
+    return cached(`article:${id}`, ['articles', 'promises'], async () => {
+      const res = await db.execute({
+        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
+                     a.rephrased_article, a.content,
+                     a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+              FROM articles a
+              LEFT JOIN sources s ON a.source_id = s.id
+              WHERE a.id = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
+        args: [id]
+      });
+      if (!res.rows.length) return null;
+      const art = mapRowToArticle(res.rows[0]);
+
+      // Backfill durability fields from the promises registry if matched by URL
+      try {
+        const promises = await loadPromisesRegistry();
+        if (promises?.promises) {
+          for (const p of promises.promises) {
+            const matchedEvidence = (p.evidence_articles || []).find(
+              (e: any) => e.url === art.url || (art.url && e.url && e.url.toLowerCase() === art.url.toLowerCase())
+            );
+            if (matchedEvidence) {
+              art.supporting_quote = matchedEvidence.supporting_quote || matchedEvidence.quote || undefined;
+              art.archived_url = matchedEvidence.archived_url || undefined;
+              art.archive_source = matchedEvidence.archive_source || undefined;
+              art.url_status = matchedEvidence.url_status || undefined;
+              art.search_fallback_url = matchedEvidence.search_fallback_url || undefined;
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load promises registry for article metadata:", e);
+      }
+
+      return art;
     });
   }
 };

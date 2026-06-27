@@ -1,22 +1,6 @@
 import React from 'react'
 
-// Slug generator — MUST match the aggregator's Python slugify():
-// lowercase, spaces → _, dots removed, all other non [a-z0-9_] stripped.
-// 'M.K. Stalin' → 'mk_stalin', 'S. Jaishankar' → 's_jaishankar'
-export function slugify(name: string): string {
-  return name.toLowerCase().replace(/ /g, '_').replace(/\./g, '').replace(/[^a-z0-9_]/g, '')
-}
-
-// Party aliases whose dashboard lives under a different canonical slug
-const PARTY_SLUG_ALIASES: Record<string, string> = {
-  congress: 'inc',
-  trinamool: 'tmc',
-}
-
-export function partySlugify(party: string): string {
-  const s = slugify(party)
-  return PARTY_SLUG_ALIASES[s] ?? s
-}
+export { slugify, partySlugify } from './slug'
 
 // Strip " - Source Name" from end of titles
 export function cleanTitle(title: string): string {

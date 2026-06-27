@@ -5,26 +5,37 @@ import Link from 'next/link'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import { slugify } from '@/lib/utils'
 import type { Metadata } from 'next'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const state = await api.state(params.name).catch(() => null)
-  const stateName = state?.state || params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  if (!state) {
+    return {
+      title: 'Not Found | SatyaDheesh',
+      robots: {
+        index: false,
+      }
+    }
+  }
+
+  const stateName = state.state || params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const canonicalSlug = slugify(stateName)
 
   const title = `${stateName} — local issues, CM & accountability | SatyaDheesh`
-  const description = `Track governance, local issues, and political news for ${stateName}. Chief Minister: ${state?.cm || 'N/A'}. Capital: ${state?.capital || 'N/A'}.`
+  const description = `Track governance, local issues, and political news for ${stateName}. Chief Minister: ${state.cm || 'N/A'}. Capital: ${state.capital || 'N/A'}.`
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/state/${params.name}`,
+      canonical: `https://satyadheesh.in/state/${canonicalSlug}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/state/${params.name}`,
+      url: `https://satyadheesh.in/state/${canonicalSlug}`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -38,7 +49,12 @@ export default async function StatePage({ params }: { params: { name: string } }
   const state = await api.state(params.name)
 
   if (!state) {
-    return <div className="p-12 text-center"><p className="text-[var(--text3)] font-mono text-[13px]">State not found: {params.name}</p></div>
+    notFound()
+  }
+
+  const canonicalSlug = slugify(state.state || '')
+  if (decodeURIComponent(params.name) !== canonicalSlug) {
+    permanentRedirect(`/state/${canonicalSlug}`)
   }
 
   const topTopics = Object.entries(state.top_topics_30d ?? {}).sort(([, a], [, b]) => b - a)
@@ -46,7 +62,7 @@ export default async function StatePage({ params }: { params: { name: string } }
 
   const breadcrumbData = makeBreadcrumbJsonLd([
     { name: 'Home', item: 'https://satyadheesh.in/' },
-    { name: state.state || 'State', item: `https://satyadheesh.in/state/${params.name}` }
+    { name: state.state || 'State', item: `https://satyadheesh.in/state/${canonicalSlug}` }
   ])
 
   return (

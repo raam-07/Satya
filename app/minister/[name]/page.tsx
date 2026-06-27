@@ -5,42 +5,47 @@ import { ArticleList } from '@/components/ArticleList'
 import { renderMarkdown, slugify } from '@/lib/utils'
 import { JsonLd, makeBreadcrumbJsonLd, checkUrlResolves } from '@/components/JsonLd'
 import type { Metadata } from 'next'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const minister = await api.minister(params.name).catch(() => null)
-  const displayName = params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-  const name = minister?.name ?? displayName
+  if (!minister) {
+    return {
+      title: 'Not Found | SatyaDheesh',
+      robots: {
+        index: false,
+      }
+    }
+  }
 
-  const promises = minister?.promises ?? []
+  const name = minister.name || ''
+  const canonicalSlug = slugify(name)
+  const promises = minister.promises ?? []
   const kept = promises.filter(p => p.status === 'kept').length
   const broken = promises.filter(p => p.status === 'broken').length
   const ongoing = promises.filter(p => p.status === 'ongoing').length
 
-  const roleParty = minister
-    ? [minister.role, minister.party].filter(Boolean).join(', ')
-    : 'Political Leader'
+  const roleParty = [minister.role, minister.party].filter(Boolean).join(', ') || 'Political Leader'
 
   const title = `${name} — promises kept, broken & pending | SatyaDheesh`
-  const description = minister
-    ? `Track the political promise record of ${name} (${roleParty}) on SatyaDheesh: ${kept} kept, ${broken} broken, and ${ongoing} pending.`
-    : `Track political promises, kept or broken, and verification record of ${name} on SatyaDheesh.`
+  const description = `Track the political promise record of ${name} (${roleParty}) on SatyaDheesh: ${kept} kept, ${broken} broken, and ${ongoing} pending.`
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/minister/${params.name}`,
+      canonical: `https://satyadheesh.in/minister/${canonicalSlug}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/minister/${params.name}`,
+      url: `https://satyadheesh.in/minister/${canonicalSlug}`,
       type: 'profile',
       images: [
         {
-          url: `https://satyadheesh.in/minister/${params.name}/opengraph-image`,
+          url: `https://satyadheesh.in/minister/${canonicalSlug}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: `${name} promise scorecard`,
@@ -51,51 +56,55 @@ export async function generateMetadata({ params }: { params: { name: string } })
       card: 'summary_large_image',
       title,
       description,
-      images: [`https://satyadheesh.in/minister/${params.name}/opengraph-image`],
+      images: [`https://satyadheesh.in/minister/${canonicalSlug}/opengraph-image`],
     }
   }
 }
 
 export default async function MinisterPage({ params }: { params: { name: string } }) {
-  const displayName = params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-
-  // Fetch the specific minister profile first (fast and lightweight)
   const minister = await api.minister(params.name)
-  let articles = minister?.recent_articles ?? []
+  if (!minister) {
+    notFound()
+  }
 
-  // If the minister profile does not exist or has no articles, fetch feed as a fallback
+  const canonicalSlug = slugify(minister.name || '')
+  if (decodeURIComponent(params.name) !== canonicalSlug) {
+    permanentRedirect(`/minister/${canonicalSlug}`)
+  }
+
+  let articles = minister.recent_articles ?? []
+
+  // If the minister profile has no articles, fetch feed as a fallback
   if (articles.length === 0) {
     const feedData = await api.feed('all')
     articles = (feedData?.articles ?? []).filter(a =>
       a.ministers_mentioned?.some(m =>
-        m && typeof m === 'string' && m.toLowerCase().includes(params.name.replace(/_/g, ' ').toLowerCase())
+        m && typeof m === 'string' && m.toLowerCase().includes(minister.name!.toLowerCase())
       )
     )
   }
 
   // One-line intro from API or fallback
-  const intro = minister
-    ? [minister.role, minister.ministry, minister.party && `${minister.party}`]
-        .filter(Boolean).join(' · ')
-    : null
+  const intro = [minister.role, minister.ministry, minister.party && `${minister.party}`]
+    .filter(Boolean).join(' · ') || null
 
-  const name = minister?.name ?? displayName
-  const promises = minister?.promises ?? []
+  const name = minister.name || ''
+  const promises = minister.promises ?? []
   const kept = promises.filter(p => p.status === 'kept').length
   const broken = promises.filter(p => p.status === 'broken').length
   const ongoing = promises.filter(p => p.status === 'ongoing').length
 
   // Wikipedia validation HEAD check
-  const isWikiResolves = minister?.wikipedia ? await checkUrlResolves(minister.wikipedia) : false
+  const isWikiResolves = minister.wikipedia ? await checkUrlResolves(minister.wikipedia) : false
   const sameAs: string[] = []
-  if (isWikiResolves && minister?.wikipedia) {
+  if (isWikiResolves && minister.wikipedia) {
     sameAs.push(minister.wikipedia)
   }
 
   const breadcrumbData = makeBreadcrumbJsonLd([
     { name: 'Home', item: 'https://satyadheesh.in/' },
     { name: 'Netas', item: 'https://satyadheesh.in/netas' },
-    { name: name, item: `https://satyadheesh.in/minister/${params.name}` }
+    { name: name, item: `https://satyadheesh.in/minister/${canonicalSlug}` }
   ])
 
   const personData = {
@@ -311,7 +320,7 @@ export default async function MinisterPage({ params }: { params: { name: string 
       {/* Articles */}
       <ArticleList
         articles={articles}
-        emptyMessage={`No articles found for ${displayName}`}
+        emptyMessage={`No articles found for ${name}`}
       />
     </div>
   )

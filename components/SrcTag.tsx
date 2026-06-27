@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { useManifest } from '@/lib/ManifestContext'
 import { useToast } from '@/lib/ToastContext'
+import { slugify } from '@/lib/utils'
 
 // ── Source tag — tappable ─────────────────────────────────────────────────────
 export function SrcTag({ label }: { label?: string }) {
   if (!label) return null
   return (
     <Link
-      href={`/source/${encodeURIComponent(label)}`}
+      href={`/source/${slugify(label)}`}
       onClick={e => e.stopPropagation()}
       className="text-[10px] font-mono truncate max-w-[200px] inline-block hover:underline"
       style={{ color: 'var(--accent)', opacity: 0.85 }}

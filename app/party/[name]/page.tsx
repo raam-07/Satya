@@ -4,18 +4,28 @@ import { StatusBadge, PBadge } from '@/components/SrcTag'
 import Link from 'next/link'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
-import { slugify } from '@/lib/utils'
+import { slugify, partySlugify } from '@/lib/utils'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const party = await api.party(params.name).catch(() => null)
-  const partyName = party?.full_name || party?.party || params.name.toUpperCase()
-  
+  if (!party) {
+    return {
+      title: 'Not Found | SatyaDheesh',
+      robots: {
+        index: false,
+      }
+    }
+  }
+
+  const canonicalSlug = partySlugify(party.party || '')
+  const partyName = party.full_name || party.party || params.name.toUpperCase()
   const title = `${partyName} — promises & performance | SatyaDheesh`
   
-  let description = `${partyName} (${party?.coalition || ''}) promise tracker and political performance on SatyaDheesh.`
-  if (party?.promises) {
+  let description = `${partyName} (${party.coalition || ''}) promise tracker and political performance on SatyaDheesh.`
+  if (party.promises) {
     const kept = party.promises.filter(p => p.status === 'kept').length
     const broken = party.promises.filter(p => p.status === 'broken').length
     const ongoing = party.promises.filter(p => p.status === 'ongoing').length
@@ -26,12 +36,12 @@ export async function generateMetadata({ params }: { params: { name: string } })
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/party/${params.name}`,
+      canonical: `https://satyadheesh.in/party/${canonicalSlug}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/party/${params.name}`,
+      url: `https://satyadheesh.in/party/${canonicalSlug}`,
     },
     twitter: {
       card: 'summary_large_image',
@@ -45,7 +55,12 @@ export default async function PartyPage({ params }: { params: { name: string } }
   const party = await api.party(params.name)
 
   if (!party) {
-    return <EmptyState message={`Party data not found for "${params.name}"`} />
+    notFound()
+  }
+
+  const canonicalSlug = partySlugify(party.party || '')
+  if (decodeURIComponent(params.name) !== canonicalSlug) {
+    permanentRedirect(`/party/${canonicalSlug}`)
   }
 
   const promises = party.promises ?? []
@@ -56,7 +71,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
 
   const breadcrumbData = makeBreadcrumbJsonLd([
     { name: 'Home', item: 'https://satyadheesh.in/' },
-    { name: party.full_name || party.party || 'Party', item: `https://satyadheesh.in/party/${params.name}` }
+    { name: party.full_name || party.party || 'Party', item: `https://satyadheesh.in/party/${canonicalSlug}` }
   ])
 
   return (

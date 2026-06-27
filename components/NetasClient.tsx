@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { PartyData, IndiaOverview } from '@/lib/api'
-import { slugify } from '@/lib/utils'
+import { slugify, partySlugify } from '@/lib/utils'
 
 const PARTY_CONFIG = [
   { id: 'bjp', name: 'BJP', fullName: 'Bharatiya Janata Party',       accent: '#BF4A07', bg: '#FFF3E0', border: '#FFB74D' },
@@ -141,7 +141,7 @@ export function NetasClient({ partyData, overview, manifestMinisters, manifestSt
               return (
                 <Link
                   key={party.id}
-                  href={`/party/${party.id}`}
+                  href={`/party/${partySlugify(party.name)}`}
                   className="block border rounded-sm p-4 hover:border-[var(--accent)] transition-colors bg-[var(--surface)] group"
                   style={{ borderColor: 'var(--border-md)' }}
                 >

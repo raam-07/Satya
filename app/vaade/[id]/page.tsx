@@ -6,6 +6,7 @@ import type { PoliticalPromise } from '@/lib/api'
 import { renderMarkdown, slugify } from '@/lib/utils'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
@@ -22,7 +23,10 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   if (!promise) {
     return {
-      title: 'Promise Not Found | SatyaDheesh',
+      title: 'Not Found | SatyaDheesh',
+      robots: {
+        index: false,
+      }
     }
   }
 
@@ -30,6 +34,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     ? promise.promise.substring(0, 22) + '...'
     : promise.promise;
 
+  const canonicalId = String(promise.id)
   const title = `"${cleanPromise}" — ${promise.person} | SatyaDheesh`
   let description = `Promise: "${promise.promise}" | Verdict: ${promise.status?.toUpperCase()}. Sourced status of this promise made by ${promise.person}.`
   if (description.length > 155) {
@@ -40,15 +45,15 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/vaade/${params.id}`,
+      canonical: `https://satyadheesh.in/vaade/${canonicalId}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/vaade/${params.id}`,
+      url: `https://satyadheesh.in/vaade/${canonicalId}`,
       images: [
         {
-          url: `https://satyadheesh.in/vaade/${params.id}/opengraph-image`,
+          url: `https://satyadheesh.in/vaade/${canonicalId}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: `Promise from ${promise.person}: ${promise.status}`,
@@ -59,7 +64,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       card: 'summary_large_image',
       title,
       description,
-      images: [`https://satyadheesh.in/vaade/${params.id}/opengraph-image`],
+      images: [`https://satyadheesh.in/vaade/${canonicalId}/opengraph-image`],
     }
   }
 }
@@ -87,24 +92,12 @@ export default async function PromisePage({ params }: { params: { id: string } }
   const promise = allPromises.find(p => String(p.id) === promiseId)
 
   if (!promise) {
-    return (
-      <div className="md:max-w-4xl md:mx-auto">
-        <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
-          <Link href="/vaade" className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'var(--text3)' }}>
-            ← Vaade
-          </Link>
-          <h1 className="text-[22px] font-black font-serif mt-2" style={{ color: 'var(--text1)' }}>Promise not found</h1>
-        </div>
-        <div className="p-12 text-center">
-          <p className="text-[13px] font-mono" style={{ color: 'var(--text3)' }}>
-            Promise #{promiseId} could not be found.
-          </p>
-          <Link href="/vaade" className="text-[11px] font-mono mt-4 block" style={{ color: 'var(--accent)' }}>
-            ← Back to all promises
-          </Link>
-        </div>
-      </div>
-    )
+    notFound()
+  }
+
+  const canonicalId = String(promise.id)
+  if (decodeURIComponent(params.id) !== canonicalId) {
+    permanentRedirect(`/vaade/${canonicalId}`)
   }
 
   const statusColor = STATUS_COLOR[promise.status ?? ''] ?? 'var(--text3)'
@@ -112,7 +105,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
   const breadcrumbData = makeBreadcrumbJsonLd([
     { name: 'Home', item: 'https://satyadheesh.in/' },
     { name: 'Vaade', item: 'https://satyadheesh.in/vaade' },
-    { name: `Promise #${promiseId}`, item: `https://satyadheesh.in/vaade/${params.id}` }
+    { name: `Promise #${canonicalId}`, item: `https://satyadheesh.in/vaade/${canonicalId}` }
   ])
 
   const RATING_MAP: Record<string, number> = {

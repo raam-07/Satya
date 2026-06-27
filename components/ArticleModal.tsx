@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown, slugify, partySlugify } from '@/lib/utils'
 import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from './SrcTag'
+import { useToast } from '@/lib/ToastContext'
 
 // Topic display names per spec
 const TOPIC_LABELS: Record<string, string> = {
@@ -37,9 +38,22 @@ interface ArticleModalProps {
 
 export function ArticleModal({ article, onClose }: ArticleModalProps) {
   const router = useRouter()
+  const { showToast } = useToast()
   const [fullContent, setFullContent] = useState<string | null>(null)
   const [contentLoading, setContentLoading] = useState(false)
   const [contentExpanded, setContentExpanded] = useState(false)
+
+  const handleShare = () => {
+    if (!article?.id) return
+    const shareUrl = `https://satyadheesh.in/news/${article.id}`
+    navigator.clipboard.writeText(shareUrl)
+      .then(() => {
+        showToast('Link copied to clipboard!')
+      })
+      .catch(() => {
+        showToast('Failed to copy link')
+      })
+  }
 
   useEffect(() => {
     if (article) document.body.style.overflow = 'hidden'
@@ -130,13 +144,24 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
             )}
             {displayDate && <span className="text-[10px] font-mono" style={{ color: 'var(--text3)' }}>· {displayDate}</span>}
           </div>
-          <button
-            onClick={onClose}
-            className="text-[22px] leading-none w-8 h-8 flex items-center justify-center transition-colors"
-            style={{ color: 'var(--text3)' }}
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="text-[10px] font-mono tracking-wider uppercase border rounded-[2px] px-2 py-1 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors flex items-center gap-1"
+              style={{ color: 'var(--text3)', borderColor: 'var(--border-md)' }}
+              title="Copy shareable link"
+            >
+              <span>Share</span>
+              <span className="text-[10px]">🔗</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="text-[22px] leading-none w-8 h-8 flex items-center justify-center transition-colors"
+              style={{ color: 'var(--text3)' }}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Scrollable content */}
@@ -235,7 +260,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                 {article.topic_tags.map((tag, i) => (
                   <Link
                     key={i}
-                    href={`/topic/${encodeURIComponent(tag)}`}
+                    href={`/topic/${slugify(tag)}`}
                     onClick={onClose}
                     className="text-[9px] font-mono tracking-widest uppercase border rounded-[2px] px-[6px] py-[2px] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                     style={{ color: 'var(--text3)', borderColor: 'var(--border-md)' }}
@@ -386,7 +411,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                   <DigRow
                     key={`topic-${i}`}
                     label={`More on ${TOPIC_LABELS[tag] ?? tag.replace(/_/g, ' ')}`}
-                    href={`/topic/${encodeURIComponent(tag)}`}
+                    href={`/topic/${slugify(tag)}`}
                     onClose={onClose}
                   />
                 ))}
@@ -395,7 +420,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                 {article.source && (
                   <DigRow
                     label={`More from ${article.source}`}
-                    href={`/source/${encodeURIComponent(article.source)}`}
+                    href={`/source/${slugify(article.source)}`}
                     onClose={onClose}
                   />
                 )}

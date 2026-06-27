@@ -2,6 +2,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { partySlugify } from '@/lib/utils'
+
+const canonicalizeHref = (href: string): string => {
+  if (href.startsWith('/party/')) {
+    const parts = href.split('/')
+    const partyName = parts[parts.length - 1]
+    return `/party/${partySlugify(partyName)}`
+  }
+  return href
+}
 
 const NAV = [
   { label: 'Feed',           href: '/',      icon: '◉' },
@@ -31,7 +41,7 @@ const NAV = [
     icon: '◎',
     children: [
       { label: 'Crime & Violence', href: '/topic/crime_violence' },
-      { label: 'Corruption',       href: '/topic/corruption_scams' },
+      { label: 'Corruption',       href: '/topic/corruption_scam' },
       { label: 'Economy',          href: '/topic/economy' },
     ],
   },
@@ -113,17 +123,20 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               {/* Sub-items */}
               {item.children && isOpen && !collapsed && (
                 <div className="ml-9 border-l border-[var(--border-md)]">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={`block px-3 py-2 text-[11px] transition-colors hover:text-accent ${
-                        pathname === child.href ? 'text-accent font-semibold' : 'text-[var(--text3)]'
-                      }`}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
+                  {item.children.map((child) => {
+                    const canonicalChildHref = canonicalizeHref(child.href)
+                    return (
+                      <Link
+                        key={child.href}
+                        href={canonicalChildHref}
+                        className={`block px-3 py-2 text-[11px] transition-colors hover:text-accent ${
+                          pathname === canonicalChildHref ? 'text-accent font-semibold' : 'text-[var(--text3)]'
+                        }`}
+                      >
+                        {child.label}
+                      </Link>
+                    )
+                  })}
                 </div>
               )}
             </div>
