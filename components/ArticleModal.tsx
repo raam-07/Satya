@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { api, type Article } from '@/lib/api'
@@ -61,11 +61,32 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
     return () => { document.body.style.overflow = '' }
   }, [article])
 
+  // Close on the phone's back gesture / browser Back button: push a history
+  // entry when the modal opens, and close (instead of leaving the page) when
+  // the user goes back.
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    if (!article) return
+    window.history.pushState({ satyaModal: true }, '')
+    const onPop = () => onClose()
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [article, onClose])
+
+  // Single dismiss path: if we pushed a history entry, go back (which fires
+  // popstate -> onClose); otherwise just close.
+  const dismiss = useCallback(() => {
+    if (typeof window !== 'undefined' && (window.history.state as any)?.satyaModal) {
+      window.history.back()
+    } else {
+      onClose()
+    }
+  }, [onClose])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') dismiss() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [dismiss])
 
   // Lazy-load full article content when modal opens
   useEffect(() => {
@@ -112,7 +133,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
     <div
       className="fixed inset-0 z-[200] flex flex-col"
       style={{ background: 'rgba(26,26,26,0.72)', backdropFilter: 'blur(4px)' }}
-      onClick={onClose}
+      onClick={dismiss}
     >
       <div
         className="relative mt-auto md:m-auto w-full md:max-w-2xl md:rounded-sm overflow-hidden flex flex-col"
@@ -124,8 +145,18 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: 'var(--border-md)' }}>
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between px-3 py-3 border-b flex-shrink-0" style={{ borderColor: 'var(--border-md)' }}>
+          <button
+            onClick={dismiss}
+            aria-label="Back"
+            className="flex items-center gap-1 flex-shrink-0 mr-1 -ml-1 px-2 py-1.5 rounded-md text-[11px] font-mono tracking-widest uppercase text-[var(--text2)] hover:text-[var(--accent)] active:bg-[var(--bg-alt)] transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Back
+          </button>
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
             {article.sentiment && <SentimentDot sentiment={article.sentiment} />}
             {article.party_mentioned?.[0] && <PBadge party={article.party_mentioned[0]} />}
             {/* Tappable category → navigates to feed tab */}
@@ -155,7 +186,8 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
               <span className="text-[10px]">🔗</span>
             </button>
             <button
-              onClick={onClose}
+              onClick={dismiss}
+              aria-label="Close"
               className="text-[22px] leading-none w-8 h-8 flex items-center justify-center transition-colors"
               style={{ color: 'var(--text3)' }}
             >
