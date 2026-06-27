@@ -7,7 +7,7 @@ import { slugify } from '@/lib/utils'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-export const revalidate = 60
+export const revalidate = 3600
 
 export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
   const state = await api.state(params.name).catch(() => null)
