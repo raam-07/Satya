@@ -32,7 +32,7 @@ export async function checkUrlResolves(url: string | undefined): Promise<boolean
     const res = await fetch(url, {
       method: 'HEAD',
       headers: {
-        'User-Agent': 'SatyaDheeshBot/1.0 (contact: thesatyadheesh@gmail.com)'
+        'User-Agent': 'SatyaDheeshBot/1.0 (contact: raam541232@gmail.com)'
       },
       next: { revalidate: 86400 } // Cache result for 24 hours
     })

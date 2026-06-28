@@ -102,7 +102,7 @@ export default function AboutPage() {
             <strong>No Editorial Claims:</strong> This platform does not write, edit, or assert independent news claims. All records are derived from third-party verified publishers and are directly linked to their primary source URLs, which remain the sole editorial authority and owner of the content.
           </p>
           <p>
-            <strong>Disputes and Corrections:</strong> We value accountability and accuracy. If you identify a classification error, incorrect promise mapping, or outdated evidence link, please email us directly at <a href="mailto:thesatyadheesh@gmail.com" className="text-[var(--accent)] hover:underline">thesatyadheesh@gmail.com</a> for correction.
+            <strong>Disputes and Corrections:</strong> We value accountability and accuracy. If you identify a classification error, incorrect promise mapping, or outdated evidence link, please email us directly at <a href="mailto:raam541232@gmail.com" className="text-[var(--accent)] hover:underline">raam541232@gmail.com</a> for correction.
           </p>
         </div>
       </section>
@@ -113,7 +113,7 @@ export default function AboutPage() {
         </p>
         <div className="pt-2">
           <a
-            href="mailto:thesatyadheesh@gmail.com"
+            href="mailto:raam541232@gmail.com"
             className="inline-flex items-center justify-center px-5 py-2 border border-[var(--accent)] text-[11px] font-mono tracking-wider text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors duration-200 uppercase rounded-sm"
           >
             Contact Us

@@ -333,7 +333,7 @@ export default async function DataPage() {
                   For feedback, data corrections, or general inquiries:
                 </p>
                 <a
-                  href="mailto:thesatyadheesh@gmail.com"
+                  href="mailto:raam541232@gmail.com"
                   className="inline-flex items-center justify-center px-4 py-1.5 border border-[var(--accent)] text-[10px] font-mono tracking-wider text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors duration-200 uppercase rounded-sm"
                 >
                   Email Us
