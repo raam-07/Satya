@@ -59,7 +59,7 @@ export default async function DataPage() {
           <p className="text-[13px] text-[var(--text2)] mt-1">India by the numbers — sourced, structured, transparent.</p>
         </div>
         <div className="flex-shrink-0">
-          <HardRefreshButton />
+          <HardRefreshButton secret={process.env.REVALIDATE_SECRET} />
         </div>
       </div>
 

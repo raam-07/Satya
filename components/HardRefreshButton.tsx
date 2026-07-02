@@ -5,18 +5,29 @@ import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/ToastContext'
 import { event } from '@/lib/gtag'
 
-export function HardRefreshButton() {
+interface HardRefreshButtonProps {
+  secret?: string
+}
+
+export function HardRefreshButton({ secret }: HardRefreshButtonProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
   const { showToast } = useToast()
 
   const handleRefresh = async () => {
     if (isRefreshing) return
+
+    let activeSecret = secret
+    if (!activeSecret) {
+      activeSecret = prompt('Enter Admin Revalidation Secret to clear server cache:') || undefined
+      if (!activeSecret) return
+    }
+
     setIsRefreshing(true)
     showToast('Clearing server cache...')
     
     try {
-      const res = await fetch(`/api/data?type=refresh&t=${Date.now()}`, {
+      const res = await fetch(`/api/data?type=refresh&secret=${encodeURIComponent(activeSecret)}&t=${Date.now()}`, {
         method: 'GET',
         cache: 'no-store',
       })

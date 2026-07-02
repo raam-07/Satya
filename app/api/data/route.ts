@@ -11,6 +11,11 @@ export async function GET(req: NextRequest) {
   try {
     switch (type) {
       case 'refresh':
+        const secret = searchParams.get('secret');
+        const expectedSecret = process.env.REVALIDATE_SECRET;
+        if (!expectedSecret || secret !== expectedSecret) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const { clearCache } = await import('@/lib/api.server');
         clearCache();
         return NextResponse.json({ success: true });
