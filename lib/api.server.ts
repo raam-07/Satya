@@ -102,6 +102,7 @@ function mapRowToArticle(row: any): Article {
   return {
     id: Number(row.id),
     title: row.title || '',
+    rephrased_title: row.rephrased_title || undefined,
     url: row.url || '',
     source: row.source_name || '',
     image_url: row.image_url || undefined,
@@ -269,7 +270,7 @@ export const serverApi = {
           args: [todayStart]
         },
         {
-          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
+          sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
                 FROM articles a
                 LEFT JOIN sources s ON a.source_id = s.id
@@ -426,7 +427,7 @@ export const serverApi = {
 
       const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
         {
-          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+          sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
                 FROM articles a
                 LEFT JOIN sources s ON a.source_id = s.id
@@ -527,7 +528,7 @@ export const serverApi = {
 
       const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
         {
-          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+          sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
                 FROM articles a
                 LEFT JOIN sources s ON a.source_id = s.id
@@ -630,7 +631,7 @@ export const serverApi = {
 
       const [articlesRes, totalRes, last30dRes, cityRes, topicRes] = await db.batch([
         {
-          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+          sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
                  FROM articles a
                  LEFT JOIN sources s ON a.source_id = s.id
@@ -712,7 +713,7 @@ export const serverApi = {
 
       const [articlesRes, totalRes, last30dRes] = await db.batch([
         {
-          sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+          sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
                 FROM articles a
                 LEFT JOIN sources s ON a.source_id = s.id
@@ -751,7 +752,7 @@ export const serverApi = {
   async category(name: string): Promise<{ articles?: Article[] } | null> {
     return cached(`category:${name.toLowerCase()}`, ['articles'], async () => {
       const articlesRes = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+        sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
               FROM articles a
               LEFT JOIN sources s ON a.source_id = s.id
@@ -847,7 +848,7 @@ export const serverApi = {
   async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     return cached(`feed:${type.toLowerCase()}`, ['articles'], async () => {
       let query = `
-        SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+        SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
         FROM articles a
         LEFT JOIN sources s ON a.source_id = s.id
@@ -917,7 +918,7 @@ export const serverApi = {
       // tokens, OR across fields) — so "modi farmers" finds articles about both.
       const tokens = raw.split(/\s+/).filter(Boolean).slice(0, 6);
       const fields = [
-        'a.title', 'a.rephrased_article', 'a.party_mentioned', 'a.ministers_mentioned',
+        'a.title', 'a.rephrased_title', 'a.rephrased_article', 'a.party_mentioned', 'a.ministers_mentioned',
         'a.states_mentioned', 'a.cities_mentioned', 'a.topic_tags', 'a.category', 's.name'
       ];
 
@@ -937,7 +938,7 @@ export const serverApi = {
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
 
       const res = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+        sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason,
                      (CASE
                         WHEN LOWER(a.title) LIKE ? THEN 3
@@ -971,7 +972,7 @@ export const serverApi = {
 
       // 2. Fetch recent articles from this source using source_id
       const res = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+        sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
               FROM articles a
               LEFT JOIN sources s ON a.source_id = s.id
@@ -1004,7 +1005,7 @@ export const serverApi = {
   async article(id: number): Promise<Article | null> {
     return cached(`article:${id}`, ['articles', 'promises'], async () => {
       const res = await db.execute({
-        sql: `SELECT a.id, a.title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
+        sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
                      a.rephrased_article, a.content,
                      a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
               FROM articles a

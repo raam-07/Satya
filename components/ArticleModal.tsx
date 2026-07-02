@@ -121,7 +121,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
 
   if (!article) return null
 
-  const displayTitle = cleanTitle(article.title ?? '')
+  const displayTitle = cleanTitle(article.rephrased_title ?? article.title ?? '')
   const displayDate  = formatDate(article.scraped_at)
   const displayCat   = categoryLabel(article.category)
   const showImage    = hasImage(article.image_url)
@@ -326,7 +326,18 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
             {/* Source + original link + archive link + search fallback + supporting quote */}
             <div className="pt-4 border-t mb-6 space-y-3" style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                {article.source && <SrcTag label={article.source} />}
+                {article.source && (
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-[var(--text3)]">
+                    {article.rephrased_title && (
+                      <>
+                        <span>Originally:</span>
+                        <span className="italic">"{article.title}"</span>
+                        <span>—</span>
+                      </>
+                    )}
+                    <SrcTag label={article.source} />
+                  </div>
+                )}
                 
                 {article.url && (
                   <div className="text-[10px] font-mono flex items-center gap-1">

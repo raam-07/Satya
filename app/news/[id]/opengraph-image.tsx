@@ -10,7 +10,7 @@ export const contentType = 'image/png'
 export default async function Image({ params }: { params: { id: string } }) {
   const idNum = Number(params.id)
   const article = isNaN(idNum) ? null : await api.article(idNum).catch(() => null)
-  const title = article ? cleanTitle(article.title) : 'News Record Not Found'
+  const title = article ? cleanTitle(article.rephrased_title ?? article.title) : 'News Record Not Found'
   const source = article?.source || 'Verified Source'
   const category = article?.category || 'News'
 

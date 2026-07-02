@@ -2,6 +2,7 @@
 export interface Article {
   id: number
   title: string
+  rephrased_title?: string
   url: string
   source: string
   image_url?: string

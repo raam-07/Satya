@@ -46,7 +46,7 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, variant = 'default', onOpen, clampSummary = true }: ArticleCardProps) {
   const {
-    title, rephrased_article, source,
+    title, rephrased_title, rephrased_article, source,
     image_url, sentiment, party_mentioned,
     category, scraped_at, civic_flag,
     civic_flag_category, civic_flag_reason,
@@ -54,7 +54,7 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
 
 
   const firstParty      = party_mentioned?.[0]
-  const displayTitle    = cleanTitle(title ?? '')
+  const displayTitle    = cleanTitle(rephrased_title ?? title ?? '')
   const displayCategory = categoryLabel(category)
   const displayDate     = formatDate(scraped_at)
   const showImage       = hasImage(image_url)
@@ -136,7 +136,18 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
             </p>
           )}
 
-          {source && <SrcTag label={source} />}
+          {source && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[var(--text3)]">
+              {rephrased_title && (
+                <>
+                  <span>Originally:</span>
+                  <span className="italic">"{title}"</span>
+                  <span>—</span>
+                </>
+              )}
+              <SrcTag label={source} />
+            </div>
+          )}
         </div>
       </button>
     )
@@ -205,7 +216,18 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
           </p>
         )}
 
-        {source && <SrcTag label={source} />}
+        {source && (
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[var(--text3)]">
+            {rephrased_title && (
+              <>
+                <span>Originally:</span>
+                <span className="italic">"{title}"</span>
+                <span>—</span>
+              </>
+            )}
+            <SrcTag label={source} />
+          </div>
+        )}
       </div>
 
       {/* Thumbnail or placeholder */}

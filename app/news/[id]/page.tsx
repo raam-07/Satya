@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const article = await api.article(idNum).catch(() => null)
   if (!article) return { robots: { index: false } }
 
-  const title = `${cleanTitle(article.title)} — SatyaDheesh`
+  const title = `${cleanTitle(article.rephrased_title ?? article.title)} — SatyaDheesh`
   const description = article.supporting_quote || article.title
   const image = article.image_url || `https://satyadheesh.in/news/${article.id}/opengraph-image`
 
@@ -59,7 +59,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
     notFound()
   }
 
-  const displayTitle = cleanTitle(article.title ?? '')
+  const displayTitle = cleanTitle(article.rephrased_title ?? article.title ?? '')
   const displayDate  = formatDate(article.scraped_at)
   const displayCat   = categoryLabel(article.category)
 
@@ -209,14 +209,23 @@ export default async function NewsArticlePage({ params }: PageProps) {
                   article.url_status === 'dead' ? (
                     <span className="line-through text-[var(--text3)]">Original article link is inactive</span>
                   ) : (
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline transition-colors font-bold text-[var(--accent)]"
-                    >
-                      Read full article at {article.source || 'original publisher'} ↗
-                    </a>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {article.rephrased_title && (
+                        <>
+                          <span>Originally:</span>
+                          <span className="italic">"{article.title}"</span>
+                          <span>—</span>
+                        </>
+                      )}
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline transition-colors font-bold text-[var(--accent)]"
+                      >
+                        Read full article at {article.source || 'original publisher'} ↗
+                      </a>
+                    </div>
                   )
                 )}
 
