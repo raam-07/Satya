@@ -873,17 +873,26 @@ export const serverApi = {
         farmers: 'farmer_agriculture'
       };
 
+      const INDIA_FILTER = ` AND (a.category != 'international'
+        OR a.party_mentioned     NOT IN ('[]','')
+        OR a.ministers_mentioned NOT IN ('[]','')
+        OR a.states_mentioned    NOT IN ('[]','')
+        OR a.cities_mentioned    NOT IN ('[]',''))`;
+
       if (type === 'flagged') {
-        query += " AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT 200";
+        query += INDIA_FILTER + " AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT 200";
       } else if (category_map[type]) {
+        if (category_map[type] !== 'international') {
+          query += INDIA_FILTER;
+        }
         query += " AND a.category = ? ORDER BY a.scraped_at DESC LIMIT 200";
         args.push(category_map[type]);
       } else if (topic_map[type]) {
-        query += " AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT 200";
+        query += INDIA_FILTER + " AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT 200";
         args.push(`%${topic_map[type]}%`);
       } else {
         // 'all' feed
-        query += " ORDER BY a.scraped_at DESC LIMIT 200";
+        query += INDIA_FILTER + " ORDER BY a.scraped_at DESC LIMIT 200";
       }
 
       const res = await db.execute({ sql: query, args });
