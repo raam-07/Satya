@@ -60,38 +60,5 @@ export function HardRefreshButton({ secret }: HardRefreshButtonProps) {
     }
   }
 
-  return (
-    <>
-      <button
-        onClick={handleRefresh}
-        disabled={isRefreshing}
-        className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-sm font-mono text-[11px] font-semibold tracking-wider uppercase transition-all duration-200 select-none
-          ${isRefreshing 
-            ? 'bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text3)] cursor-not-allowed' 
-            : 'bg-[var(--surface)] border-[var(--border-md)] text-[var(--text2)] hover:text-[var(--accent)] hover:border-[var(--accent)] active:scale-95 cursor-pointer shadow-sm hover:shadow-md'
-          }`}
-        style={{
-          boxShadow: isRefreshing ? 'none' : '0 1px 2px rgba(0,0,0,0.02)',
-        }}
-      >
-        <span 
-          className={`text-[12px] ${isRefreshing ? 'spin-icon' : ''}`}
-          style={{ display: 'inline-block' }}
-        >
-          ↻
-        </span>
-        {isRefreshing ? 'Refreshing...' : 'Hard Refresh'}
-      </button>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        .spin-icon {
-          animation: spin 0.8s linear infinite;
-        }
-      `}</style>
-    </>
-  )
+  return null;
 }
