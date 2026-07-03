@@ -4,7 +4,7 @@ import { getLastRevalidatedAt, setLastRevalidatedAt } from '@/lib/api.server';
 
 export const dynamic = 'force-dynamic';
 
-const COOLDOWN_MS = 60 * 60 * 1000; // 60 minutes
+const COOLDOWN_MS = 120 * 60 * 1000; // 120 minutes
 
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
