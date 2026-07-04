@@ -402,7 +402,7 @@ export const serverApi = {
   },
 
   async party(name: string): Promise<PartyData | null> {
-    return cached(`party:${name.toLowerCase()}`, ['entities', 'promises'], async () => {
+    return cached(`party:${name.toLowerCase()}`, [], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -510,7 +510,7 @@ export const serverApi = {
   },
 
   async minister(name: string): Promise<Minister | null> {
-    return cached(`minister:${name.toLowerCase()}`, ['entities', 'promises'], async () => {
+    return cached(`minister:${name.toLowerCase()}`, [], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -605,7 +605,7 @@ export const serverApi = {
   },
 
   async state(name: string): Promise<StateData | null> {
-    return cached(`state:${name.toLowerCase()}`, ['entities'], async () => {
+    return cached(`state:${name.toLowerCase()}`, [], async () => {
       const entities = await loadEntities();
       if (!entities) return null;
 
