@@ -430,31 +430,39 @@ export const serverApi = {
       // Fetch articles and stats in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
 
+      const partySlug = partySlugify(partyName);
       const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                FROM articles a
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.party_mentioned LIKE ?
+                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
                 ORDER BY a.scraped_at DESC LIMIT 100`,
-          args: [`%${partyName}%`]
+          args: [partySlug]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ?`,
-          args: [`%${partyName}%`]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
+          args: [partySlug]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ? AND scraped_at >= ?`,
-          args: [`%${partyName}%`, thirtyDaysAgo]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
+          args: [partySlug, thirtyDaysAgo]
         },
         {
-          sql: `SELECT sentiment, COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND party_mentioned LIKE ? AND scraped_at >= ?
-                GROUP BY sentiment`,
-          args: [`%${partyName}%`, thirtyDaysAgo]
+          sql: `SELECT a.sentiment, COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+                GROUP BY a.sentiment`,
+          args: [partySlug, thirtyDaysAgo]
         }
       ]);
 
@@ -531,31 +539,39 @@ export const serverApi = {
       // Fetch articles and stats in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
 
+      const ministerSlug = slugify(canonicalName);
       const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                FROM articles a
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.ministers_mentioned LIKE ?
+                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
                 ORDER BY a.scraped_at DESC LIMIT 100`,
-          args: [`%${canonicalName}%`]
+          args: [ministerSlug]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ?`,
-          args: [`%${canonicalName}%`]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
+          args: [ministerSlug]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ? AND scraped_at >= ?`,
-          args: [`%${canonicalName}%`, thirtyDaysAgo]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
+          args: [ministerSlug, thirtyDaysAgo]
         },
         {
-          sql: `SELECT sentiment, COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND ministers_mentioned LIKE ? AND scraped_at >= ?
-                GROUP BY sentiment`,
-          args: [`%${canonicalName}%`, thirtyDaysAgo]
+          sql: `SELECT a.sentiment, COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+                GROUP BY a.sentiment`,
+          args: [ministerSlug, thirtyDaysAgo]
         }
       ]);
 
@@ -627,9 +643,8 @@ export const serverApi = {
 
       const uniqueSearchTerms = Array.from(new Set(searchTerms));
 
-      const likeClauseA = "(" + uniqueSearchTerms.map(() => "a.states_mentioned LIKE ?").join(" OR ") + ")";
-      const likeClausePlain = "(" + uniqueSearchTerms.map(() => "states_mentioned LIKE ?").join(" OR ") + ")";
-      const likeArgs = uniqueSearchTerms.map(term => `%${term}%`);
+      const stateSlugs = Array.from(new Set(uniqueSearchTerms.map(term => slugify(term))));
+      const placeholders = stateSlugs.map(() => "?").join(", ");
 
       // Fetch articles, counts, and aggregations in a single batch
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
@@ -638,33 +653,42 @@ export const serverApi = {
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                 FROM articles a
-                 LEFT JOIN sources s ON a.source_id = s.id
-                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND ${likeClauseA}
-                 ORDER BY a.scraped_at DESC LIMIT 100`,
-          args: [...likeArgs]
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                LEFT JOIN sources s ON a.source_id = s.id
+                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed')
+                ORDER BY a.scraped_at DESC LIMIT 100`,
+          args: [...stateSlugs]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                 WHERE status IN ('classified', 'entity_processed', 'processed') AND ${likeClausePlain}`,
-          args: [...likeArgs]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed')`,
+          args: [...stateSlugs]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                 WHERE status IN ('classified', 'entity_processed', 'processed') AND ${likeClausePlain} AND scraped_at >= ?`,
-          args: [...likeArgs, thirtyDaysAgo]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
+          args: [...stateSlugs, thirtyDaysAgo]
         },
         {
-          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.cities_mentioned) j
-                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND ${likeClauseA} AND a.scraped_at >= ?
-                 GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [...likeArgs, thirtyDaysAgo]
+          sql: `SELECT j.value as val, COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id, json_each(a.cities_mentioned) j
+                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+          args: [...stateSlugs, thirtyDaysAgo]
         },
         {
-          sql: `SELECT j.value as val, COUNT(*) as c FROM articles a, json_each(a.topic_tags) j
-                 WHERE a.status IN ('classified', 'entity_processed', 'processed') AND ${likeClauseA} AND a.scraped_at >= ?
-                 GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [...likeArgs, thirtyDaysAgo]
+          sql: `SELECT j.value as val, COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id, json_each(a.topic_tags) j
+                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
+                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+          args: [...stateSlugs, thirtyDaysAgo]
         }
       ]);
 
@@ -716,25 +740,31 @@ export const serverApi = {
 
       if (!canonical) return null;
 
+      const topicSlug = slugify(canonical);
       const [articlesRes, totalRes, last30dRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                FROM articles a
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.topic_tags LIKE ?
+                WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
                 ORDER BY a.scraped_at DESC LIMIT 100`,
-          args: [`%${canonical}%`]
+          args: [topicSlug]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND topic_tags LIKE ?`,
-          args: [`%${canonical}%`]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
+          args: [topicSlug]
         },
         {
-          sql: `SELECT COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND topic_tags LIKE ? AND scraped_at >= ?`,
-          args: [`%${canonical}%`, thirtyDaysAgo]
+          sql: `SELECT COUNT(*) as c 
+                FROM article_entities ae
+                JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
+          args: [topicSlug, thirtyDaysAgo]
         }
       ]);
 
