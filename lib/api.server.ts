@@ -133,7 +133,12 @@ function mapRowToArticle(row: any): Article {
 // --- Next.js unstable_cache & In-Memory Request Deduplication ---
 const inflight = new Map<string, Promise<any>>();
 
-async function cached<T>(key: string, tags: string[], fn: () => Promise<T>): Promise<T> {
+async function cached<T>(
+  key: string,
+  tags: string[],
+  fn: () => Promise<T>,
+  options?: { revalidate?: number }
+): Promise<T> {
   const existing = inflight.get(key);
   if (existing) return existing;
 
@@ -143,7 +148,7 @@ async function cached<T>(key: string, tags: string[], fn: () => Promise<T>): Pro
         return fn();
       },
       [key],
-      { tags }
+      { tags, revalidate: options?.revalidate }
     )();
   })();
 
@@ -397,7 +402,7 @@ export const serverApi = {
   },
 
   async party(name: string): Promise<PartyData | null> {
-    return cached(`party:${name.toLowerCase()}`, ['entities', 'promises', 'articles'], async () => {
+    return cached(`party:${name.toLowerCase()}`, ['entities', 'promises'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -501,11 +506,11 @@ export const serverApi = {
         promises: partyPromises,
         recent_articles
       };
-    });
+    }, { revalidate: 86400 });
   },
 
   async minister(name: string): Promise<Minister | null> {
-    return cached(`minister:${name.toLowerCase()}`, ['entities', 'promises', 'articles'], async () => {
+    return cached(`minister:${name.toLowerCase()}`, ['entities', 'promises'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -596,11 +601,11 @@ export const serverApi = {
         promises: ministerPromises,
         recent_articles
       };
-    });
+    }, { revalidate: 86400 });
   },
 
   async state(name: string): Promise<StateData | null> {
-    return cached(`state:${name.toLowerCase()}`, ['entities', 'articles'], async () => {
+    return cached(`state:${name.toLowerCase()}`, ['entities'], async () => {
       const entities = await loadEntities();
       if (!entities) return null;
 
@@ -688,11 +693,11 @@ export const serverApi = {
         top_topics_30d,
         recent_articles
       };
-    });
+    }, { revalidate: 86400 });
   },
 
   async topic(name: string): Promise<TopicData | null> {
-    return cached(`topic:${name.toLowerCase()}`, ['articles'], async () => {
+    return cached(`topic:${name.toLowerCase()}`, [], async () => {
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
       const canonicalTags = [
         'corruption_scam', 'crime_violence', 'economy', 'education', 'farmer_agriculture', 
@@ -746,7 +751,7 @@ export const serverApi = {
         },
         recent_articles
       };
-    });
+    }, { revalidate: 86400 });
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
@@ -969,7 +974,7 @@ export const serverApi = {
   },
 
   async source(name: string): Promise<{ source?: string; articles?: Article[] } | null> {
-    return cached(`source:${name.toLowerCase()}`, ['articles'], async () => {
+    return cached(`source:${name.toLowerCase()}`, [], async () => {
       // 1. Fetch all sources and match by slugified name in JS
       const sourcesCheck = await db.execute("SELECT id, name FROM sources");
       const matchedSource = sourcesCheck.rows.find(
@@ -992,7 +997,7 @@ export const serverApi = {
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
       return { source: canonicalName, articles };
-    });
+    }, { revalidate: 86400 });
   },
 
   async politicians(): Promise<any[] | null> {
