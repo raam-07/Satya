@@ -257,7 +257,7 @@ export const serverApi = {
         catBreakdownRes,
         flagCatsRes
       ] = await db.batch([
-        "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed')",
+        "SELECT (SELECT COUNT(*) FROM articles) - (SELECT COUNT(*) FROM articles WHERE status IN ('scraped', 'rephrased')) as c",
         {
           sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
           args: [sevenDaysAgo]
