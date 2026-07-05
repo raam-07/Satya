@@ -514,7 +514,7 @@ export const serverApi = {
         promises: partyPromises,
         recent_articles
       };
-    }, { revalidate: 86400 });
+    }, { revalidate: 259200 });
   },
 
   async minister(name: string): Promise<Minister | null> {
@@ -617,7 +617,7 @@ export const serverApi = {
         promises: ministerPromises,
         recent_articles
       };
-    }, { revalidate: 86400 });
+    }, { revalidate: 259200 });
   },
 
   async state(name: string): Promise<StateData | null> {
@@ -717,7 +717,7 @@ export const serverApi = {
         top_topics_30d,
         recent_articles
       };
-    }, { revalidate: 86400 });
+    }, { revalidate: 259200 });
   },
 
   async topic(name: string): Promise<TopicData | null> {
@@ -781,7 +781,7 @@ export const serverApi = {
         },
         recent_articles
       };
-    }, { revalidate: 86400 });
+    }, { revalidate: 259200 });
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
@@ -1027,7 +1027,7 @@ export const serverApi = {
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
       return { source: canonicalName, articles };
-    }, { revalidate: 86400 });
+    }, { revalidate: 259200 });
   },
 
   async politicians(): Promise<any[] | null> {
