@@ -275,12 +275,18 @@ export const serverApi = {
           args: [todayStart]
         },
         {
-          sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
-                       a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                FROM articles a
-                LEFT JOIN sources s ON a.source_id = s.id
-                WHERE a.status IN ('classified', 'entity_processed', 'processed') AND a.category IN ('politics', 'economy', 'crime', 'international')
-                ORDER BY a.scraped_at DESC LIMIT 10`,
+          sql: `SELECT * FROM (
+                  SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
+                         a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                  FROM articles a INDEXED BY idx_articles_status_scraped
+                  LEFT JOIN sources s ON a.source_id = s.id
+                  WHERE a.status IN ('classified', 'entity_processed', 'processed')
+                  ORDER BY a.scraped_at DESC
+                  LIMIT 200
+                ) a
+                WHERE a.category IN ('politics', 'economy', 'crime', 'international')
+                ORDER BY a.scraped_at DESC
+                LIMIT 10`,
           args: []
         },
         {
@@ -927,7 +933,24 @@ export const serverApi = {
         args.push(`%${topic_map[type]}%`);
       } else {
         // 'all' feed
-        query += INDIA_FILTER + " ORDER BY a.scraped_at DESC LIMIT 200";
+        query = `
+          SELECT * FROM (
+            SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
+                   a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+            FROM articles a INDEXED BY idx_articles_status_scraped
+            LEFT JOIN sources s ON a.source_id = s.id
+            WHERE a.status IN ('classified', 'entity_processed', 'processed')
+            ORDER BY a.scraped_at DESC
+            LIMIT 1000
+          ) a
+          WHERE (a.category != 'international'
+            OR a.party_mentioned     NOT IN ('[]','')
+            OR a.ministers_mentioned NOT IN ('[]','')
+            OR a.states_mentioned    NOT IN ('[]','')
+            OR a.cities_mentioned    NOT IN ('[]',''))
+          ORDER BY a.scraped_at DESC
+          LIMIT 200
+        `;
       }
 
       const res = await db.execute({ sql: query, args });
