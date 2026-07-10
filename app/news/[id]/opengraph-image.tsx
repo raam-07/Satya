@@ -14,13 +14,13 @@ export default async function Image({ params }: { params: { id: string } }) {
   const source = article?.source || 'Verified Source'
   const category = article?.category || 'News'
 
-  // Fetch fonts dynamically
+  // Load fonts locally
   const [dmSansData, playfairData] = await Promise.all([
-    fetch('https://fonts.gstatic.com/s/dmsans/v15/r05L5VVo-2xqiCDMD-ALk7GF.ttf').then((res) =>
-      res.arrayBuffer()
+    fetch(new URL('../../../public/fonts/DMSans-Regular.ttf', import.meta.url)).then((res) =>
+      res.ok ? res.arrayBuffer() : null
     ).catch(() => null),
-    fetch('https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD7K2_7kVrHy087K3qPJ6mg95179wa1A.ttf').then((res) =>
-      res.arrayBuffer()
+    fetch(new URL('../../../public/fonts/PlayfairDisplay-Bold.ttf', import.meta.url)).then((res) =>
+      res.ok ? res.arrayBuffer() : null
     ).catch(() => null),
   ])
 
