@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { cleanTitle, formatDate, categoryLabel, renderMarkdown } from '@/lib/utils'
 import { PBadge, SentimentDot, TappableMinister, TappableState } from '@/components/SrcTag'
 import { EventStorySoFar } from '@/components/EventStorySoFar'
+import { SummaryMark } from '@/components/BrandMark'
 
 export const revalidate = false
 
@@ -128,9 +129,12 @@ export default async function NewsArticlePage({ params }: PageProps) {
 
           {/* Summary */}
           {article.rephrased_article && (
-            <p className="text-[14px] leading-relaxed border-l-2 pl-4 mb-5 font-sans" style={{ color: 'var(--text2)', borderColor: 'var(--accent)' }}>
-              {renderMarkdown(article.rephrased_article)}
-            </p>
+            <div className="mb-5">
+              <p className="text-[14px] leading-relaxed border-l-2 pl-4 font-sans" style={{ color: 'var(--text2)', borderColor: 'var(--accent)' }}>
+                {renderMarkdown(article.rephrased_article)}
+              </p>
+              <SummaryMark />
+            </div>
           )}
 
           {/* Story so far — event timeline (lazy) */}

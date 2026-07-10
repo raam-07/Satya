@@ -7,6 +7,7 @@ import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown, slugify, partySlugify } from '@/lib/utils'
 import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from './SrcTag'
 import { EventStorySoFar } from './EventStorySoFar'
+import { SummaryMark } from './BrandMark'
 import { useToast } from '@/lib/ToastContext'
 
 // Topic display names per spec
@@ -243,9 +244,12 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
 
             {/* Summary */}
             {article.rephrased_article && (
-              <p className="text-[14px] leading-relaxed border-l-2 pl-4 mb-5" style={{ color: 'var(--text2)', borderColor: 'var(--accent)' }}>
-                {renderMarkdown(article.rephrased_article)}
-              </p>
+              <div className="mb-5">
+                <p className="text-[14px] leading-relaxed border-l-2 pl-4" style={{ color: 'var(--text2)', borderColor: 'var(--accent)' }}>
+                  {renderMarkdown(article.rephrased_article)}
+                </p>
+                <SummaryMark />
+              </div>
             )}
 
             {/* Story so far — event timeline (lazy) */}
