@@ -61,7 +61,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       <div className="border-b border-[var(--border-md)] flex items-center" style={{ height: 56 }}>
         {!collapsed && (
           <Link href="/" className="flex-1 px-4">
-            <div className="font-serif font-black text-[18px] tracking-[0.18em] uppercase text-[var(--text1)] leading-none">
+            <div className="font-display font-black text-[18px] tracking-[0.18em] uppercase text-[var(--text1)] leading-none">
               SatyaDheesh
             </div>
             <div className="text-[9px] tracking-[0.2em] text-[var(--text3)] font-mono uppercase mt-0.5">

@@ -99,7 +99,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
           )}
 
           {/* Title */}
-          <h1 className="text-[24px] md:text-[30px] font-black font-serif leading-tight mb-5 text-[var(--text1)]">
+          <h1 className="text-[24px] md:text-[30px] font-bold font-serif leading-tight mb-5 text-[var(--text1)]">
             {displayTitle}
           </h1>
 
@@ -210,13 +210,6 @@ export default async function NewsArticlePage({ params }: PageProps) {
                     <span className="line-through text-[var(--text3)]">Original article link is inactive</span>
                   ) : (
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {article.rephrased_title && (
-                        <>
-                          <span>Originally:</span>
-                          <span className="italic">"{article.title}"</span>
-                          <span>—</span>
-                        </>
-                      )}
                       <a
                         href={article.url}
                         target="_blank"

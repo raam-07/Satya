@@ -138,13 +138,6 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
 
           {source && (
             <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[var(--text3)]">
-              {rephrased_title && (
-                <>
-                  <span>Originally:</span>
-                  <span className="italic">"{title}"</span>
-                  <span>—</span>
-                </>
-              )}
               <SrcTag label={source} />
             </div>
           )}
@@ -218,13 +211,6 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
 
         {source && (
           <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[var(--text3)]">
-            {rephrased_title && (
-              <>
-                <span>Originally:</span>
-                <span className="italic">"{title}"</span>
-                <span>—</span>
-              </>
-            )}
             <SrcTag label={source} />
           </div>
         )}

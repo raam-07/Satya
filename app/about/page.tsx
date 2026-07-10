@@ -15,8 +15,8 @@ export default function AboutPage() {
     <div className="max-w-3xl mx-auto px-6 py-10">
       {/* Masthead */}
       <div className="border-b-2 border-[var(--accent)] pb-6 mb-8 text-center">
-        <div className="text-[10px] font-mono tracking-[0.3em] text-[var(--text3)] uppercase mb-4">Est. 2024 · Vol. II</div>
-        <h1 className="text-[48px] font-black font-serif tracking-[0.15em] uppercase text-[var(--text1)] leading-none">SatyaDheesh</h1>
+        <div className="text-[10px] font-mono tracking-[0.3em] text-[var(--text3)] uppercase mb-4">Est. Nov 2025 · Vol. I</div>
+        <h1 className="text-[48px] font-black font-display tracking-[0.15em] uppercase text-[var(--text1)] leading-none">SatyaDheesh</h1>
         <div className="text-[20px] font-serif text-accent mt-2">सत्याधीश</div>
         <div className="text-[10px] font-mono tracking-[0.25em] text-[var(--text3)] uppercase mt-4">
           India's Ground Truth Record

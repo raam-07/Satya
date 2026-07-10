@@ -16,7 +16,7 @@ export default function Loading() {
             boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
           }}
         >
-          <span className="font-serif font-black text-[22px] text-white tracking-widest translate-x-[1px]">S</span>
+          <span className="font-display font-black text-[22px] text-white tracking-widest translate-x-[1px]">S</span>
         </div>
 
         {/* Minimal bouncing dots */}

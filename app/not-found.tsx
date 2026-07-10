@@ -16,7 +16,7 @@ export default function NotFound() {
         <div className="text-[10px] font-mono tracking-[0.3em] text-[var(--text3)] uppercase mb-4">
           Error 404
         </div>
-        <h1 className="text-[48px] font-black font-serif tracking-[0.15em] uppercase text-[var(--text1)] leading-none">
+        <h1 className="text-[48px] font-black font-display tracking-[0.15em] uppercase text-[var(--text1)] leading-none">
           Not Found
         </h1>
         <div className="text-[20px] font-serif text-accent mt-2">सत्याधीश</div>

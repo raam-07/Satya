@@ -1,0 +1,735 @@
+﻿2026-07-10T03:39:23.4351328Z Current runner version: '2.335.1'
+2026-07-10T03:39:23.4386476Z ##[group]Runner Image Provisioner
+2026-07-10T03:39:23.4387739Z Hosted Compute Agent
+2026-07-10T03:39:23.4388761Z Version: 20260624.560
+2026-07-10T03:39:23.4389896Z Commit: 925d229a51159bc391ae97e54a2dd1fe20af789d
+2026-07-10T03:39:23.4391387Z Build Date: 2026-06-24T18:26:47Z
+2026-07-10T03:39:23.4392673Z Worker ID: {79170cbb-42a9-43d6-a4aa-9a31bf00b905}
+2026-07-10T03:39:23.4393975Z Azure Region: eastus
+2026-07-10T03:39:23.4394993Z ##[endgroup]
+2026-07-10T03:39:23.4397345Z ##[group]Operating System
+2026-07-10T03:39:23.4398340Z Ubuntu
+2026-07-10T03:39:23.4399346Z 24.04.4
+2026-07-10T03:39:23.4400212Z LTS
+2026-07-10T03:39:23.4401414Z ##[endgroup]
+2026-07-10T03:39:23.4402371Z ##[group]Runner Image
+2026-07-10T03:39:23.4403475Z Image: ubuntu-24.04
+2026-07-10T03:39:23.4404496Z Version: 20260705.232.1
+2026-07-10T03:39:23.4407122Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260705.232/images/ubuntu/Ubuntu2404-Readme.md
+2026-07-10T03:39:23.4409832Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260705.232
+2026-07-10T03:39:23.4411927Z ##[endgroup]
+2026-07-10T03:39:23.4414110Z ##[group]GITHUB_TOKEN Permissions
+2026-07-10T03:39:23.4417110Z Actions: write
+2026-07-10T03:39:23.4418071Z Contents: write
+2026-07-10T03:39:23.4419041Z Issues: write
+2026-07-10T03:39:23.4420088Z Metadata: read
+2026-07-10T03:39:23.4421454Z ##[endgroup]
+2026-07-10T03:39:23.4424468Z Secret source: Actions
+2026-07-10T03:39:23.4426016Z Prepare workflow directory
+2026-07-10T03:39:23.4888814Z Prepare all required actions
+2026-07-10T03:39:23.4944452Z Getting action download info
+2026-07-10T03:39:23.6944240Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-07-10T03:39:23.7796331Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-07-10T03:39:23.9228647Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+2026-07-10T03:39:24.4254003Z Complete job name: process_timeline
+2026-07-10T03:39:24.5168219Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-10T03:39:24.5179317Z ##[group]Run actions/checkout@v4
+2026-07-10T03:39:24.5180872Z with:
+2026-07-10T03:39:24.5181692Z   ref: main
+2026-07-10T03:39:24.5182543Z   repository: raam-07/satya-timeline-service
+2026-07-10T03:39:24.5191954Z   token: ***
+2026-07-10T03:39:24.5192750Z   ssh-strict: true
+2026-07-10T03:39:24.5193543Z   ssh-user: git
+2026-07-10T03:39:24.5194357Z   persist-credentials: true
+2026-07-10T03:39:24.5195257Z   clean: true
+2026-07-10T03:39:24.5196069Z   sparse-checkout-cone-mode: true
+2026-07-10T03:39:24.5197047Z   fetch-depth: 1
+2026-07-10T03:39:24.5197827Z   fetch-tags: false
+2026-07-10T03:39:24.5198683Z   show-progress: true
+2026-07-10T03:39:24.5199554Z   lfs: false
+2026-07-10T03:39:24.5200308Z   submodules: false
+2026-07-10T03:39:24.5201356Z   set-safe-directory: true
+2026-07-10T03:39:24.5202599Z ##[endgroup]
+2026-07-10T03:39:24.6236716Z Syncing repository: raam-07/satya-timeline-service
+2026-07-10T03:39:24.6240905Z ##[group]Getting Git version info
+2026-07-10T03:39:24.6243598Z Working directory is '/home/runner/work/satya-timeline-service/satya-timeline-service'
+2026-07-10T03:39:24.6247310Z [command]/usr/bin/git version
+2026-07-10T03:39:24.6299863Z git version 2.54.0
+2026-07-10T03:39:24.6323742Z ##[endgroup]
+2026-07-10T03:39:24.6340272Z Temporarily overriding HOME='/home/runner/work/_temp/326e300b-05c4-4402-b17b-1c95a4ad2d41' before making global git config changes
+2026-07-10T03:39:24.6345807Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-10T03:39:24.6350662Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/satya-timeline-service/satya-timeline-service
+2026-07-10T03:39:24.6398033Z Deleting the contents of '/home/runner/work/satya-timeline-service/satya-timeline-service'
+2026-07-10T03:39:24.6402258Z ##[group]Initializing the repository
+2026-07-10T03:39:24.6406841Z [command]/usr/bin/git init /home/runner/work/satya-timeline-service/satya-timeline-service
+2026-07-10T03:39:24.6514388Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-07-10T03:39:24.6517576Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-07-10T03:39:24.6520840Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-07-10T03:39:24.6523321Z hint: call:
+2026-07-10T03:39:24.6524507Z hint:
+2026-07-10T03:39:24.6526001Z hint: 	git config --global init.defaultBranch <name>
+2026-07-10T03:39:24.6527891Z hint:
+2026-07-10T03:39:24.6529000Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-07-10T03:39:24.6531446Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-07-10T03:39:24.6533287Z hint:
+2026-07-10T03:39:24.6534615Z hint: 	git branch -m <name>
+2026-07-10T03:39:24.6535995Z hint:
+2026-07-10T03:39:24.6537580Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-07-10T03:39:24.6540354Z Initialized empty Git repository in /home/runner/work/satya-timeline-service/satya-timeline-service/.git/
+2026-07-10T03:39:24.6544839Z [command]/usr/bin/git remote add origin https://github.com/raam-07/satya-timeline-service
+2026-07-10T03:39:24.6597426Z ##[endgroup]
+2026-07-10T03:39:24.6599582Z ##[group]Disabling automatic garbage collection
+2026-07-10T03:39:24.6603429Z [command]/usr/bin/git config --local gc.auto 0
+2026-07-10T03:39:24.6637295Z ##[endgroup]
+2026-07-10T03:39:24.6638813Z ##[group]Setting up auth
+2026-07-10T03:39:24.6644375Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-10T03:39:24.6679978Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-10T03:39:24.7045065Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-10T03:39:24.7085426Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-10T03:39:24.7317330Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-10T03:39:24.7352595Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-10T03:39:24.7574086Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-07-10T03:39:24.7611646Z ##[endgroup]
+2026-07-10T03:39:24.7613050Z ##[group]Fetching the repository
+2026-07-10T03:39:24.7622472Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/heads/main*:refs/remotes/origin/main* +refs/tags/main*:refs/tags/main*
+2026-07-10T03:39:25.0932008Z From https://github.com/raam-07/satya-timeline-service
+2026-07-10T03:39:25.0933148Z  * [new branch]      main       -> origin/main
+2026-07-10T03:39:25.0971951Z ##[endgroup]
+2026-07-10T03:39:25.0972595Z ##[group]Determining the checkout info
+2026-07-10T03:39:25.0979690Z [command]/usr/bin/git branch --list --remote origin/main
+2026-07-10T03:39:25.1014063Z   origin/main
+2026-07-10T03:39:25.1021491Z ##[endgroup]
+2026-07-10T03:39:25.1028358Z [command]/usr/bin/git sparse-checkout disable
+2026-07-10T03:39:25.1091712Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-07-10T03:39:25.1117603Z ##[group]Checking out the ref
+2026-07-10T03:39:25.1124960Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-07-10T03:39:25.1209262Z Switched to a new branch 'main'
+2026-07-10T03:39:25.1213041Z branch 'main' set up to track 'origin/main'.
+2026-07-10T03:39:25.1224732Z ##[endgroup]
+2026-07-10T03:39:25.1264851Z [command]/usr/bin/git log -1 --format=%H
+2026-07-10T03:39:25.1293576Z 6d144086ee6a8605bd1967d6df4fa75bc8fa2a75
+2026-07-10T03:39:25.1549328Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-10T03:39:25.1552017Z ##[group]Run actions/setup-python@v5
+2026-07-10T03:39:25.1552503Z with:
+2026-07-10T03:39:25.1552902Z   python-version: 3.10
+2026-07-10T03:39:25.1553311Z   cache: pip
+2026-07-10T03:39:25.1553698Z   check-latest: false
+2026-07-10T03:39:25.1556647Z   token: ***
+2026-07-10T03:39:25.1557054Z   update-environment: true
+2026-07-10T03:39:25.1557525Z   allow-prereleases: false
+2026-07-10T03:39:25.1557945Z   freethreaded: false
+2026-07-10T03:39:25.1558349Z ##[endgroup]
+2026-07-10T03:39:25.2944744Z ##[group]Installed versions
+2026-07-10T03:39:25.2971296Z (node:2257) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-10T03:39:25.2972334Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-10T03:39:25.2973215Z Successfully set up CPython (3.10.20)
+2026-07-10T03:39:25.2974471Z ##[endgroup]
+2026-07-10T03:39:25.3478353Z [command]/opt/hostedtoolcache/Python/3.10.20/x64/bin/pip cache dir
+2026-07-10T03:39:25.6752629Z /home/runner/.cache/pip
+2026-07-10T03:39:25.7634271Z Cache hit for: setup-python-Linux-x64-24.04-Ubuntu-python-3.10.20-pip-5ff65bdaf2f0e4a4115fad54d0fd8d0dc18d54c1e0c3e5230c00d0317ebf0636
+2026-07-10T03:39:25.7740442Z (node:2257) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-07-10T03:39:26.8212323Z Received 218103808 of 2839162041 (7.7%), 208.0 MBs/sec
+2026-07-10T03:39:27.8212674Z Received 469762048 of 2839162041 (16.5%), 224.0 MBs/sec
+2026-07-10T03:39:28.8184616Z Received 742391808 of 2839162041 (26.1%), 235.8 MBs/sec
+2026-07-10T03:39:29.8188298Z Received 998244352 of 2839162041 (35.2%), 237.8 MBs/sec
+2026-07-10T03:39:30.8213639Z Received 1275068416 of 2839162041 (44.9%), 242.9 MBs/sec
+2026-07-10T03:39:31.8239954Z Received 1526726656 of 2839162041 (53.8%), 242.3 MBs/sec
+2026-07-10T03:39:32.8238294Z Received 1795162112 of 2839162041 (63.2%), 244.3 MBs/sec
+2026-07-10T03:39:33.8243127Z Received 2088763392 of 2839162041 (73.6%), 248.8 MBs/sec
+2026-07-10T03:39:34.8270854Z Received 2394947584 of 2839162041 (84.4%), 253.5 MBs/sec
+2026-07-10T03:39:35.8268107Z Received 2646605824 of 2839162041 (93.2%), 252.1 MBs/sec
+2026-07-10T03:39:36.5691983Z Received 2839162041 of 2839162041 (100.0%), 251.8 MBs/sec
+2026-07-10T03:39:36.5692931Z Cache Size: ~2708 MB (2839162041 B)
+2026-07-10T03:39:36.5864527Z [command]/usr/bin/tar -xf /home/runner/work/_temp/c5f43a00-8c7e-46a5-b703-1b888611d726/cache.tzst -P -C /home/runner/work/satya-timeline-service/satya-timeline-service --use-compress-program unzstd
+2026-07-10T03:39:41.7026000Z Cache restored successfully
+2026-07-10T03:39:41.8233937Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.10.20-pip-5ff65bdaf2f0e4a4115fad54d0fd8d0dc18d54c1e0c3e5230c00d0317ebf0636
+2026-07-10T03:39:42.3669955Z ##[group]Run python -m pip install --upgrade pip
+2026-07-10T03:39:42.3670905Z [36;1mpython -m pip install --upgrade pip[0m
+2026-07-10T03:39:42.3671505Z [36;1mpip install huggingface_hub libsql[0m
+2026-07-10T03:39:42.3672048Z [36;1mif [ -f requirements.txt ]; then[0m
+2026-07-10T03:39:42.3672569Z [36;1m  pip install -r requirements.txt[0m
+2026-07-10T03:39:42.3673032Z [36;1mfi[0m
+2026-07-10T03:39:43.0736125Z shell: /usr/bin/bash -e {0}
+2026-07-10T03:39:43.0736744Z env:
+2026-07-10T03:39:43.0737068Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:39:43.0737596Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+2026-07-10T03:39:43.0738088Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:39:43.0738530Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:39:43.0738973Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:39:43.0739475Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+2026-07-10T03:39:43.0739885Z ##[endgroup]
+2026-07-10T03:39:43.9339112Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (26.1.2)
+2026-07-10T03:39:44.5239229Z Collecting huggingface_hub
+2026-07-10T03:39:44.5836982Z   Downloading huggingface_hub-1.23.0-py3-none-any.whl.metadata (14 kB)
+2026-07-10T03:39:44.6271163Z Collecting libsql
+2026-07-10T03:39:44.6284902Z   Using cached libsql-0.1.11-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (281 bytes)
+2026-07-10T03:39:44.6436979Z Collecting click<9.0.0,>=8.4.2 (from huggingface_hub)
+2026-07-10T03:39:44.6451307Z   Using cached click-8.4.2-py3-none-any.whl.metadata (2.6 kB)
+2026-07-10T03:39:44.6665905Z Collecting filelock>=3.10.0 (from huggingface_hub)
+2026-07-10T03:39:44.6700884Z   Downloading filelock-3.29.7-py3-none-any.whl.metadata (2.0 kB)
+2026-07-10T03:39:44.6903439Z Collecting fsspec>=2023.5.0 (from huggingface_hub)
+2026-07-10T03:39:44.6916693Z   Using cached fsspec-2026.6.0-py3-none-any.whl.metadata (10 kB)
+2026-07-10T03:39:44.7557816Z Collecting hf-xet<2.0.0,>=1.5.1 (from huggingface_hub)
+2026-07-10T03:39:44.7573272Z   Using cached hf_xet-1.5.1-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+2026-07-10T03:39:44.7736175Z Collecting httpx<1,>=0.23.0 (from huggingface_hub)
+2026-07-10T03:39:44.7749339Z   Using cached httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2026-07-10T03:39:44.7901790Z Collecting packaging>=20.9 (from huggingface_hub)
+2026-07-10T03:39:44.7914706Z   Using cached packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+2026-07-10T03:39:44.8296966Z Collecting pyyaml>=5.1 (from huggingface_hub)
+2026-07-10T03:39:44.8310419Z   Using cached pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-07-10T03:39:44.8602898Z Collecting tqdm>=4.42.1 (from huggingface_hub)
+2026-07-10T03:39:44.8639508Z   Downloading tqdm-4.68.4-py3-none-any.whl.metadata (57 kB)
+2026-07-10T03:39:44.8929476Z Collecting typing-extensions>=4.1.0 (from huggingface_hub)
+2026-07-10T03:39:44.8943992Z   Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+2026-07-10T03:39:44.9124637Z Collecting anyio (from httpx<1,>=0.23.0->huggingface_hub)
+2026-07-10T03:39:44.9138468Z   Using cached anyio-4.14.1-py3-none-any.whl.metadata (4.6 kB)
+2026-07-10T03:39:44.9328464Z Collecting certifi (from httpx<1,>=0.23.0->huggingface_hub)
+2026-07-10T03:39:44.9343105Z   Using cached certifi-2026.6.17-py3-none-any.whl.metadata (2.5 kB)
+2026-07-10T03:39:44.9494239Z Collecting httpcore==1.* (from httpx<1,>=0.23.0->huggingface_hub)
+2026-07-10T03:39:44.9507543Z   Using cached httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2026-07-10T03:39:44.9643818Z Collecting idna (from httpx<1,>=0.23.0->huggingface_hub)
+2026-07-10T03:39:44.9657043Z   Using cached idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+2026-07-10T03:39:44.9755068Z Collecting h11>=0.16 (from httpcore==1.*->httpx<1,>=0.23.0->huggingface_hub)
+2026-07-10T03:39:44.9768610Z   Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-07-10T03:39:44.9906131Z Collecting exceptiongroup>=1.0.2 (from anyio->httpx<1,>=0.23.0->huggingface_hub)
+2026-07-10T03:39:44.9919410Z   Using cached exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+2026-07-10T03:39:45.0051258Z Downloading huggingface_hub-1.23.0-py3-none-any.whl (770 kB)
+2026-07-10T03:39:45.0188128Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 770.3/770.3 kB 79.2 MB/s  0:00:00
+2026-07-10T03:39:45.0201786Z Using cached click-8.4.2-py3-none-any.whl (119 kB)
+2026-07-10T03:39:45.0216634Z Using cached hf_xet-1.5.1-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.5 MB)
+2026-07-10T03:39:45.0247690Z Using cached httpx-0.28.1-py3-none-any.whl (73 kB)
+2026-07-10T03:39:45.0260724Z Using cached httpcore-1.0.9-py3-none-any.whl (78 kB)
+2026-07-10T03:39:45.0274595Z Using cached libsql-0.1.11-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (5.1 MB)
+2026-07-10T03:39:45.0333597Z Downloading filelock-3.29.7-py3-none-any.whl (46 kB)
+2026-07-10T03:39:45.0368539Z Using cached fsspec-2026.6.0-py3-none-any.whl (203 kB)
+2026-07-10T03:39:45.0381970Z Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+2026-07-10T03:39:45.0394595Z Using cached packaging-26.2-py3-none-any.whl (100 kB)
+2026-07-10T03:39:45.0407756Z Using cached pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (770 kB)
+2026-07-10T03:39:45.0446934Z Downloading tqdm-4.68.4-py3-none-any.whl (676 kB)
+2026-07-10T03:39:45.0526360Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 676.6/676.6 kB 96.4 MB/s  0:00:00
+2026-07-10T03:39:45.0539624Z Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-07-10T03:39:45.0552933Z Using cached anyio-4.14.1-py3-none-any.whl (124 kB)
+2026-07-10T03:39:45.0565753Z Using cached exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+2026-07-10T03:39:45.0577982Z Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-07-10T03:39:45.0590714Z Using cached certifi-2026.6.17-py3-none-any.whl (133 kB)
+2026-07-10T03:39:45.1614172Z Installing collected packages: typing-extensions, tqdm, pyyaml, packaging, libsql, idna, hf-xet, h11, fsspec, filelock, click, certifi, httpcore, exceptiongroup, anyio, httpx, huggingface_hub
+2026-07-10T03:39:46.2979632Z 
+2026-07-10T03:39:46.3009864Z Successfully installed anyio-4.14.1 certifi-2026.6.17 click-8.4.2 exceptiongroup-1.3.1 filelock-3.29.7 fsspec-2026.6.0 h11-0.16.0 hf-xet-1.5.1 httpcore-1.0.9 httpx-0.28.1 huggingface_hub-1.23.0 idna-3.18 libsql-0.1.11 packaging-26.2 pyyaml-6.0.3 tqdm-4.68.4 typing-extensions-4.16.0
+2026-07-10T03:39:46.6699215Z Requirement already satisfied: libsql in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from -r requirements.txt (line 1)) (0.1.11)
+2026-07-10T03:39:46.7390702Z Collecting sentence-transformers (from -r requirements.txt (line 2))
+2026-07-10T03:39:46.7405940Z   Using cached sentence_transformers-5.6.0-py3-none-any.whl.metadata (18 kB)
+2026-07-10T03:39:46.9766035Z Collecting numpy (from -r requirements.txt (line 3))
+2026-07-10T03:39:46.9782757Z   Using cached numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+2026-07-10T03:39:46.9977276Z Collecting llama-cpp-python>=0.2.90 (from -r requirements.txt (line 4))
+2026-07-10T03:39:46.9978672Z   Using cached llama_cpp_python-0.3.33-py3-none-linux_x86_64.whl
+2026-07-10T03:39:47.0455340Z Collecting transformers<6.0.0,>=4.41.0 (from sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:47.0468632Z   Using cached transformers-5.13.0-py3-none-any.whl.metadata (32 kB)
+2026-07-10T03:39:47.1133161Z Requirement already satisfied: huggingface-hub>=0.23.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from sentence-transformers->-r requirements.txt (line 2)) (1.23.0)
+2026-07-10T03:39:47.1887754Z Collecting torch>=1.11.0 (from sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:47.2396237Z   Downloading torch-2.13.0-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (38 kB)
+2026-07-10T03:39:47.3486492Z Collecting scikit-learn>=0.22.0 (from sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:47.3500091Z   Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+2026-07-10T03:39:47.5087461Z Collecting scipy>=1.0.0 (from sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:47.5102754Z   Using cached scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+2026-07-10T03:39:47.5175326Z Requirement already satisfied: typing_extensions>=4.5.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from sentence-transformers->-r requirements.txt (line 2)) (4.16.0)
+2026-07-10T03:39:47.5180209Z Requirement already satisfied: tqdm>=4.0.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from sentence-transformers->-r requirements.txt (line 2)) (4.68.4)
+2026-07-10T03:39:47.5235718Z Requirement already satisfied: packaging>=20.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2)) (26.2)
+2026-07-10T03:39:47.5240001Z Requirement already satisfied: pyyaml>=5.1 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2)) (6.0.3)
+2026-07-10T03:39:47.9631346Z Collecting regex>=2025.10.22 (from transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:47.9648162Z   Using cached regex-2026.6.28-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+2026-07-10T03:39:48.7111438Z Collecting tokenizers<=0.23.0,>=0.22.0 (from transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:48.7126498Z   Using cached tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.3 kB)
+2026-07-10T03:39:48.8711433Z Collecting typer (from transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:48.8725540Z   Using cached typer-0.26.8-py3-none-any.whl.metadata (15 kB)
+2026-07-10T03:39:48.9990122Z Collecting safetensors>=0.8.0 (from transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.0005460Z   Using cached safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.2 kB)
+2026-07-10T03:39:49.0249066Z Requirement already satisfied: click<9.0.0,>=8.4.2 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (8.4.2)
+2026-07-10T03:39:49.0253898Z Requirement already satisfied: filelock>=3.10.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (3.29.7)
+2026-07-10T03:39:49.0258464Z Requirement already satisfied: fsspec>=2023.5.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (2026.6.0)
+2026-07-10T03:39:49.0268127Z Requirement already satisfied: hf-xet<2.0.0,>=1.5.1 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (1.5.1)
+2026-07-10T03:39:49.0273711Z Requirement already satisfied: httpx<1,>=0.23.0 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (0.28.1)
+2026-07-10T03:39:49.0314628Z Requirement already satisfied: anyio in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (4.14.1)
+2026-07-10T03:39:49.0318658Z Requirement already satisfied: certifi in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (2026.6.17)
+2026-07-10T03:39:49.0324009Z Requirement already satisfied: httpcore==1.* in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (1.0.9)
+2026-07-10T03:39:49.0327990Z Requirement already satisfied: idna in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (3.18)
+2026-07-10T03:39:49.0349303Z Requirement already satisfied: h11>=0.16 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from httpcore==1.*->httpx<1,>=0.23.0->huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (0.16.0)
+2026-07-10T03:39:49.0516759Z Collecting diskcache>=5.6.1 (from llama-cpp-python>=0.2.90->-r requirements.txt (line 4))
+2026-07-10T03:39:49.0529435Z   Using cached diskcache-5.6.3-py3-none-any.whl.metadata (20 kB)
+2026-07-10T03:39:49.0702543Z Collecting jinja2>=2.11.3 (from llama-cpp-python>=0.2.90->-r requirements.txt (line 4))
+2026-07-10T03:39:49.0715319Z   Using cached jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+2026-07-10T03:39:49.1692291Z Collecting MarkupSafe>=2.0 (from jinja2>=2.11.3->llama-cpp-python>=0.2.90->-r requirements.txt (line 4))
+2026-07-10T03:39:49.1705594Z   Using cached markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+2026-07-10T03:39:49.1974245Z Collecting joblib>=1.2.0 (from scikit-learn>=0.22.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.1987435Z   Using cached joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+2026-07-10T03:39:49.2074838Z Collecting threadpoolctl>=3.1.0 (from scikit-learn>=0.22.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.2087352Z   Using cached threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+2026-07-10T03:39:49.2162244Z Requirement already satisfied: setuptools>=77.0.3 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2)) (79.0.1)
+2026-07-10T03:39:49.2295750Z Collecting sympy>=1.13.3 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.2308582Z   Using cached sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+2026-07-10T03:39:49.2520662Z Collecting networkx>=2.5.1 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.2534573Z   Using cached networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
+2026-07-10T03:39:49.2675309Z Collecting cuda-toolkit==13.0.3 (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.2712794Z   Downloading cuda_toolkit-13.0.3.0-py2.py3-none-any.whl.metadata (17 kB)
+2026-07-10T03:39:49.3382854Z Collecting cuda-bindings<14,>=13.0.3 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.3396079Z   Using cached cuda_bindings-13.3.1-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (2.5 kB)
+2026-07-10T03:39:49.3509297Z Collecting nvidia-cudnn-cu13==9.20.0.48 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.3522559Z   Using cached nvidia_cudnn_cu13-9.20.0.48-py3-none-manylinux_2_27_x86_64.whl.metadata (1.9 kB)
+2026-07-10T03:39:49.3598633Z Collecting nvidia-cusparselt-cu13==0.8.1 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.3611002Z   Using cached nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl.metadata (12 kB)
+2026-07-10T03:39:49.3695076Z Collecting nvidia-nccl-cu13==2.29.7 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.3707454Z   Using cached nvidia_nccl_cu13-2.29.7-py3-none-manylinux_2_18_x86_64.whl.metadata (2.1 kB)
+2026-07-10T03:39:49.3785553Z Collecting nvidia-nvshmem-cu13==3.4.5 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.3798550Z   Using cached nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.1 kB)
+2026-07-10T03:39:49.3956479Z Collecting triton==3.7.1 (from torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.3969944Z   Using cached triton-3.7.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (1.7 kB)
+2026-07-10T03:39:49.4088485Z Collecting nvidia-cuda-cupti==13.0.85.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4100536Z   Using cached nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl.metadata (1.7 kB)
+2026-07-10T03:39:49.4184494Z Collecting nvidia-curand==10.4.0.35.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4196505Z   Using cached nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl.metadata (1.7 kB)
+2026-07-10T03:39:49.4310419Z Collecting nvidia-cufft==12.0.0.61.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4324003Z   Using cached nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (1.8 kB)
+2026-07-10T03:39:49.4417042Z Collecting nvidia-nvjitlink<14,>=13.0.88 (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4454985Z   Downloading nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl.metadata (1.8 kB)
+2026-07-10T03:39:49.4568467Z Collecting nvidia-nvtx==13.0.85.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4580759Z   Using cached nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl.metadata (1.8 kB)
+2026-07-10T03:39:49.4728308Z Collecting nvidia-cublas==13.1.1.3.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4740391Z   Using cached nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl.metadata (1.8 kB)
+2026-07-10T03:39:49.4829835Z Collecting nvidia-cuda-nvrtc==13.0.88.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4842334Z   Using cached nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl.metadata (1.7 kB)
+2026-07-10T03:39:49.4925518Z Collecting nvidia-cufile==1.15.1.6.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.4937540Z   Using cached nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (1.7 kB)
+2026-07-10T03:39:49.5043234Z Collecting nvidia-cusolver==12.0.4.66.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.5054985Z   Using cached nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl.metadata (1.8 kB)
+2026-07-10T03:39:49.5148653Z Collecting nvidia-cusparse==12.6.3.3.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.5161322Z   Using cached nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (1.8 kB)
+2026-07-10T03:39:49.5280145Z Collecting nvidia-cuda-runtime==13.0.96.* (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.5292666Z   Using cached nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (1.7 kB)
+2026-07-10T03:39:49.5433571Z Collecting cuda-pathfinder>=1.4.2 (from cuda-bindings<14,>=13.0.3->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.5446414Z   Using cached cuda_pathfinder-1.5.6-py3-none-any.whl.metadata (1.9 kB)
+2026-07-10T03:39:49.5751467Z Collecting mpmath<1.4,>=1.1.0 (from sympy>=1.13.3->torch>=1.11.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.5764290Z   Using cached mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+2026-07-10T03:39:49.5840790Z Requirement already satisfied: exceptiongroup>=1.0.2 in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (from anyio->httpx<1,>=0.23.0->huggingface-hub>=0.23.0->sentence-transformers->-r requirements.txt (line 2)) (1.3.1)
+2026-07-10T03:39:49.5979557Z Collecting shellingham>=1.3.0 (from typer->transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.5992911Z   Using cached shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+2026-07-10T03:39:49.6294967Z Collecting rich>=13.8.0 (from typer->transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.6308279Z   Using cached rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+2026-07-10T03:39:49.6391687Z Collecting annotated-doc>=0.0.2 (from typer->transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.6404329Z   Using cached annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+2026-07-10T03:39:49.6536199Z Collecting markdown-it-py>=2.2.0 (from rich>=13.8.0->typer->transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.6548790Z   Using cached markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+2026-07-10T03:39:49.6749716Z Collecting pygments<3.0.0,>=2.13.0 (from rich>=13.8.0->typer->transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.6762669Z   Using cached pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+2026-07-10T03:39:49.6853132Z Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers<6.0.0,>=4.41.0->sentence-transformers->-r requirements.txt (line 2))
+2026-07-10T03:39:49.6865205Z   Using cached mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+2026-07-10T03:39:49.6909968Z Using cached sentence_transformers-5.6.0-py3-none-any.whl (596 kB)
+2026-07-10T03:39:49.6925640Z Using cached transformers-5.13.0-py3-none-any.whl (11.5 MB)
+2026-07-10T03:39:49.6985687Z Using cached tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+2026-07-10T03:39:49.7011335Z Using cached numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+2026-07-10T03:39:49.7087524Z Using cached diskcache-5.6.3-py3-none-any.whl (45 kB)
+2026-07-10T03:39:49.7100106Z Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-07-10T03:39:49.7113971Z Using cached markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+2026-07-10T03:39:49.7126375Z Using cached regex-2026.6.28-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (794 kB)
+2026-07-10T03:39:49.7141382Z Using cached safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (516 kB)
+2026-07-10T03:39:49.7155629Z Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (9.7 MB)
+2026-07-10T03:39:49.7201600Z Using cached joblib-1.5.3-py3-none-any.whl (309 kB)
+2026-07-10T03:39:49.7215321Z Using cached scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+2026-07-10T03:39:49.7366716Z Using cached threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+2026-07-10T03:39:49.7415080Z Downloading torch-2.13.0-cp310-cp310-manylinux_2_28_x86_64.whl (526.6 MB)
+2026-07-10T03:39:54.9904300Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 526.6/526.6 MB 69.1 MB/s  0:00:05
+2026-07-10T03:39:54.9947395Z Downloading cuda_toolkit-13.0.3.0-py2.py3-none-any.whl (2.5 kB)
+2026-07-10T03:39:54.9983920Z Using cached nvidia_cudnn_cu13-9.20.0.48-py3-none-manylinux_2_27_x86_64.whl (366.2 MB)
+2026-07-10T03:39:55.1274410Z Using cached nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl (170.1 MB)
+2026-07-10T03:39:55.1888947Z Using cached nvidia_nccl_cu13-2.29.7-py3-none-manylinux_2_18_x86_64.whl (206.0 MB)
+2026-07-10T03:39:55.2624034Z Using cached nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (60.4 MB)
+2026-07-10T03:39:55.2851343Z Using cached triton-3.7.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (197.6 MB)
+2026-07-10T03:39:55.3560038Z Using cached cuda_bindings-13.3.1-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (6.7 MB)
+2026-07-10T03:39:55.3597565Z Using cached nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl (423.1 MB)
+2026-07-10T03:39:55.5093444Z Using cached nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl (10.7 MB)
+2026-07-10T03:39:55.5145683Z Using cached nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl (90.2 MB)
+2026-07-10T03:39:55.5477608Z Using cached nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (2.2 MB)
+2026-07-10T03:39:55.5498373Z Using cached nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (214.1 MB)
+2026-07-10T03:39:55.6268685Z Using cached nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (1.2 MB)
+2026-07-10T03:39:55.6286052Z Using cached nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl (59.5 MB)
+2026-07-10T03:39:55.6511775Z Using cached nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl (200.9 MB)
+2026-07-10T03:39:55.7927837Z Using cached nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (145.9 MB)
+2026-07-10T03:39:56.1228408Z Downloading nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl (40.7 MB)
+2026-07-10T03:39:59.0092277Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.7/40.7 MB 14.0 MB/s  0:00:02
+2026-07-10T03:39:59.0107823Z Using cached nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl (148 kB)
+2026-07-10T03:39:59.0121175Z Using cached cuda_pathfinder-1.5.6-py3-none-any.whl (52 kB)
+2026-07-10T03:39:59.0133612Z Using cached networkx-3.4.2-py3-none-any.whl (1.7 MB)
+2026-07-10T03:39:59.0152843Z Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-07-10T03:39:59.0190786Z Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-07-10T03:39:59.0207789Z Using cached typer-0.26.8-py3-none-any.whl (122 kB)
+2026-07-10T03:39:59.0220862Z Using cached annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+2026-07-10T03:39:59.0233406Z Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+2026-07-10T03:39:59.0247016Z Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-07-10T03:39:59.0264152Z Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-07-10T03:39:59.0277009Z Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-07-10T03:39:59.0289755Z Using cached shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+2026-07-10T03:40:01.4864661Z Installing collected packages: nvidia-cusparselt-cu13, mpmath, cuda-toolkit, triton, threadpoolctl, sympy, shellingham, safetensors, regex, pygments, nvidia-nvtx, nvidia-nvshmem-cu13, nvidia-nvjitlink, nvidia-nccl-cu13, nvidia-curand, nvidia-cufile, nvidia-cuda-runtime, nvidia-cuda-nvrtc, nvidia-cuda-cupti, numpy, networkx, mdurl, MarkupSafe, joblib, diskcache, cuda-pathfinder, annotated-doc, scipy, nvidia-cusparse, nvidia-cufft, nvidia-cublas, markdown-it-py, jinja2, cuda-bindings, scikit-learn, rich, nvidia-cusolver, nvidia-cudnn-cu13, llama-cpp-python, typer, torch, tokenizers, transformers, sentence-transformers
+2026-07-10T03:40:45.8126852Z 
+2026-07-10T03:40:45.8212854Z Successfully installed MarkupSafe-3.0.3 annotated-doc-0.0.4 cuda-bindings-13.3.1 cuda-pathfinder-1.5.6 cuda-toolkit-13.0.3.0 diskcache-5.6.3 jinja2-3.1.6 joblib-1.5.3 llama-cpp-python-0.3.33 markdown-it-py-4.2.0 mdurl-0.1.2 mpmath-1.3.0 networkx-3.4.2 numpy-2.2.6 nvidia-cublas-13.1.1.3 nvidia-cuda-cupti-13.0.85 nvidia-cuda-nvrtc-13.0.88 nvidia-cuda-runtime-13.0.96 nvidia-cudnn-cu13-9.20.0.48 nvidia-cufft-12.0.0.61 nvidia-cufile-1.15.1.6 nvidia-curand-10.4.0.35 nvidia-cusolver-12.0.4.66 nvidia-cusparse-12.6.3.3 nvidia-cusparselt-cu13-0.8.1 nvidia-nccl-cu13-2.29.7 nvidia-nvjitlink-13.3.33 nvidia-nvshmem-cu13-3.4.5 nvidia-nvtx-13.0.85 pygments-2.20.0 regex-2026.6.28 rich-15.0.0 safetensors-0.8.0 scikit-learn-1.7.2 scipy-1.15.3 sentence-transformers-5.6.0 shellingham-1.5.4 sympy-1.14.0 threadpoolctl-3.6.0 tokenizers-0.22.2 torch-2.13.0 transformers-5.13.0 triton-3.7.1 typer-0.26.8
+2026-07-10T03:40:46.0498819Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-10T03:40:46.0500090Z ##[group]Run actions/cache@v4
+2026-07-10T03:40:46.0500342Z with:
+2026-07-10T03:40:46.0500724Z   path: ./models
+2026-07-10T03:40:46.0500965Z   key: qwen-14b-local-models-v3-q5km
+2026-07-10T03:40:46.0501254Z   enableCrossOsArchive: false
+2026-07-10T03:40:46.0501501Z   fail-on-cache-miss: false
+2026-07-10T03:40:46.0501735Z   lookup-only: false
+2026-07-10T03:40:46.0501948Z   save-always: false
+2026-07-10T03:40:46.0502154Z env:
+2026-07-10T03:40:46.0502405Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:40:46.0502855Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+2026-07-10T03:40:46.0503320Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:40:46.0503703Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:40:46.0504092Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:40:46.0504477Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+2026-07-10T03:40:46.0504798Z ##[endgroup]
+2026-07-10T03:40:46.1561776Z (node:2419) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-10T03:40:46.1562713Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-10T03:40:46.2201837Z Cache hit for: qwen-14b-local-models-v3-q5km
+2026-07-10T03:40:46.2305026Z (node:2419) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-07-10T03:40:47.2649612Z Received 222298112 of 12148376031 (1.8%), 212.0 MBs/sec
+2026-07-10T03:40:48.2649854Z Received 469762048 of 12148376031 (3.9%), 224.0 MBs/sec
+2026-07-10T03:40:49.2778083Z Received 759169024 of 12148376031 (6.2%), 240.3 MBs/sec
+2026-07-10T03:40:50.2781659Z Received 1023410176 of 12148376031 (8.4%), 243.2 MBs/sec
+2026-07-10T03:40:51.2870314Z Received 1287651328 of 12148376031 (10.6%), 244.5 MBs/sec
+2026-07-10T03:40:52.2931768Z Received 1556086784 of 12148376031 (12.8%), 246.3 MBs/sec
+2026-07-10T03:40:53.2981815Z Received 1790967808 of 12148376031 (14.7%), 242.9 MBs/sec
+2026-07-10T03:40:54.3051757Z Received 2063597568 of 12148376031 (17.0%), 244.8 MBs/sec
+2026-07-10T03:40:55.3045582Z Received 2340421632 of 12148376031 (19.3%), 246.9 MBs/sec
+2026-07-10T03:40:56.3058448Z Received 2596274176 of 12148376031 (21.4%), 246.6 MBs/sec
+2026-07-10T03:40:57.3301909Z Received 2856321024 of 12148376031 (23.5%), 246.2 MBs/sec
+2026-07-10T03:40:58.3333441Z Received 3133145088 of 12148376031 (25.8%), 247.6 MBs/sec
+2026-07-10T03:40:59.3422647Z Received 3397386240 of 12148376031 (28.0%), 247.8 MBs/sec
+2026-07-10T03:41:00.3403481Z Received 3628072960 of 12148376031 (29.9%), 245.8 MBs/sec
+2026-07-10T03:41:01.3481589Z Received 3892314112 of 12148376031 (32.0%), 246.1 MBs/sec
+2026-07-10T03:41:02.3611693Z Received 4160749568 of 12148376031 (34.2%), 246.5 MBs/sec
+2026-07-10T03:41:03.3661621Z Received 4404019200 of 12148376031 (36.3%), 245.6 MBs/sec
+2026-07-10T03:41:04.3664230Z Received 4676648960 of 12148376031 (38.5%), 246.4 MBs/sec
+2026-07-10T03:41:05.3804975Z Received 4924112896 of 12148376031 (40.5%), 245.7 MBs/sec
+2026-07-10T03:41:06.3820276Z Received 5200936960 of 12148376031 (42.8%), 246.6 MBs/sec
+2026-07-10T03:41:07.3818155Z Received 5465178112 of 12148376031 (45.0%), 246.8 MBs/sec
+2026-07-10T03:41:08.3827780Z Received 5737807872 of 12148376031 (47.2%), 247.4 MBs/sec
+2026-07-10T03:41:09.3843954Z Received 6002049024 of 12148376031 (49.4%), 247.6 MBs/sec
+2026-07-10T03:41:10.3868930Z Received 6270484480 of 12148376031 (51.6%), 247.9 MBs/sec
+2026-07-10T03:41:11.3872257Z Received 6505365504 of 12148376031 (53.5%), 247.0 MBs/sec
+2026-07-10T03:41:12.4011598Z Received 6710886400 of 12148376031 (55.2%), 244.9 MBs/sec
+2026-07-10T03:41:13.4391671Z Received 6979321856 of 12148376031 (57.5%), 244.9 MBs/sec
+2026-07-10T03:41:14.4376076Z Received 7247757312 of 12148376031 (59.7%), 245.3 MBs/sec
+2026-07-10T03:41:15.4381698Z Received 7499415552 of 12148376031 (61.7%), 245.2 MBs/sec
+2026-07-10T03:41:16.4404773Z Received 7763656704 of 12148376031 (63.9%), 245.4 MBs/sec
+2026-07-10T03:41:17.4397676Z Received 8015314944 of 12148376031 (66.0%), 245.2 MBs/sec
+2026-07-10T03:41:18.4463990Z Received 8283750400 of 12148376031 (68.2%), 245.5 MBs/sec
+2026-07-10T03:41:19.4469379Z Received 8493465600 of 12148376031 (69.9%), 244.1 MBs/sec
+2026-07-10T03:41:20.4471582Z Received 8761901056 of 12148376031 (72.1%), 244.5 MBs/sec
+2026-07-10T03:41:21.4535666Z Received 9009364992 of 12148376031 (74.2%), 244.2 MBs/sec
+2026-07-10T03:41:22.4606711Z Received 9261023232 of 12148376031 (76.2%), 244.0 MBs/sec
+2026-07-10T03:41:23.4613598Z Received 9529458688 of 12148376031 (78.4%), 244.3 MBs/sec
+2026-07-10T03:41:24.4753082Z Received 9797894144 of 12148376031 (80.7%), 244.5 MBs/sec
+2026-07-10T03:41:25.4749793Z Received 10066329600 of 12148376031 (82.9%), 244.8 MBs/sec
+2026-07-10T03:41:26.4787669Z Received 10317987840 of 12148376031 (84.9%), 244.7 MBs/sec
+2026-07-10T03:41:27.4832224Z Received 10569646080 of 12148376031 (87.0%), 244.6 MBs/sec
+2026-07-10T03:41:28.4902430Z Received 10787749888 of 12148376031 (88.8%), 243.7 MBs/sec
+2026-07-10T03:41:29.4943843Z Received 11043602432 of 12148376031 (90.9%), 243.6 MBs/sec
+2026-07-10T03:41:30.4934133Z Received 11312037888 of 12148376031 (93.1%), 243.9 MBs/sec
+2026-07-10T03:41:31.4992346Z Received 11593056256 of 12148376031 (95.4%), 244.4 MBs/sec
+2026-07-10T03:41:32.5025501Z Received 11832131584 of 12148376031 (97.4%), 244.0 MBs/sec
+2026-07-10T03:41:33.5078005Z Received 12134121472 of 12148376031 (99.9%), 244.9 MBs/sec
+2026-07-10T03:41:33.5537565Z Received 12148376031 of 12148376031 (100.0%), 245.0 MBs/sec
+2026-07-10T03:41:33.5540344Z Cache Size: ~11586 MB (12148376031 B)
+2026-07-10T03:41:33.5762404Z [command]/usr/bin/tar -xf /home/runner/work/_temp/1e078526-6cd4-41bc-9c27-36b3eb21ec01/cache.tzst -P -C /home/runner/work/satya-timeline-service/satya-timeline-service --use-compress-program unzstd
+2026-07-10T03:42:00.6976890Z Cache restored successfully
+2026-07-10T03:42:02.8623242Z Cache restored from key: qwen-14b-local-models-v3-q5km
+2026-07-10T03:42:03.9613094Z ##[group]Run ARGS=""
+2026-07-10T03:42:03.9613577Z [36;1mARGS=""[0m
+2026-07-10T03:42:03.9613822Z [36;1mif [ "false" = "true" ]; then[0m
+2026-07-10T03:42:03.9614123Z [36;1m  ARGS="$ARGS --dry-run"[0m
+2026-07-10T03:42:03.9614389Z [36;1mfi[0m
+2026-07-10T03:42:03.9614851Z [36;1mif [ -n "" ]; then[0m
+2026-07-10T03:42:03.9615251Z [36;1m  ARGS="$ARGS --from-id "[0m
+2026-07-10T03:42:03.9615752Z [36;1mfi[0m
+2026-07-10T03:42:03.9615948Z [36;1mif [ -n "0" ]; then[0m
+2026-07-10T03:42:03.9616198Z [36;1m  ARGS="$ARGS --limit 0"[0m
+2026-07-10T03:42:03.9616440Z [36;1mfi[0m
+2026-07-10T03:42:03.9616637Z [36;1mif [ -n "" ]; then[0m
+2026-07-10T03:42:03.9616887Z [36;1m  ARGS="$ARGS --audit-event "[0m
+2026-07-10T03:42:03.9617184Z [36;1mfi[0m
+2026-07-10T03:42:03.9617369Z [36;1m[0m
+2026-07-10T03:42:03.9617602Z [36;1m# Execute pipeline and capture outputs[0m
+2026-07-10T03:42:03.9618020Z [36;1mpython timeline_pipeline.py $ARGS | tee pipeline.log[0m
+2026-07-10T03:42:03.9618565Z [36;1m[0m
+2026-07-10T03:42:03.9618968Z [36;1m# Extract variables and write to $GITHUB_OUTPUT[0m
+2026-07-10T03:42:03.9619659Z [36;1mHAS_MORE=$(grep "has_more=" pipeline.log | cut -d= -f2 || echo "false")[0m
+2026-07-10T03:42:03.9620723Z [36;1mART_ATTACHED=$(grep "articles_attached=" pipeline.log | cut -d= -f2 || echo "0")[0m
+2026-07-10T03:42:03.9621430Z [36;1m[0m
+2026-07-10T03:42:03.9621828Z [36;1mecho "has_more=$HAS_MORE" >> $GITHUB_OUTPUT[0m
+2026-07-10T03:42:03.9622481Z [36;1mecho "articles_attached=$ART_ATTACHED" >> $GITHUB_OUTPUT[0m
+2026-07-10T03:42:03.9623170Z [36;1m[0m
+2026-07-10T03:42:03.9623700Z [36;1mecho "GHA OUTPUT - has_more: $HAS_MORE, articles_attached: $ART_ATTACHED"[0m
+2026-07-10T03:42:04.3276289Z shell: /usr/bin/bash -e {0}
+2026-07-10T03:42:04.3276609Z env:
+2026-07-10T03:42:04.3276932Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:42:04.3277469Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+2026-07-10T03:42:04.3278017Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:42:04.3278665Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:42:04.3279141Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+2026-07-10T03:42:04.3279613Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+2026-07-10T03:42:04.3280358Z   SATYA_DB_URL: ***
+2026-07-10T03:42:04.3282574Z   SATYA_DB_TOKEN: ***
+2026-07-10T03:42:04.3282906Z   MODEL_2B_PATH: ./models/gemma-2-2b-it-Q4_K_M.gguf
+2026-07-10T03:42:04.3283347Z   MODEL_GATE_PATH: ./models/Qwen2.5-14B-Instruct-Q5_K_M.gguf
+2026-07-10T03:42:04.3283743Z ##[endgroup]
+2026-07-10T03:42:04.6661481Z 2026-07-10 03:42:04,665 - INFO - Pipeline started. dry_run=False, batch_size=25, sim_threshold=0.6
+2026-07-10T03:42:04.6738188Z 2026-07-10 03:42:04,673 - INFO - Connecting to remote Turso Database at: ***
+2026-07-10T03:42:06.3934850Z 2026-07-10 03:42:06,393 - INFO - Loaded cursor from DB. Last processed article ID: 20180
+2026-07-10T03:42:17.7060233Z 2026-07-10 03:42:06,393 - INFO - Fetching up to 25 articles after cursor (id 20180)...
+2026-07-10T03:42:17.7061649Z 2026-07-10 03:42:17,705 - INFO - Loading sentence-transformers/all-MiniLM-L6-v2...
+2026-07-10T03:42:17.7069317Z 2026-07-10 03:42:17,706 - INFO - No device provided, using cpu
+2026-07-10T03:42:17.7677179Z 2026-07-10 03:42:17,767 - INFO - HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.7904686Z 2026-07-10 03:42:17,790 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.7908146Z Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-07-10T03:42:17.7910315Z 2026-07-10 03:42:17,790 - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-07-10T03:42:17.7965579Z 2026-07-10 03:42:17,796 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8022470Z 2026-07-10 03:42:17,801 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8169568Z 2026-07-10 03:42:17,816 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.8225065Z 2026-07-10 03:42:17,822 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8285357Z 2026-07-10 03:42:17,828 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8291676Z 2026-07-10 03:42:17,829 - INFO - Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-07-10T03:42:17.8427542Z 2026-07-10 03:42:17,842 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.8484667Z 2026-07-10 03:42:17,848 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8620677Z 2026-07-10 03:42:17,861 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.8675694Z 2026-07-10 03:42:17,867 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8734098Z 2026-07-10 03:42:17,873 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.8880260Z 2026-07-10 03:42:17,887 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.8935274Z 2026-07-10 03:42:17,893 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.9114162Z 2026-07-10 03:42:17,911 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.9171198Z 2026-07-10 03:42:17,916 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.9236689Z 2026-07-10 03:42:17,923 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.9398173Z 2026-07-10 03:42:17,939 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:17.9555057Z 2026-07-10 03:42:17,955 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:17.9620633Z 2026-07-10 03:42:17,961 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:17.9677139Z 2026-07-10 03:42:17,967 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:18.0301893Z 2026-07-10 03:42:18,029 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+2026-07-10T03:42:18.8585040Z 
+2026-07-10T03:42:18.8858334Z Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]
+2026-07-10T03:42:18.8859586Z Loading weights: 100%|██████████| 103/103 [00:00<00:00, 3785.01it/s]
+2026-07-10T03:42:18.9115867Z 2026-07-10 03:42:18,911 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:18.9307294Z 2026-07-10 03:42:18,930 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:18.9474126Z 2026-07-10 03:42:18,947 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:18.9660166Z 2026-07-10 03:42:18,965 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:18.9814434Z 2026-07-10 03:42:18,981 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:18.9871673Z 2026-07-10 03:42:18,986 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:18.9929849Z 2026-07-10 03:42:18,992 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.0085653Z 2026-07-10 03:42:19,008 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.0147550Z 2026-07-10 03:42:19,014 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.0347877Z 2026-07-10 03:42:19,034 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.0414110Z 2026-07-10 03:42:19,041 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.0588299Z 2026-07-10 03:42:19,058 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.0649321Z 2026-07-10 03:42:19,064 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.0863184Z 2026-07-10 03:42:19,086 - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:19.1038102Z 2026-07-10 03:42:19,103 - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.1231271Z 2026-07-10 03:42:19,122 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.1293586Z 2026-07-10 03:42:19,129 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/vocab.txt "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.1355010Z 2026-07-10 03:42:19,135 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/vocab.txt "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.1549527Z 2026-07-10 03:42:19,154 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.1609583Z 2026-07-10 03:42:19,160 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.1673371Z 2026-07-10 03:42:19,167 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.1881740Z 2026-07-10 03:42:19,187 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/added_tokens.json "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:19.2014235Z 2026-07-10 03:42:19,201 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/special_tokens_map.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.2073204Z 2026-07-10 03:42:19,207 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/special_tokens_map.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.2133617Z 2026-07-10 03:42:19,213 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/special_tokens_map.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.2303880Z 2026-07-10 03:42:19,230 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/chat_template.jinja "HTTP/1.1 404 Not Found"
+2026-07-10T03:42:19.2886786Z 2026-07-10 03:42:19,288 - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-10T03:42:19.2947348Z 2026-07-10 03:42:19,294 - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.3013442Z 2026-07-10 03:42:19,301 - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.3205838Z 2026-07-10 03:42:19,320 - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-07-10T03:42:19.4721653Z 2026-07-10 03:42:19,471 - INFO - Loading Gemma 2B from ./models/gemma-2-2b-it-Q4_K_M.gguf...
+2026-07-10T03:42:20.5464918Z llama_kv_cache_iswa: using full-size SWA cache (ref: https://github.com/ggml-org/llama.cpp/pull/13194#issuecomment-2868343055)
+2026-07-10T03:42:20.6279179Z 2026-07-10 03:42:20,627 - INFO - Loading Qwen 14B from ./models/Qwen2.5-14B-Instruct-Q5_K_M.gguf...
+2026-07-10T03:42:27.3985460Z 2026-07-10 03:42:27,398 - INFO - Loaded 616 open events into memory index.
+2026-07-10T03:42:27.3986142Z 2026-07-10 03:42:27,398 - INFO - 
+2026-07-10T03:42:27.3987600Z Processing article ID 20184: 'Raut cites Ajit Pawar's statement on BJP 'scam' file, casts doubts on death; ruling party hits back - The Hindu'
+2026-07-10T03:42:27.3989210Z 2026-07-10 03:42:27,398 - INFO -   Entities: ['delhi', 'maharashtra', 'ncp', 'sp', 'bjp', 'congress', 'sharad_pawar', 'nationalist_congress', 'shiv_sena']
+2026-07-10T03:42:27.4013736Z 
+2026-07-10T03:42:27.5445663Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:42:27.5447123Z Batches: 100%|██████████| 1/1 [00:00<00:00,  7.00it/s]
+2026-07-10T03:42:27.5447806Z Batches: 100%|██████████| 1/1 [00:00<00:00,  6.99it/s]
+2026-07-10T03:42:27.5456836Z 2026-07-10 03:42:27,545 - INFO -   Best similarity match: 0.6766 with Event ID 1830
+2026-07-10T03:47:06.6111729Z 2026-07-10 03:47:06,610 - INFO - Nomination: article_id=20184, event_id=1830, cosine=0.6766, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T03:47:06.6112536Z 
+2026-07-10T03:47:06.6114324Z 1. The article discusses claims by Sanjay Raut regarding the suspicious nature of Ajit Pawar's death and its implications for the BJP and NCP. This is directly related to the event named "Ajit Pawar's Political Faction Faces Uncertainty," which involves the political fallout and factional dynamics following Ajit Pawar's death.
+2026-07-10T03:47:06.6117264Z 2. The article provides a development connected to the specific occurrence named in the scope, as it discusses the political ramifications of Ajit Pawar's death and the potential shift in political allegiances.
+2026-07-10T03:47:06.6119442Z 3. The article clearly falls within the scope of the event as it deals with the aftermath and political consequences of Ajit Pawar's death, which is central to the event's named occurrence.
+2026-07-10T03:47:06.6120708Z 
+2026-07-10T03:47:06.6120862Z Final answer: ATTACH
+2026-07-10T03:47:06.6121382Z 2026-07-10 03:47:06,610 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T03:47:16.9316447Z 2026-07-10 03:47:16,931 - INFO -   Generated Milestone: 'Sanjay Raut, leader of the Shiv Sena (UBT), cast doubt on Ajit Pawar's death, suggesting a connection to his revelation of a BJP corruption file.'
+2026-07-10T03:47:19.4446947Z 2026-07-10 03:47:19,444 - INFO -   Attached to Event ID 1830 successfully.
+2026-07-10T03:47:19.4447738Z 2026-07-10 03:47:19,444 - INFO - 
+2026-07-10T03:47:19.4448431Z Processing article ID 20186: 'Periye twin murder case convict granted parole again - The Hindu'
+2026-07-10T03:47:19.4449204Z 2026-07-10 03:47:19,444 - INFO -   Entities: ['congress']
+2026-07-10T03:47:19.4469955Z 
+2026-07-10T03:47:19.4774440Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:47:19.4775335Z Batches: 100%|██████████| 1/1 [00:00<00:00, 33.10it/s]
+2026-07-10T03:47:19.4792442Z 2026-07-10 03:47:19,479 - INFO -   Best similarity match: 0.4874 with Event ID 1842
+2026-07-10T03:48:55.1782809Z 2026-07-10 03:48:55,177 - INFO -   Generated Event Scope: 'This event covers the granting of 15 days of parole to Ranjith, a convict in the Periye twin murder case, and includes reactions, analyses, and follow-up developments related to this specific decision.
+2026-07-10T03:48:55.1785784Z It excludes other actions by the same individuals, parties, or regions unless they are direct developments of this parole decision.'
+2026-07-10T03:48:57.6116637Z 2026-07-10 03:48:57,611 - INFO -   Created new invisible Event ID 2235.
+2026-07-10T03:48:57.6117453Z 2026-07-10 03:48:57,611 - INFO - 
+2026-07-10T03:48:57.6118218Z Processing article ID 20190: 'E. Sreedharan opens office for high-speed rail project at Ponnani - The Hindu'
+2026-07-10T03:48:57.6119190Z 2026-07-10 03:48:57,611 - INFO -   Entities: ['kerala', 'bjp', 'congress', 'delhi']
+2026-07-10T03:48:57.6140396Z 
+2026-07-10T03:48:57.6444336Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:48:57.6445377Z Batches: 100%|██████████| 1/1 [00:00<00:00, 33.13it/s]
+2026-07-10T03:48:57.6453207Z 2026-07-10 03:48:57,645 - INFO -   Best similarity match: 0.6987 with Event ID 1630
+2026-07-10T03:53:21.5231733Z 2026-07-10 03:53:21,522 - INFO - Nomination: article_id=20190, event_id=1630, cosine=0.6987, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T03:53:21.5232530Z 
+2026-07-10T03:53:21.5234353Z 1. The article is not about a genuinely different named occurrence. It is related to the high-speed rail project mentioned in the context of Prime Minister Modi's visit to Thiruvananthapuram. The visit itself was about launching development projects, and the high-speed rail project is a direct consequence of discussions and proposals related to such development initiatives.
+2026-07-10T03:53:21.5236692Z    
+2026-07-10T03:53:21.5238445Z 2. The article reports a development related to the high-speed rail project, which is a direct follow-up to the discussions and proposals that were likely part of the Prime Minister's visit. E. Sreedharan's actions to proceed with the project are a consequence of the broader discussions and initiatives that were part of the event.
+2026-07-10T03:53:21.5240273Z 
+2026-07-10T03:53:21.5240865Z Based on the above reasoning, the article falls within the scope of the event.
+2026-07-10T03:53:21.5241366Z 
+2026-07-10T03:53:21.5244745Z ATTACH
+2026-07-10T03:53:21.5311558Z 2026-07-10 03:53:21,522 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T03:53:27.4261662Z 2026-07-10 03:53:27,425 - INFO -   Generated Milestone: 'E. Sreedharan opened an office in Ponnani to begin work on a proposed high-speed rail project connecting Kerala's southern and northern ends.'
+2026-07-10T03:53:29.9588829Z 2026-07-10 03:53:29,958 - INFO -   Attached to Event ID 1630 successfully.
+2026-07-10T03:53:29.9589678Z 2026-07-10 03:53:29,958 - INFO - 
+2026-07-10T03:53:29.9591150Z Processing article ID 20191: 'R. Ashok questions silence of Karnataka Deputy CM D.K. Shivakumar on Brand Bengaluru, absence from House - The Hindu'
+2026-07-10T03:53:29.9592270Z 2026-07-10 03:53:29,958 - INFO -   Entities: ['karnataka', 'bengaluru', 'siddaramaiah']
+2026-07-10T03:53:29.9610698Z 
+2026-07-10T03:53:29.9914896Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:53:29.9915871Z Batches: 100%|██████████| 1/1 [00:00<00:00, 33.13it/s]
+2026-07-10T03:53:29.9921475Z 2026-07-10 03:53:29,991 - INFO -   Best similarity match: 0.5886 with Event ID 1649
+2026-07-10T03:55:23.1316903Z 2026-07-10 03:55:23,130 - INFO -   Generated Event Scope: 'This event covers R. Ashok's questioning of Deputy Chief Minister D.K. Shivakumar's silence on the "Brand Bengaluru" campaign and his absence from legislative sessions, including any reactions, analyses, and follow-up developments related to this specific occurrence.
+2026-07-10T03:55:23.1318894Z It excludes other actions by R. Ashok, D.K. Shivakumar, or the Karnataka government unless they are direct developments or responses to this specific questioning and the issues raised regarding "Brand Bengaluru."'
+2026-07-10T03:55:25.4765429Z 2026-07-10 03:55:25,476 - INFO -   Created new invisible Event ID 2236.
+2026-07-10T03:55:25.4766242Z 2026-07-10 03:55:25,476 - INFO - 
+2026-07-10T03:55:25.4767313Z Processing article ID 20194: 'BJP MLC C.T. Ravi elected president of Chikkamagaluru DCC Bank - The Hindu'
+2026-07-10T03:55:25.4768493Z 2026-07-10 03:55:25,476 - INFO -   Entities: ['bjp']
+2026-07-10T03:55:25.4787851Z 
+2026-07-10T03:55:25.5043351Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:55:25.5044647Z Batches: 100%|██████████| 1/1 [00:00<00:00, 39.47it/s]
+2026-07-10T03:55:25.5050466Z 2026-07-10 03:55:25,504 - INFO -   Best similarity match: 0.5518 with Event ID 2070
+2026-07-10T03:57:09.8582910Z 2026-07-10 03:57:09,857 - INFO -   Generated Event Scope: 'This event covers the election of C.T. Ravi as president of the Chikkamagaluru District Cooperative Central Bank and the election of H.K. Dinesh Hosur as vice-president, including any reactions, analyses, and follow-up developments related to these elections.
+2026-07-10T03:57:09.8586316Z It excludes other actions or events involving C.T. Ravi, H.K. Dinesh Hosur, the BJP, or the Chikkamagaluru District Cooperative Central Bank unless they are direct developments of these specific elections.'
+2026-07-10T03:57:12.1743224Z 2026-07-10 03:57:12,173 - INFO -   Created new invisible Event ID 2237.
+2026-07-10T03:57:12.1743887Z 2026-07-10 03:57:12,174 - INFO - 
+2026-07-10T03:57:12.1755170Z Processing article ID 20205: 'Congress launches ‘Kadakku Purathu’ digital offensive against LDF - The Hindu'
+2026-07-10T03:57:12.1756044Z 2026-07-10 03:57:12,174 - INFO -   Entities: ['kerala', 'cpi', 'congress', 'pinarayi_vijayan']
+2026-07-10T03:57:12.1765553Z 
+2026-07-10T03:57:12.2109166Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:57:12.2113442Z Batches: 100%|██████████| 1/1 [00:00<00:00, 29.35it/s]
+2026-07-10T03:57:12.2119381Z 2026-07-10 03:57:12,211 - INFO -   Best similarity match: 0.5955 with Event ID 1637
+2026-07-10T03:59:03.3548577Z 2026-07-10 03:59:03,353 - INFO -   Generated Event Scope: 'This event covers the Congress party's launch of a digital campaign in Kerala, using the slogan "Kadakku Purathu," and includes reactions, analyses, and follow-up developments related to this specific offensive against the LDF government.
+2026-07-10T03:59:03.3551832Z It excludes other actions by the Congress party, Pinarayi Vijayan, or the LDF government unless they are direct developments or responses to this digital campaign.'
+2026-07-10T03:59:05.6559601Z 2026-07-10 03:59:05,655 - INFO -   Created new invisible Event ID 2238.
+2026-07-10T03:59:05.6560373Z 2026-07-10 03:59:05,655 - INFO - 
+2026-07-10T03:59:05.6564401Z Processing article ID 20209: 'Congress spokesperson accuses NCB of behaving like BJP’s ‘agent’ - The Hindu'
+2026-07-10T03:59:05.6565494Z 2026-07-10 03:59:05,655 - INFO -   Entities: ['rajasthan', 'narendra_modi', 'bjp', 'congress', 'siddaramaiah', 'karnataka']
+2026-07-10T03:59:05.6587167Z 
+2026-07-10T03:59:05.6955181Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T03:59:05.6956504Z Batches: 100%|██████████| 1/1 [00:00<00:00, 27.37it/s]
+2026-07-10T03:59:05.6964972Z 2026-07-10 03:59:05,696 - INFO -   Best similarity match: 0.7400 with Event ID 2083
+2026-07-10T04:02:54.8095017Z 2026-07-10 04:02:54,809 - INFO - Nomination: article_id=20209, event_id=2083, cosine=0.7400, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T04:02:54.8096077Z 
+2026-07-10T04:02:54.8097200Z 1. The new article does not describe a genuinely different named occurrence. It is a reaction to the same event mentioned in the scope, which involves the NCB's raid in Mysuru and the subsequent arrest.
+2026-07-10T04:02:54.8099795Z 2. The new article reports a development connected to the specific occurrence named in the scope. It provides a reaction from the Congress spokesperson, M. Lakshman, who accuses the NCB of acting as a tool for the BJP and criticizes the NCB's actions and language.
+2026-07-10T04:02:54.8102259Z 3. The article clearly falls within the scope of the event as it is a direct reaction to the NCB's raid and arrest in Mysuru.
+2026-07-10T04:02:54.8103125Z 
+2026-07-10T04:02:54.8103361Z Final answer: ATTACH
+2026-07-10T04:02:54.8104158Z 2026-07-10 04:02:54,809 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T04:03:01.7789844Z 2026-07-10 04:03:01,778 - INFO -   Generated Milestone: 'M. Lakshman, spokesperson for the Karnataka Pradesh Congress Committee, accused the NCB of acting as a tool for the BJP and spreading false information about drug operations in Mysuru.'
+2026-07-10T04:03:57.3657836Z 2026-07-10 04:03:57,365 - ERROR -   Generated Title too long (9 words): 'NCB Accused of BJP Bias in Mysuru Drug Operations'. Keeping NULL.
+2026-07-10T04:03:59.7458792Z 2026-07-10 04:03:59,745 - INFO -   Attached to Event ID 2083 successfully.
+2026-07-10T04:03:59.7459461Z 2026-07-10 04:03:59,745 - INFO - 
+2026-07-10T04:03:59.7460307Z Processing article ID 20211: 'Siddaramaiah trying to become leader of South India, says Vijayendra - The Hindu'
+2026-07-10T04:03:59.7462080Z 2026-07-10 04:03:59,745 - INFO -   Entities: ['bengaluru', 'delhi', 'bjp', 'congress', 'nirmala_sitharaman', 'siddaramaiah', 'karnataka']
+2026-07-10T04:03:59.7497646Z 
+2026-07-10T04:03:59.7945280Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T04:03:59.7946533Z Batches: 100%|██████████| 1/1 [00:00<00:00, 22.42it/s]
+2026-07-10T04:03:59.7955971Z 2026-07-10 04:03:59,795 - INFO -   Best similarity match: 0.7129 with Event ID 1653
+2026-07-10T04:08:28.8105010Z 2026-07-10 04:08:28,810 - INFO - Nomination: article_id=20211, event_id=1653, cosine=0.7129, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T04:08:28.8105780Z 
+2026-07-10T04:08:28.8107308Z 1. The article discusses a public disagreement over the Union Budget involving Siddaramaiah, Vijayendra, and the BJP. This disagreement is related to Siddaramaiah's criticism of the BJP-led Union Government's shift towards coercive centralism and his campaign advocating for increased state tax share.
+2026-07-10T04:08:28.8110303Z 2. The article is a reaction to Siddaramaiah's criticism and campaign, as it addresses the specific issue of state rights and the Union Budget's allocation to Karnataka.
+2026-07-10T04:08:28.8112481Z 3. The article does not discuss a genuinely different named occurrence but rather a reaction to the specific event of Siddaramaiah's criticism and campaign.
+2026-07-10T04:08:28.8113411Z 
+2026-07-10T04:08:28.8113552Z Final answer: ATTACH
+2026-07-10T04:08:28.8114204Z 2026-07-10 04:08:28,810 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T04:08:34.5331959Z 2026-07-10 04:08:34,532 - INFO -   Generated Milestone: 'B.Y. Vijayendra accused Siddaramaiah of attempting to become a leader in South India by dividing the region against the Centre.'
+2026-07-10T04:08:37.0032802Z 2026-07-10 04:08:37,002 - INFO -   Attached to Event ID 1653 successfully.
+2026-07-10T04:08:37.0033778Z 2026-07-10 04:08:37,003 - INFO - 
+2026-07-10T04:08:37.0034822Z Processing article ID 20212: 'Chief Minister Stalin inaugurates renovated Poompuhar tourism complex - The Hindu'
+2026-07-10T04:08:37.0035533Z 2026-07-10 04:08:37,003 - INFO -   Entities: ['mk_stalin']
+2026-07-10T04:08:37.0055013Z 
+2026-07-10T04:08:37.0349823Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T04:08:37.0351019Z Batches: 100%|██████████| 1/1 [00:00<00:00, 34.17it/s]
+2026-07-10T04:08:37.0354514Z 2026-07-10 04:08:37,035 - INFO -   Best similarity match: 0.6349 with Event ID 2133
+2026-07-10T04:12:50.1643680Z 2026-07-10 04:12:50,163 - INFO - Nomination: article_id=20212, event_id=2133, cosine=0.6349, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T04:12:50.1644464Z 
+2026-07-10T04:12:50.1645915Z 1. The article is about Chief Minister M.K. Stalin inaugurating the renovated Poompuhar tourism complex in Sirkazhi taluk, which is in Sivaganga district. This is not a genuinely different named occurrence but rather a specific event that took place during Stalin's visit to Sivaganga district.
+2026-07-10T04:12:50.1648968Z 2. The article reports a development connected to Stalin's visit, which includes the inauguration of a project (renovated Poompuhar tourism complex) in Sivaganga district. This fits within the scope of the event, which includes inaugurations and launches of welfare programs during his visit.
+2026-07-10T04:12:50.1651298Z 3. The article clearly falls under the scope of the event as it is a direct development of Stalin's visit to Sivaganga district.
+2026-07-10T04:12:50.1651999Z 
+2026-07-10T04:12:50.1652140Z Final answer: ATTACH
+2026-07-10T04:12:50.1652591Z 2026-07-10 04:12:50,163 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T04:12:55.3330382Z 2026-07-10 04:12:55,332 - INFO -   Generated Milestone: 'Chief Minister Stalin inaugurated the renovated Poompuhar tourism complex, marking a significant investment in tourism infrastructure.'
+2026-07-10T04:13:45.3947609Z 2026-07-10 04:13:45,394 - INFO -   Generated Event Title: 'Tamil Nadu Poompuhar Tourism Complex Inauguration' | slug: tamil-nadu-poompuhar-tourism-complex-inauguration
+2026-07-10T04:13:49.5737045Z 2026-07-10 04:13:49,573 - INFO -   Attached to Event ID 2133 successfully.
+2026-07-10T04:13:49.5738261Z 2026-07-10 04:13:49,573 - INFO - 
+2026-07-10T04:13:49.5739192Z Processing article ID 20228: 'CPI(M) to observe black day against Union Budget on February 3 - The Hindu'
+2026-07-10T04:13:49.5739881Z 2026-07-10 04:13:49,573 - INFO -   Entities: ['cpi', 'kerala']
+2026-07-10T04:13:49.5759147Z 
+2026-07-10T04:13:49.6058273Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T04:13:49.6059342Z Batches: 100%|██████████| 1/1 [00:00<00:00, 33.65it/s]
+2026-07-10T04:13:49.6064281Z 2026-07-10 04:13:49,606 - INFO -   Best similarity match: 0.6386 with Event ID 2200
+2026-07-10T04:18:37.2265958Z 2026-07-10 04:18:37,226 - INFO - Nomination: article_id=20228, event_id=2200, cosine=0.6386, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T04:18:37.2267386Z 
+2026-07-10T04:18:37.2268646Z 1. The article is about the Communist Party of India (Marxist) [CPI(M)] observing a "black day" on February 3rd to protest the Union Budget 2026-27. This is a reaction to the same Union Budget that Kerala's political leaders criticized for neglecting the state's demands.
+2026-07-10T04:18:37.2271145Z 2. The article details the CPI(M)'s criticism of the Union Budget, which aligns with the scope of the event, which includes reactions from political leaders regarding the Union Budget 2026-27.
+2026-07-10T04:18:37.2272932Z 3. The article does not discuss a different budget, court case, or scheme, and it clearly reports on a development connected to the specific occurrence named in the event scope.
+2026-07-10T04:18:37.2273911Z 
+2026-07-10T04:18:37.2274058Z Final answer: ATTACH
+2026-07-10T04:18:37.2274528Z 2026-07-10 04:18:37,226 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T04:18:43.3291153Z 2026-07-10 04:18:43,328 - INFO -   Generated Milestone: 'The CPI(M) will observe a "black day" on February 3rd to protest the Union Budget's lack of attention to Kerala's needs.'
+2026-07-10T04:18:45.7578042Z 2026-07-10 04:18:45,757 - INFO -   Attached to Event ID 2200 successfully.
+2026-07-10T04:18:45.7578683Z 2026-07-10 04:18:45,757 - INFO - 
+2026-07-10T04:18:45.7579533Z Processing article ID 20229: 'An atmosphere of social harmony and communal goodwill prevails in Bihar: Governor - The Hindu'
+2026-07-10T04:18:45.7580853Z 2026-07-10 04:18:45,757 - INFO -   Entities: ['nda', 'bjp', 'bihar', 'nitish_kumar']
+2026-07-10T04:18:45.7599460Z 
+2026-07-10T04:18:45.7898633Z Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2026-07-10T04:18:45.7899608Z Batches: 100%|██████████| 1/1 [00:00<00:00, 33.68it/s]
+2026-07-10T04:18:45.7906332Z 2026-07-10 04:18:45,790 - INFO -   Best similarity match: 0.7093 with Event ID 1923
+2026-07-10T04:22:43.3389154Z 2026-07-10 04:22:43,338 - INFO - Nomination: article_id=20229, event_id=1923, cosine=0.7093, vote=ATTACH | Raw: Step-by-step reasoning:
+2026-07-10T04:22:43.3390091Z 
+2026-07-10T04:22:43.3391871Z 1. The new article is not about a genuinely different named occurrence. It is a follow-up to the Governor's statement praising the state's rule of law and development under Chief Minister Nitish Kumar.
+2026-07-10T04:22:43.3394392Z 2. The article reports on a development connected to the specific occurrence named in the scope. It details the Governor's praise for the government's efforts in promoting social harmony and communal goodwill, along with initiatives to strengthen law enforcement and provide employment opportunities.
+2026-07-10T04:22:43.3396846Z 3. The article clearly falls within the scope of the event as it is a direct follow-up to the Governor's statement and elaborates on the same theme of praising the government's achievements.
+2026-07-10T04:22:43.3397889Z 
+2026-07-10T04:22:43.3398039Z Final answer: ATTACH
+2026-07-10T04:22:43.3398505Z 2026-07-10 04:22:43,338 - INFO -   [ATTACH] Approved by scope gate.
+2026-07-10T04:22:48.9824480Z 2026-07-10 04:22:48,982 - INFO -   Generated Milestone: 'Governor Arif Mohammad Khan commended the Nitish Kumar-led NDA government for its efforts to promote social harmony and communal goodwill in Bihar.'
+2026-07-10T04:23:40.9368945Z 2026-07-10 04:23:40,936 - INFO -   Generated Event Title: 'Bihar NDA Government Praised for Social Harmony Efforts' | slug: bihar-nda-government-praised-for-social-harmony-efforts
+2026-07-10T09:39:35.5910402Z ##[error]The operation was canceled.
+2026-07-10T09:39:35.6352033Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-10T09:39:35.6353454Z Post job cleanup.
+2026-07-10T09:39:35.8675602Z [command]/usr/bin/git version
+2026-07-10T09:39:35.8728218Z git version 2.54.0
+2026-07-10T09:39:35.8800763Z Temporarily overriding HOME='/home/runner/work/_temp/50d4fee6-fade-4be0-863e-9210fa9805dd' before making global git config changes
+2026-07-10T09:39:35.8802178Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-10T09:39:35.8806220Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/satya-timeline-service/satya-timeline-service
+2026-07-10T09:39:35.8845765Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-10T09:39:35.8879913Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-10T09:39:35.9173404Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-10T09:39:35.9200381Z http.https://github.com/.extraheader
+2026-07-10T09:39:35.9211820Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-07-10T09:39:35.9248171Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-10T09:39:35.9502394Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-10T09:39:35.9539809Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-10T09:39:35.9961532Z Cleaning up orphan processes
+2026-07-10T09:39:36.0255751Z Terminate orphan process: pid (2448) (python)
+2026-07-10T09:39:36.0282799Z Terminate orphan process: pid (2449) (tee)
+2026-07-10T09:39:36.0394252Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@v4, actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

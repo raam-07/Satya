@@ -21,7 +21,8 @@ const config: Config = {
         red:      '#b02828',
       },
       fontFamily: {
-        serif:  ['Playfair Display', 'Georgia', 'serif'],
+        serif:   ['Source Serif 4', 'Georgia', 'serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
         sans:   ['DM Sans', 'system-ui', 'sans-serif'],
         mono:   ['IBM Plex Mono', 'monospace'],
       },

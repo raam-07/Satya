@@ -61,7 +61,7 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
       <div className="flex-shrink-0 border-b" style={{ borderColor: 'var(--border-md)' }}>
         <div className="h-[2px]" style={{ background: 'var(--accent)' }} />
         <div className="flex items-center gap-3 px-4 py-3">
-          <span className="text-[var(--accent)] text-[18px] font-black font-serif tracking-[0.15em]">S</span>
+          <span className="text-[var(--accent)] text-[18px] font-black font-display tracking-[0.15em]">S</span>
           <div className="w-px h-5" style={{ background: 'var(--border-md)' }} />
           <input
             ref={inputRef}

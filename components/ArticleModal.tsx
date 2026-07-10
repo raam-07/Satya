@@ -214,7 +214,7 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
             )}
 
             {/* Title */}
-            <h2 className="text-[22px] md:text-[26px] font-black font-serif leading-tight mb-4" style={{ color: 'var(--text1)' }}>
+            <h2 className="text-[22px] md:text-[26px] font-bold font-serif leading-tight mb-4" style={{ color: 'var(--text1)' }}>
               {displayTitle}
             </h2>
 
@@ -328,13 +328,6 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 {article.source && (
                   <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-[var(--text3)]">
-                    {article.rephrased_title && (
-                      <>
-                        <span>Originally:</span>
-                        <span className="italic">"{article.title}"</span>
-                        <span>—</span>
-                      </>
-                    )}
                     <SrcTag label={article.source} />
                   </div>
                 )}

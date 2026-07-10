@@ -75,7 +75,7 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
             }}
             aria-label="Search"
           >
-            <span className="font-black font-serif text-[18px] tracking-tight leading-none" style={{ color: '#fff' }}>S</span>
+            <span className="font-black font-display text-[18px] tracking-tight leading-none" style={{ color: '#fff' }}>S</span>
           </button>
         </div>
 
