@@ -96,7 +96,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
           return (
             <Link
               key={ev.id}
-              href={`/event/${ev.slug}`}
+              href={`/event/${ev.slug || ev.id}`}
               className="block bg-[var(--surface)] border rounded-sm p-4 transition-colors hover:border-[var(--accent)]"
               style={{ borderColor: 'var(--border-md)', opacity: ongoing ? 1 : 0.8 }}
             >

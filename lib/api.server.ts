@@ -275,7 +275,7 @@ export const serverApi = {
                         SELECT ea.event_date AS d FROM event_articles ea
                          WHERE ea.event_id = e.id ORDER BY ea.event_date ASC)) AS milestone_dates
               FROM events e
-              WHERE e.title IS NOT NULL
+              WHERE e.title IS NOT NULL AND e.slug IS NOT NULL AND e.slug != ''
               ORDER BY e.last_seen DESC
               LIMIT 120`,
         args: []
@@ -291,10 +291,17 @@ export const serverApi = {
   },
 
   async eventTimeline(slug: string): Promise<EventTimeline | null> {
-    return cached(`eventTimeline:${slug.toLowerCase()}`, ['events'], async () => {
+    let param = slug;
+    try { param = decodeURIComponent(slug); } catch {}
+    param = param.trim();
+    return cached(`eventTimeline:${param.toLowerCase()}`, ['events'], async () => {
+      // Resolve by slug; fall back to numeric id (covers events without a slug)
+      const isNumeric = /^\d+$/.test(param);
       const run = (withScope: boolean) => db.execute({
-        sql: `SELECT ${EVENT_COLS}${withScope ? ', e.scope' : ''} FROM events e WHERE e.slug = ? AND e.title IS NOT NULL`,
-        args: [slug]
+        sql: `SELECT ${EVENT_COLS}${withScope ? ', e.scope' : ''} FROM events e
+              WHERE e.title IS NOT NULL AND (e.slug = ?${isNumeric ? ' OR e.id = ?' : ''})
+              LIMIT 1`,
+        args: isNumeric ? [param, Number(param)] : [param]
       });
       let evRes;
       try {
@@ -333,14 +340,15 @@ export const serverApi = {
   async articleEvent(articleId: number): Promise<EventTimeline | null> {
     return cached(`articleEvent:${articleId}`, ['events'], async () => {
       const res = await db.execute({
-        sql: `SELECT e.slug FROM event_articles ea
+        sql: `SELECT e.id, e.slug FROM event_articles ea
               JOIN events e ON e.id = ea.event_id
               WHERE ea.article_id = ? AND e.title IS NOT NULL
               ORDER BY e.last_seen DESC LIMIT 1`,
         args: [articleId]
       });
       if (!res.rows.length) return null;
-      return serverApi.eventTimeline(String(res.rows[0].slug));
+      const ref = res.rows[0].slug ? String(res.rows[0].slug) : String(res.rows[0].id);
+      return serverApi.eventTimeline(ref);
     }, { revalidate: 900 });
   },
 
@@ -998,8 +1006,9 @@ export const serverApi = {
     });
   },
 
-  async feed(type: string): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
-    return cached(`feed:${type.toLowerCase()}`, ['articles'], async () => {
+  async feed(type: string, limit?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+    const lim = Math.min(Math.max(Number(limit) || 500, 1), 500);
+    return cached(`feed:${type.toLowerCase()}:${lim}`, ['articles'], async () => {
       let query = `
         SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -1033,15 +1042,15 @@ export const serverApi = {
         OR a.cities_mentioned    NOT IN ('[]',''))`;
 
       if (type === 'flagged') {
-        query += INDIA_FILTER + " AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT 200";
+        query += INDIA_FILTER + ` AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT ${lim}`;
       } else if (category_map[type]) {
         if (category_map[type] !== 'international') {
           query += INDIA_FILTER;
         }
-        query += " AND a.category = ? ORDER BY a.scraped_at DESC LIMIT 200";
+        query += ` AND a.category = ? ORDER BY a.scraped_at DESC LIMIT ${lim}`;
         args.push(category_map[type]);
       } else if (topic_map[type]) {
-        query += INDIA_FILTER + " AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT 200";
+        query += INDIA_FILTER + ` AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT ${lim}`;
         args.push(`%${topic_map[type]}%`);
       } else {
         // 'all' feed
@@ -1053,7 +1062,7 @@ export const serverApi = {
             LEFT JOIN sources s ON a.source_id = s.id
             WHERE a.status IN ('classified', 'entity_processed', 'processed')
             ORDER BY a.scraped_at DESC
-            LIMIT 1000
+            LIMIT ${Math.max(lim * 3, 200)}
           ) a
           WHERE (a.category != 'international'
             OR a.party_mentioned     NOT IN ('[]','')
@@ -1061,7 +1070,7 @@ export const serverApi = {
             OR a.states_mentioned    NOT IN ('[]','')
             OR a.cities_mentioned    NOT IN ('[]',''))
           ORDER BY a.scraped_at DESC
-          LIMIT 200
+          LIMIT ${lim}
         `;
       }
 

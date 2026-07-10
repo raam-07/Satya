@@ -40,8 +40,8 @@ export default async function VaadePage() {
           </div>
           <Link
             href="/netas"
-            className="flex-shrink-0 mt-1 text-[10px] font-mono font-semibold tracking-wider uppercase px-3 py-2 rounded-[3px] transition-colors hover:bg-[var(--bg-alt)] text-[var(--text2)]"
-            style={{ border: '1px solid var(--border-md)' }}
+            className="flex-shrink-0 mt-1 text-[10px] font-mono font-semibold tracking-wider uppercase px-3 py-2 rounded-[3px] transition-opacity hover:opacity-80"
+            style={{ border: '1px solid var(--accent)', color: 'var(--accent)', background: 'rgba(191,74,7,0.06)' }}
           >
             Netas →
           </Link>

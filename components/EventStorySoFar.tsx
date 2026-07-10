@@ -38,7 +38,7 @@ export function EventStorySoFar({ articleId }: { articleId: number }) {
       </div>
 
       <Link
-        href={`/event/${event.slug}`}
+        href={`/event/${event.slug || event.id}`}
         className="flex items-center justify-between px-4 py-2.5 border-t transition-colors hover:bg-[var(--bg-alt)]"
         style={{ borderColor: 'var(--border)' }}
       >

@@ -24,6 +24,8 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
 
   // Feed cache — persists across tab switches without triggering re-renders
   const feedCache = useRef<Map<string, Article[]>>(new Map([['all', initialArticles]]))
+  // Tabs whose FULL feed (not just the fast initial slice) has been fetched
+  const fullLoaded = useRef<Set<string>>(new Set())
 
   const openModal  = useCallback((a: Article) => setModalArticle(a), [])
   const closeModal = useCallback(() => setModalArticle(null), [])
@@ -44,9 +46,11 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
       feedCache.current.clear()
       setLoading(true)
       try {
+        fullLoaded.current.clear()
         const res = await api.feed(activeTab, true)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
+        fullLoaded.current.add(activeTab)
         setArticles(list)
         setVisibleCount(20)
       } catch (err) {
@@ -60,23 +64,30 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
   }, [activeTab])
 
   useEffect(() => {
-    // Check cache first — no network call needed
+    // Check cache first — show instantly, no spinner
     const cached = feedCache.current.get(activeTab)
     if (cached) {
       setArticles(cached)
       setVisibleCount(20)
       setLoading(false)
-      return
+      // Fully loaded already → nothing else to do
+      if (fullLoaded.current.has(activeTab)) return
     }
 
     let active = true
     async function loadFeed() {
-      setLoading(true)
+      // Only show the spinner when we have nothing to display yet;
+      // topping up a fast initial slice happens silently in the background.
+      if (!cached) setLoading(true)
       try {
         const res = await api.feed(activeTab)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
-        if (active) { setArticles(list); setVisibleCount(20) }
+        fullLoaded.current.add(activeTab)
+        if (active && list.length > 0) {
+          setArticles(list)
+          if (!cached) setVisibleCount(20)
+        }
       } catch (err) {
         console.error('Error loading feed:', err)
       } finally {

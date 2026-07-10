@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
       case 'category':
         return NextResponse.json(await serverApi.category(param));
       case 'feed':
-        return NextResponse.json(await serverApi.feed(param));
+        const feedLimit = parseInt(searchParams.get('limit') || '', 10);
+        return NextResponse.json(await serverApi.feed(param, isNaN(feedLimit) ? undefined : feedLimit));
       case 'search':
         return NextResponse.json(await serverApi.search(param));
       case 'source':

@@ -71,7 +71,7 @@ export function VaadeClient({ data }: VaadeClientProps) {
   const [activeCategory, setActiveCategory] = useState<CategoryFilterId>('all')
   const [activeTopic, setActiveTopic] = useState<string>('all')
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
-  const [criticalOnly, setCriticalOnly] = useState<boolean>(false)
+  const [criticalOnly, setCriticalOnly] = useState<boolean>(true)
 
   const byStatus = data?.by_status ?? {}
   const allPromises: PoliticalPromise[] = [
