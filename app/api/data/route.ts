@@ -47,6 +47,14 @@ export async function GET(req: NextRequest) {
         const artId = parseInt(param, 10);
         if (isNaN(artId)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });
         return NextResponse.json(await serverApi.article(artId));
+      case 'eventsList':
+        return NextResponse.json(await serverApi.eventsList());
+      case 'eventTimeline':
+        return NextResponse.json(await serverApi.eventTimeline(param));
+      case 'articleEvent':
+        const aeId = parseInt(param, 10);
+        if (isNaN(aeId)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });
+        return NextResponse.json(await serverApi.articleEvent(aeId));
       case 'articleContent':
         const id = parseInt(param, 10);
         if (isNaN(id)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });

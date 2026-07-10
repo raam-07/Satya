@@ -1,0 +1,94 @@
+import { api } from '@/lib/api'
+import { StoryTimeline } from '@/components/StoryTimeline'
+import { cleanTitle } from '@/lib/utils'
+import { epochToDate, eventDaySpan, entityKeyLabel } from '@/lib/eventUtils'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const revalidate = 900
+
+interface Props {
+  params: { slug: string }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const event = await api.eventTimeline(params.slug)
+  if (!event) return { title: 'Timeline not found | SatyaDheesh' }
+  const title = cleanTitle(event.title)
+  return {
+    title: `${title} — Full Timeline | SatyaDheesh`,
+    description:
+      event.scope ||
+      `${title}: ${event.article_count} updates tracked from ${epochToDate(event.first_seen)} to ${epochToDate(event.last_seen)}.`,
+    alternates: {
+      canonical: `https://satyadheesh.in/event/${params.slug}`,
+    },
+  }
+}
+
+export default async function EventPage({ params }: Props) {
+  const event = await api.eventTimeline(params.slug)
+  if (!event) notFound()
+
+  const ongoing = event.state === 'open'
+  const days = eventDaySpan(event)
+
+  return (
+    <div className="md:max-w-3xl md:mx-auto">
+      {/* Header */}
+      <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href="/timelines"
+            className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase hover:text-[var(--accent)] transition-colors"
+          >
+            Timelines
+          </Link>
+          <span className="text-[10px] font-mono text-[var(--text3)]">/</span>
+          <span
+            className="text-[10px] font-mono tracking-widest uppercase"
+            style={{ color: ongoing ? 'var(--green)' : 'var(--text3)' }}
+          >
+            {ongoing ? '● Ongoing' : 'Concluded'}
+          </span>
+        </div>
+
+        <h1 className="text-[24px] md:text-[30px] font-bold font-serif leading-tight text-[var(--text1)] mt-2">
+          {cleanTitle(event.title)}
+        </h1>
+
+        {event.scope && (
+          <p className="text-[13px] text-[var(--text2)] leading-relaxed mt-2">{event.scope}</p>
+        )}
+
+        <p className="text-[10px] font-mono text-[var(--text3)] tracking-wider mt-3">
+          {event.article_count} UPDATES · {days} DAY{days > 1 ? 'S' : ''} ·{' '}
+          {epochToDate(event.first_seen).toUpperCase()} — {epochToDate(event.last_seen).toUpperCase()}
+        </p>
+
+        {event.entity_keys.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {event.entity_keys.slice(0, 8).map(key => (
+              <span
+                key={key}
+                className="text-[10px] font-mono px-2 py-0.5 rounded-[3px] text-[var(--text2)]"
+                style={{ border: '1px solid var(--border-md)' }}
+              >
+                {entityKeyLabel(key)}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Timeline */}
+      <div className="px-4 md:px-6 py-6">
+        <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-4 text-[var(--text3)]">
+          The story so far
+        </div>
+        <StoryTimeline milestones={event.milestones} />
+      </div>
+    </div>
+  )
+}

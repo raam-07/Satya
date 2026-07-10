@@ -11,10 +11,15 @@ const LEFT_TABS = [
       <rect x="2" y="14" width="13" height="2" rx="1" fill="currentColor" opacity="0.4"/>
     </svg>
   )},
-  { label: 'NETAS', href: '/netas', icon: (
+  { label: 'TIMELINES', href: '/timelines', icon: (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="7" r="3.5" fill="currentColor"/>
-      <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M5 3v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="5" cy="5" r="2" fill="currentColor"/>
+      <circle cx="5" cy="10" r="2" fill="currentColor" opacity="0.6"/>
+      <circle cx="5" cy="15" r="2" fill="currentColor" opacity="0.4"/>
+      <rect x="9" y="4" width="9" height="2" rx="1" fill="currentColor"/>
+      <rect x="9" y="9" width="7" height="2" rx="1" fill="currentColor" opacity="0.6"/>
+      <rect x="9" y="14" width="8" height="2" rx="1" fill="currentColor" opacity="0.4"/>
     </svg>
   )},
 ]

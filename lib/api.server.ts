@@ -4,15 +4,17 @@ import zlib from 'zlib';
 import { db } from './db';
 import { slugify, partySlugify } from './utils';
 import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
-import type { 
-  Article, 
-  IndiaOverview, 
-  PartyData, 
-  Minister, 
-  StateData, 
-  TopicData, 
-  PromisesSummary, 
-  Manifest 
+import type {
+  Article,
+  IndiaOverview,
+  PartyData,
+  Minister,
+  StateData,
+  TopicData,
+  PromisesSummary,
+  Manifest,
+  EventSummary,
+  EventTimeline
 } from './api';
 
 // --- Static Registries Loaders (Self-Healing Paths) ---
@@ -182,6 +184,7 @@ export function clearCache() {
     revalidateTag('articles');
     revalidateTag('promises');
     revalidateTag('entities');
+    revalidateTag('events');
     revalidatePath('/', 'layout');
   } catch (e) {
     console.error('Failed to revalidate in clearCache:', e);
@@ -231,7 +234,116 @@ async function getHeavyOverviewStats() {
   });
 }
 
+// --- Timeline (events) helpers ---
+function parseEntityKeys(raw: any): string[] {
+  try {
+    const arr = JSON.parse(String(raw || '[]'));
+    return Array.isArray(arr) ? arr.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function mapEventRow(row: any): EventSummary {
+  return {
+    id: Number(row.id),
+    title: String(row.title || ''),
+    slug: String(row.slug || ''),
+    state: (String(row.state || 'open') === 'open' ? 'open' : 'closed') as 'open' | 'closed',
+    entity_keys: parseEntityKeys(row.entity_keys),
+    first_seen: Number(row.first_seen || 0),
+    last_seen: Number(row.last_seen || 0),
+    article_count: Number(row.article_count || 0),
+    saga_id: row.saga_id != null ? Number(row.saga_id) : undefined,
+    scope: row.scope ? String(row.scope) : undefined,
+    latest_milestone: row.latest_milestone ? String(row.latest_milestone) : undefined,
+    milestone_dates: parseEntityKeys(row.milestone_dates).map(Number).filter(n => !isNaN(n))
+  };
+}
+
+const EVENT_COLS = `e.id, e.title, e.slug, e.entity_keys, e.saga_id, e.first_seen, e.last_seen, e.article_count, e.state`;
+
 export const serverApi = {
+  async eventsList(): Promise<{ events: EventSummary[] } | null> {
+    return cached('eventsList', ['events'], async () => {
+      const run = (withScope: boolean) => db.execute({
+        sql: `SELECT ${EVENT_COLS}${withScope ? ', e.scope' : ''},
+                     (SELECT COALESCE(ea.milestone, a.rephrased_title, a.title)
+                        FROM event_articles ea JOIN articles a ON a.id = ea.article_id
+                       WHERE ea.event_id = e.id ORDER BY ea.event_date DESC LIMIT 1) AS latest_milestone,
+                     (SELECT json_group_array(d) FROM (
+                        SELECT ea.event_date AS d FROM event_articles ea
+                         WHERE ea.event_id = e.id ORDER BY ea.event_date ASC)) AS milestone_dates
+              FROM events e
+              WHERE e.title IS NOT NULL
+              ORDER BY e.last_seen DESC
+              LIMIT 120`,
+        args: []
+      });
+      let res;
+      try {
+        res = await run(true);
+      } catch {
+        res = await run(false);
+      }
+      return { events: res.rows.map(mapEventRow) };
+    }, { revalidate: 900 });
+  },
+
+  async eventTimeline(slug: string): Promise<EventTimeline | null> {
+    return cached(`eventTimeline:${slug.toLowerCase()}`, ['events'], async () => {
+      const run = (withScope: boolean) => db.execute({
+        sql: `SELECT ${EVENT_COLS}${withScope ? ', e.scope' : ''} FROM events e WHERE e.slug = ? AND e.title IS NOT NULL`,
+        args: [slug]
+      });
+      let evRes;
+      try {
+        evRes = await run(true);
+      } catch {
+        evRes = await run(false);
+      }
+      if (!evRes.rows.length) return null;
+      const event = mapEventRow(evRes.rows[0]);
+
+      const msRes = await db.execute({
+        sql: `SELECT ea.article_id, ea.event_date,
+                     COALESCE(ea.milestone, a.rephrased_title, a.title) AS milestone,
+                     s.name AS source_name, a.category
+              FROM event_articles ea
+              JOIN articles a ON a.id = ea.article_id
+              LEFT JOIN sources s ON a.source_id = s.id
+              WHERE ea.event_id = ?
+              ORDER BY ea.event_date ASC`,
+        args: [event.id]
+      });
+
+      return {
+        ...event,
+        milestones: msRes.rows.map(r => ({
+          article_id: Number(r.article_id),
+          event_date: Number(r.event_date || 0),
+          milestone: String(r.milestone || ''),
+          source: r.source_name ? String(r.source_name) : undefined,
+          category: r.category ? String(r.category) : undefined
+        }))
+      };
+    }, { revalidate: 900 });
+  },
+
+  async articleEvent(articleId: number): Promise<EventTimeline | null> {
+    return cached(`articleEvent:${articleId}`, ['events'], async () => {
+      const res = await db.execute({
+        sql: `SELECT e.slug FROM event_articles ea
+              JOIN events e ON e.id = ea.event_id
+              WHERE ea.article_id = ? AND e.title IS NOT NULL
+              ORDER BY e.last_seen DESC LIMIT 1`,
+        args: [articleId]
+      });
+      if (!res.rows.length) return null;
+      return serverApi.eventTimeline(String(res.rows[0].slug));
+    }, { revalidate: 900 });
+  },
+
   async indiaOverview(): Promise<IndiaOverview | null> {
     return cached('indiaOverview', ['entities', 'promises', 'articles'], async () => {
       const entities = await loadEntities();

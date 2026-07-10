@@ -14,16 +14,16 @@ const canonicalizeHref = (href: string): string => {
 }
 
 const NAV = [
-  { label: 'Feed',           href: '/',      icon: '◉' },
-  { label: 'Netas',          href: '/netas', icon: '◈',
+  { label: 'Feed',           href: '/',          icon: '◉' },
+  { label: 'Timelines',      href: '/timelines', icon: '◈' },
+  { label: 'Vaade',          href: '/vaade', icon: '◧',
     children: [
-      { label: 'All Parties & Ministers', href: '/netas' },
+      { label: 'All Promises', href: '/vaade' },
+      { label: 'Netas — Parties & Ministers', href: '/netas' },
       { label: 'BJP',  href: '/party/bjp' },
       { label: 'INC',  href: '/party/inc' },
-      { label: 'AAP',  href: '/party/aap' },
     ],
   },
-  { label: 'Vaade',          href: '/vaade', icon: '◧' },
   { label: 'Data',           href: '/data',  icon: '◻' },
   {
     label: 'States',

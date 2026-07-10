@@ -219,6 +219,34 @@ export interface PromisesSummary {
   by_party?: Record<string, any>
 }
 
+// ── Timelines (events) ───────────────────────────────────────────────────────
+export interface EventSummary {
+  id: number
+  title: string
+  slug: string
+  state: 'open' | 'closed'
+  entity_keys: string[]
+  first_seen: number   // unix epoch (s)
+  last_seen: number    // unix epoch (s)
+  article_count: number
+  saga_id?: number
+  scope?: string
+  latest_milestone?: string
+  milestone_dates?: number[]
+}
+
+export interface EventMilestone {
+  article_id: number
+  event_date: number   // unix epoch (s)
+  milestone: string
+  source?: string
+  category?: string
+}
+
+export interface EventTimeline extends EventSummary {
+  milestones: EventMilestone[]
+}
+
 // ── manifest.json ────────────────────────────────────────────────────────────
 export interface Manifest {
   generated_at?: string
@@ -358,5 +386,29 @@ export const api = {
       return serverApi.source(name);
     }
     return fetchClientJSON<{ source?: string; articles?: Article[] }>('source', name);
+  },
+
+  async eventsList(): Promise<{ events?: EventSummary[] } | null> {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.eventsList();
+    }
+    return fetchClientJSON<{ events?: EventSummary[] }>('eventsList');
+  },
+
+  async eventTimeline(slug: string): Promise<EventTimeline | null> {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.eventTimeline(slug);
+    }
+    return fetchClientJSON<EventTimeline>('eventTimeline', slug);
+  },
+
+  async articleEvent(articleId: number): Promise<EventTimeline | null> {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.articleEvent(articleId);
+    }
+    return fetchClientJSON<EventTimeline>('articleEvent', String(articleId));
   }
 };

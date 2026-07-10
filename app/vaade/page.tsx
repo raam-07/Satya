@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { api } from '@/lib/api'
 import { PBadge } from '@/components/SrcTag'
 import { VaadeClient } from '@/components/VaadeClient'
@@ -29,11 +30,22 @@ export default async function VaadePage() {
     <div className="md:max-w-5xl md:mx-auto">
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
-        <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Promise Tracker</span>
-        <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">
-          Vaade <span className="text-[var(--text3)] font-normal font-sans text-[16px]">— वादे</span>
-        </h1>
-        <p className="text-[13px] text-[var(--text2)] mt-1">Every tracked political promise with sources and verdicts.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Promise Tracker</span>
+            <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">
+              Vaade <span className="text-[var(--text3)] font-normal font-sans text-[16px]">— वादे</span>
+            </h1>
+            <p className="text-[13px] text-[var(--text2)] mt-1">Every tracked political promise with sources and verdicts.</p>
+          </div>
+          <Link
+            href="/netas"
+            className="flex-shrink-0 mt-1 text-[10px] font-mono font-semibold tracking-wider uppercase px-3 py-2 rounded-[3px] transition-colors hover:bg-[var(--bg-alt)] text-[var(--text2)]"
+            style={{ border: '1px solid var(--border-md)' }}
+          >
+            Netas →
+          </Link>
+        </div>
       </div>
 
       {/* Scorecard */}

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { cleanTitle, formatDate, categoryLabel, renderMarkdown } from '@/lib/utils'
 import { PBadge, SentimentDot, TappableMinister, TappableState } from '@/components/SrcTag'
+import { EventStorySoFar } from '@/components/EventStorySoFar'
 
 export const revalidate = false
 
@@ -131,6 +132,9 @@ export default async function NewsArticlePage({ params }: PageProps) {
               {renderMarkdown(article.rephrased_article)}
             </p>
           )}
+
+          {/* Story so far — event timeline (lazy) */}
+          <EventStorySoFar articleId={article.id} />
 
           {/* Framing statement */}
           <div className="text-[14px] leading-relaxed text-[var(--text2)] mb-5 font-sans">

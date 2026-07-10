@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown, slugify, partySlugify } from '@/lib/utils'
 import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from './SrcTag'
+import { EventStorySoFar } from './EventStorySoFar'
 import { useToast } from '@/lib/ToastContext'
 
 // Topic display names per spec
@@ -246,6 +247,9 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
                 {renderMarkdown(article.rephrased_article)}
               </p>
             )}
+
+            {/* Story so far — event timeline (lazy) */}
+            <EventStorySoFar articleId={article.id} />
 
             {/* Original Full Text — lazy loaded */}
             {contentLoading && (
