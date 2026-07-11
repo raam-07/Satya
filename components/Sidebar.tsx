@@ -115,7 +115,14 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 >
                   <span className="w-6 text-center text-[14px] flex-shrink-0">{item.icon}</span>
                   {!collapsed && (
-                    <span className="text-[12px] font-medium truncate">{item.label}</span>
+                    <span className="text-[12px] font-medium truncate flex items-center gap-1.5">
+                      {item.label}
+                      {item.label === 'Timelines' && (
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-[var(--border-md)] text-[var(--text3)] uppercase font-mono tracking-wider scale-90">
+                          Soon
+                        </span>
+                      )}
+                    </span>
                   )}
                 </Link>
               )}

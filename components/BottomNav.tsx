@@ -64,7 +64,12 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
             {tab.icon}
-            <span className="text-[8px] font-mono tracking-wider">{tab.label}</span>
+            <span className="text-[8px] font-mono tracking-wider flex items-center gap-1">
+              {tab.label}
+              {tab.label === 'TIMELINES' && (
+                <span className="text-[6.5px] opacity-60 font-semibold uppercase tracking-normal">Soon</span>
+              )}
+            </span>
           </Link>
         ))}
 
