@@ -34,9 +34,8 @@ export function SummaryMark() {
           >
             <span className="satya-gavel">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="12.5" y="2.5" width="8" height="4.5" rx="1" transform="rotate(45 16.5 4.75)" fill="var(--accent)" />
-                <rect x="10" y="7.5" width="3" height="10" rx="1" transform="rotate(45 11.5 12.5)" fill="var(--text1)" />
-                <rect x="3" y="19.5" width="10" height="2.5" rx="1" fill="var(--text1)" />
+                <rect x="10.75" y="3" width="2.5" height="12" rx="1" fill="var(--text1)" />
+                <rect x="6" y="15" width="12" height="6" rx="1.5" fill="var(--accent)" />
               </svg>
             </span>
           </span>
