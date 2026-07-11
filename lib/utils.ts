@@ -2,9 +2,14 @@ import React from 'react'
 
 export { slugify, partySlugify } from './slug'
 
-// Strip " - Source Name" from end of titles
+// Strip markdown formatting (**bold**, *italics*, `code`) and " - Source Name" from end of titles
 export function cleanTitle(title: string): string {
-  return title.replace(/\s[-|]\s[^-|]+$/, '').trim()
+  if (!title) return ''
+  const stripped = title
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .replace(/`/g, '')
+  return stripped.replace(/\s[-|]\s[^-|]+$/, '').trim()
 }
 
 // Format scraped_at: "2026-05-22 20:00:24.051627" → "May 22" or "2 days ago"
