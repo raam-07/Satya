@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { api } from '@/lib/api'
-import { PBadge } from '@/components/SrcTag'
 import { VaadeClient } from '@/components/VaadeClient'
 import type { Metadata } from 'next'
 
@@ -17,7 +16,6 @@ export const metadata: Metadata = {
 export default async function VaadePage() {
   const data = await api.promises()
   const stats    = data?.stats   ?? { total_promises: 0, kept: 0, broken: 0, ongoing: 0 }
-  const byParty  = data?.by_party  ?? {}
 
   const kept    = stats.kept    ?? 0
   const broken  = stats.broken  ?? 0
@@ -48,59 +46,32 @@ export default async function VaadePage() {
         </div>
       </div>
 
-      {/* Scorecard */}
-      <div className="border-b" style={{ borderColor: 'var(--border-md)' }}>
-        {/* Big numbers */}
-        <div className="grid grid-cols-3 md:grid-cols-6" style={{ borderColor: 'var(--border-md)' }}>
+      {/* Scorecard — one compact strip: stacked verdict bar + inline numbers */}
+      <div className="border-b px-4 md:px-6 py-3" style={{ borderColor: 'var(--border-md)' }}>
+        {/* Stacked verdict bar: the whole story in one glance */}
+        <div className="h-2.5 rounded-full overflow-hidden flex bg-[var(--bg-alt)]" title={`Kept ${kept} · Ongoing ${ongoing} · Broken ${broken}`}>
+          <div style={{ width: `${(kept / total) * 100}%`,    background: '#1B7050' }} />
+          <div style={{ width: `${(ongoing / total) * 100}%`, background: '#BF4A07' }} />
+          <div style={{ width: `${(broken / total) * 100}%`,  background: '#B02828' }} />
+        </div>
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2">
           {[
-            { label: 'CRITICAL', val: stats.critical ?? 0, color: '#DC2626' },
-            { label: 'BROKEN',   val: broken,             color: '#B02828' },
-            { label: 'ONGOING',  val: ongoing,            color: '#BF4A07' },
-            { label: 'KEPT',     val: kept,               color: '#1B7050' },
-            { label: 'VOID',     val: voidVal,            color: '#6B7280' },
-            { label: 'TOTAL',    val: stats.total_promises ?? (kept + broken + ongoing + voidVal), color: 'var(--text1)' },
+            { label: 'Kept',     val: kept,               color: '#1B7050' },
+            { label: 'Ongoing',  val: ongoing,            color: '#BF4A07' },
+            { label: 'Broken',   val: broken,             color: '#B02828' },
+            { label: 'Void',     val: voidVal,            color: '#6B7280' },
+            { label: 'Critical', val: stats.critical ?? 0, color: '#DC2626' },
           ].map(({ label, val, color }) => (
-            <div
-              key={label}
-              className="flex flex-col items-center py-5 px-2 border-r border-b border-[var(--border-md)] [&:nth-child(3n)]:border-r-0 md:[&:nth-child(3n)]:border-r md:last:border-r-0 [&:nth-child(n+4)]:border-b-0 md:border-b-0"
-            >
-              <div className="text-[28px] md:text-[36px] font-black font-mono leading-none" style={{ color }}>
-                {val}
-              </div>
-              <div className="text-[8px] font-mono tracking-[0.16em] uppercase text-[var(--text3)] mt-1">{label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress bar */}
-        <div className="px-4 md:px-6 pb-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[9px] font-mono text-[var(--text3)] tracking-widest">PROMISE KEPT RATE (EXCL. VOID)</span>
-            <span className="text-[9px] font-mono font-bold" style={{ color: keptPct >= 50 ? '#1B7050' : '#B02828' }}>
-              {keptPct}%
+            <span key={label} className="flex items-center gap-1.5 text-[10px] font-mono">
+              <span className="w-2 h-2 rounded-full inline-block" style={{ background: color }} />
+              <span className="font-black" style={{ color }}>{val}</span>
+              <span className="text-[var(--text3)] uppercase tracking-wider">{label}</span>
             </span>
-          </div>
-          <div className="h-2 rounded-full overflow-hidden bg-[var(--bg-alt)]">
-            <div className="h-full rounded-full transition-all" style={{
-              width: `${keptPct}%`,
-              background: keptPct >= 50 ? '#1B7050' : '#BF4A07',
-            }} />
-          </div>
+          ))}
+          <span className="ml-auto text-[10px] font-mono text-[var(--text3)] uppercase tracking-wider">
+            {keptPct}% kept · {stats.total_promises ?? (kept + broken + ongoing + voidVal)} tracked
+          </span>
         </div>
-
-        {/* By party */}
-        {Object.keys(byParty).length > 0 && (
-          <div className="px-4 md:px-6 pb-4 flex flex-wrap gap-3">
-            {Object.entries(byParty).map(([party, count]) => (
-              <div key={party} className="flex items-center gap-1.5">
-                <PBadge party={party} />
-                <span className="text-[10px] font-mono text-[var(--text3)]">
-                  {Array.isArray(count) ? count.length : count}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Filter chips + promise list (client) */}
