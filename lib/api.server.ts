@@ -565,7 +565,7 @@ export const serverApi = {
                 JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
                 WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
-                ORDER BY a.scraped_at DESC LIMIT 100`,
+                ORDER BY ae.article_id DESC LIMIT 100`,
           args: [partySlug]
         },
         {
@@ -674,7 +674,7 @@ export const serverApi = {
                 JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
                 WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
-                ORDER BY a.scraped_at DESC LIMIT 100`,
+                ORDER BY ae.article_id DESC LIMIT 100`,
           args: [ministerSlug]
         },
         {
@@ -783,7 +783,7 @@ export const serverApi = {
                 JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
                 WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed')
-                ORDER BY a.scraped_at DESC LIMIT 100`,
+                ORDER BY ae.article_id DESC LIMIT 100`,
           args: [...stateSlugs]
         },
         {
@@ -875,7 +875,7 @@ export const serverApi = {
                 JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
                 WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
-                ORDER BY a.scraped_at DESC LIMIT 100`,
+                ORDER BY ae.article_id DESC LIMIT 100`,
           args: [topicSlug]
         },
         {

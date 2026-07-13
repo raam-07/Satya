@@ -40,6 +40,7 @@ const INDEXES = [
   { name: "idx_articles_status_civic_scraped", sql: "CREATE INDEX IF NOT EXISTS idx_articles_status_civic_scraped ON articles(status, civic_flag, scraped_at)" },
   { name: "idx_articles_status_category_scraped", sql: "CREATE INDEX IF NOT EXISTS idx_articles_status_category_scraped ON articles(status, category, scraped_at)" },
   { name: "idx_articles_source_id", sql: "CREATE INDEX IF NOT EXISTS idx_articles_source_id ON articles(source_id)" },
+  { name: "idx_articles_source_scraped", sql: "CREATE INDEX IF NOT EXISTS idx_articles_source_scraped ON articles(source_id, scraped_at DESC) WHERE status IN ('classified', 'entity_processed', 'processed')" },
   
   // 2. Extra performance optimizations
   { name: "idx_articles_cat_scraped_desc", sql: "CREATE INDEX IF NOT EXISTS idx_articles_cat_scraped_desc ON articles(category, scraped_at DESC) WHERE status IN ('classified', 'entity_processed', 'processed')" },
