@@ -60,3 +60,31 @@ a { color: inherit; text-decoration: none; }
   transform-box: view-box;
   animation: satya-gavel-knock 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
+
+/* --- Skeleton shimmer (route-level loading states) --- */
+@keyframes sk-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.sk {
+  background: var(--bg-alt);
+  background-image: linear-gradient(90deg, var(--bg-alt) 0px, var(--surface) 120px, var(--bg-alt) 240px);
+  background-size: 800px 100%;
+  animation: sk-shimmer 1.4s linear infinite;
+  border-radius: 3px;
+}
+
+/* --- App-feel touch polish (cosmetic only) --- */
+html {
+  overscroll-behavior-y: none; /* no scroll-chaining/bounce past the page */
+}
+a, button {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: none) {
+  /* touch devices: immediate press feedback instead of the grey flash */
+  a:active, button:active {
+    opacity: 0.65;
+    transition: opacity 60ms ease;
+  }
+}
