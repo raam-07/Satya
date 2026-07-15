@@ -5,9 +5,10 @@ import type { EventSummary } from '@/lib/api'
 import { cleanTitle } from '@/lib/utils'
 import { epochToMonYear, eventDaySpan } from '@/lib/eventUtils'
 
-type Filter = 'ongoing' | 'concluded' | 'most_updates' | 'longest'
+type Filter = 'all' | 'ongoing' | 'concluded' | 'most_updates' | 'longest'
 
 const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'all', label: 'All' },
   { id: 'ongoing', label: 'Ongoing' },
   { id: 'concluded', label: 'Concluded' },
   { id: 'most_updates', label: 'Most updates' },
@@ -51,7 +52,7 @@ function DotTrack({ ev }: { ev: EventSummary }) {
 }
 
 export function TimelinesClient({ events }: { events: EventSummary[] }) {
-  const [filter, setFilter] = useState<Filter>('ongoing')
+  const [filter, setFilter] = useState<Filter>('all')
 
   let shown = [...events]
   if (filter === 'ongoing') shown = shown.filter(e => e.state === 'open')
