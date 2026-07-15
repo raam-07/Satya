@@ -4,17 +4,29 @@ import Link from 'next/link'
 import { api, type EventTimeline } from '@/lib/api'
 import { StoryTimeline } from './StoryTimeline'
 
-export function EventStorySoFar({ articleId }: { articleId: number }) {
-  const [event, setEvent] = useState<EventTimeline | null>(null)
+interface Props {
+  articleId: number
+  /** Server-prefetched event. When provided (news pages), the timeline link is
+   *  rendered into the initial HTML — crawlable internal link, no client fetch.
+   *  When omitted (client contexts like ArticleModal), falls back to fetching. */
+  initialEvent?: EventTimeline | null
+}
+
+export function EventStorySoFar({ articleId, initialEvent }: Props) {
+  const prefetched = initialEvent !== undefined
+  const [event, setEvent] = useState<EventTimeline | null>(
+    prefetched && initialEvent && (initialEvent.milestones?.length ?? 0) >= 2 ? initialEvent : null
+  )
 
   useEffect(() => {
+    if (prefetched) return
     let cancelled = false
     setEvent(null)
     api.articleEvent(articleId).then(ev => {
       if (!cancelled && ev && ev.milestones?.length >= 2) setEvent(ev)
     }).catch(() => {})
     return () => { cancelled = true }
-  }, [articleId])
+  }, [articleId, prefetched])
 
   if (!event) return null
 

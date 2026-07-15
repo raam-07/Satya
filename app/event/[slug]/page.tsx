@@ -75,7 +75,9 @@ export default async function EventPage({ params }: Props) {
     <div className="md:max-w-3xl md:mx-auto">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // Escape "<" so scraped/LLM text containing "</script>" can never
+        // break out of this tag and inject HTML.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>

@@ -290,6 +290,24 @@ export const serverApi = {
     }, { revalidate: 900 });
   },
 
+  /** Uncapped, lightweight list for the sitemap: every titled+slugged event.
+   *  eventsList() LIMIT 120 is for the UI; the sitemap must cover them all. */
+  async eventSitemapEntries(): Promise<{ slug: string; last_seen: number; state: string }[] | null> {
+    return cached('eventSitemapEntries', ['events'], async () => {
+      const res = await db.execute({
+        sql: `SELECT e.slug, e.last_seen, e.state FROM events e
+              WHERE e.title IS NOT NULL AND e.slug IS NOT NULL AND e.slug != ''
+              ORDER BY e.last_seen DESC`,
+        args: []
+      });
+      return res.rows.map(r => ({
+        slug: String(r.slug),
+        last_seen: Number(r.last_seen ?? 0),
+        state: String(r.state ?? 'closed'),
+      }));
+    }, { revalidate: 3600 });
+  },
+
   async eventTimeline(slug: string): Promise<EventTimeline | null> {
     let param = slug;
     try { param = decodeURIComponent(slug); } catch {}

@@ -61,6 +61,10 @@ export default async function NewsArticlePage({ params }: PageProps) {
     notFound()
   }
 
+  // Server-prefetch the article's event timeline so the "story so far" box and
+  // its timeline link are in the initial HTML (crawlable internal link).
+  const storyEvent = await api.articleEvent(article.id).catch(() => null)
+
   const displayTitle = cleanTitle(article.rephrased_title ?? article.title ?? '')
   const displayDate  = formatDate(article.scraped_at)
   const displayCat   = categoryLabel(article.category)
@@ -137,8 +141,8 @@ export default async function NewsArticlePage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Story so far — event timeline (lazy) */}
-          <EventStorySoFar articleId={article.id} />
+          {/* Story so far — event timeline (server-rendered for SEO) */}
+          <EventStorySoFar articleId={article.id} initialEvent={storyEvent} />
 
           {/* Framing statement */}
           <div className="text-[14px] leading-relaxed text-[var(--text2)] mb-5 font-sans">

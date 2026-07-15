@@ -107,19 +107,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     })
 
-    // 5. All timelines (/event/[slug])
-    const eventsData = await api.eventsList()
-    const events = eventsData?.events ?? []
+    // 5. All timelines (/event/[slug]) — uncapped query so every event is
+    // indexed, not just the UI's 120 most recent. Open events change daily;
+    // closed ones are archival.
+    const { serverApi } = await import('@/lib/api.server')
+    const events = (await serverApi.eventSitemapEntries()) ?? []
     events.forEach(ev => {
       const lastMod = ev.last_seen ? new Date(ev.last_seen * 1000) : new Date('2026-06-18')
       if (lastMod.getTime() > latestTimelineDate.getTime()) {
         latestTimelineDate = lastMod
       }
       dynamicRoutes.push({
-        url: `${baseUrl}/event/${ev.slug || ev.id}`,
+        url: `${baseUrl}/event/${ev.slug}`,
         lastModified: lastMod,
-        changeFrequency: 'daily' as const,
-        priority: 0.8,
+        changeFrequency: (ev.state === 'open' ? 'daily' : 'monthly') as 'daily' | 'monthly',
+        priority: ev.state === 'open' ? 0.8 : 0.6,
       })
     })
 
