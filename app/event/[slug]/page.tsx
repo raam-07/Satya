@@ -101,10 +101,6 @@ export default async function EventPage({ params }: Props) {
           {cleanTitle(event.title)}
         </h1>
 
-        {event.scope && (
-          <p className="text-[13px] text-[var(--text2)] leading-relaxed mt-2">{event.scope}</p>
-        )}
-
         <p className="text-[10px] font-mono text-[var(--text3)] tracking-wider mt-3">
           {event.article_count} UPDATES · {days} DAY{days > 1 ? 'S' : ''} ·{' '}
           {epochToDate(event.first_seen).toUpperCase()} — {epochToDate(event.last_seen).toUpperCase()}
@@ -125,12 +121,41 @@ export default async function EventPage({ params }: Props) {
         )}
       </div>
 
+      {/* Latest update callout — what a returning reader wants first */}
+      {event.milestones.length > 1 && (() => {
+        const latest = event.milestones[event.milestones.length - 1]
+        return (
+          <Link
+            href={`/news/${latest.article_id}`}
+            className="block border-b px-4 md:px-6 py-4 transition-colors hover:bg-[var(--bg-alt)]"
+            style={{ borderColor: 'var(--border-md)', background: 'rgba(191,74,7,0.03)', borderLeft: '3px solid var(--accent)' }}
+          >
+            <p className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--accent)' }}>
+              Latest · {epochToDate(latest.event_date)}
+            </p>
+            <p className="text-[13.5px] font-medium leading-relaxed mt-1 text-[var(--text1)]">
+              {cleanTitle(latest.milestone)}
+            </p>
+          </Link>
+        )
+      })()}
+
+      {/* What this timeline covers */}
+      {event.scope && (
+        <div className="border-b px-4 md:px-6 py-3" style={{ borderColor: 'var(--border-md)' }}>
+          <p className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase text-[var(--text3)] mb-1">
+            What this timeline covers
+          </p>
+          <p className="text-[12px] text-[var(--text2)] leading-relaxed italic">{event.scope}</p>
+        </div>
+      )}
+
       {/* Timeline */}
       <div className="px-4 md:px-6 py-6">
-        <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-4 text-[var(--text3)]">
-          The story so far
+        <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-5 text-[var(--text3)]">
+          The full story, from the beginning
         </div>
-        <StoryTimeline milestones={event.milestones} />
+        <StoryTimeline milestones={event.milestones} storyMode ongoing={ongoing} />
       </div>
     </div>
   )
