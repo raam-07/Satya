@@ -16,13 +16,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = await api.eventTimeline(params.slug)
   if (!event) return { title: 'Timeline not found | SatyaDheesh' }
   const title = cleanTitle(event.title)
+  const description =
+    event.scope ||
+    `${title}: ${event.article_count} updates tracked from ${epochToDate(event.first_seen)} to ${epochToDate(event.last_seen)}.`
   return {
     title: `${title} — Full Timeline | SatyaDheesh`,
-    description:
-      event.scope ||
-      `${title}: ${event.article_count} updates tracked from ${epochToDate(event.first_seen)} to ${epochToDate(event.last_seen)}.`,
+    description,
     alternates: {
       canonical: `https://satyadheesh.in/event/${params.slug}`,
+    },
+    openGraph: {
+      title: `${title} — Full Timeline | SatyaDheesh`,
+      description,
+      url: `https://satyadheesh.in/event/${params.slug}`,
+      siteName: 'SatyaDheesh',
+      type: 'article',
+      publishedTime: new Date(event.first_seen * 1000).toISOString(),
+      modifiedTime: new Date(event.last_seen * 1000).toISOString(),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} — Full Timeline | SatyaDheesh`,
+      description,
     },
   }
 }
@@ -34,8 +49,34 @@ export default async function EventPage({ params }: Props) {
   const ongoing = event.state === 'open'
   const days = eventDaySpan(event)
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': cleanTitle(event.title),
+    'description': event.scope || `${cleanTitle(event.title)} timeline with ${event.article_count} updates.`,
+    'numberOfItems': event.milestones.length,
+    'itemListElement': event.milestones.map((m, idx) => ({
+      '@type': 'ListItem',
+      'position': idx + 1,
+      'item': {
+        '@type': 'NewsArticle',
+        'headline': m.milestone ? cleanTitle(m.milestone.length > 80 ? m.milestone.slice(0, 77) + '...' : m.milestone) : cleanTitle(event.title),
+        'datePublished': m.event_date ? new Date(m.event_date * 1000).toISOString() : undefined,
+        'description': m.milestone ? cleanTitle(m.milestone) : undefined,
+        'author': {
+          '@type': 'Organization',
+          'name': 'SatyaDheesh',
+        },
+      },
+    })),
+  }
+
   return (
     <div className="md:max-w-3xl md:mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <div className="flex items-center gap-2 flex-wrap">
