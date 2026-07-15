@@ -29,8 +29,20 @@ export async function generateMetadata({ params }: { params: { name: string } })
 
   const roleParty = [minister.role, minister.party].filter(Boolean).join(', ') || 'Political Leader'
 
-  const title = `${name} — promises kept, broken & pending | SatyaDheesh`
-  const description = `Track the political promise record of ${name} (${roleParty}) on SatyaDheesh: ${kept} kept, ${broken} broken, and ${ongoing} pending.`
+  // Cover the full query space people search for a politician: promises,
+  // criminal cases, controversies. Phrased factually (counts on record) —
+  // never as accusations.
+  const cases = minister.criminal_cases ?? 0
+  const hasRecord = cases > 0 || (minister.controversies?.length ?? 0) > 0
+  const title = hasRecord
+    ? `${name} — promises, criminal cases & controversies | SatyaDheesh`
+    : `${name} — promises kept, broken & pending | SatyaDheesh`
+  const descParts = [
+    `Track the full public record of ${name} (${roleParty}) on SatyaDheesh: ${kept} promises kept, ${broken} broken, ${ongoing} pending`,
+  ]
+  if (cases > 0) descParts.push(`${cases} criminal case${cases > 1 ? 's' : ''} on record`)
+  if ((minister.controversies?.length ?? 0) > 0) descParts.push(`controversies and gaffes as reported in the news`)
+  const description = descParts.join(', ') + '.'
 
   return {
     title,

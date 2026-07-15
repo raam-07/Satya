@@ -22,14 +22,20 @@ export async function generateMetadata({ params }: { params: { name: string } })
 
   const canonicalSlug = partySlugify(party.party || '')
   const partyName = party.full_name || party.party || params.name.toUpperCase()
-  const title = `${partyName} — promises & performance | SatyaDheesh`
-  
+  // Include the criminal-record angle when the data supports it — factual
+  // counts (as declared/reported), never characterization.
+  const leadersWithCases = (party.ministers ?? []).filter(m => (m.criminal_cases ?? 0) > 0).length
+  const title = leadersWithCases > 0
+    ? `${partyName} — promises, performance & leaders' criminal records | SatyaDheesh`
+    : `${partyName} — promises & performance | SatyaDheesh`
+
   let description = `${partyName} (${party.coalition || ''}) promise tracker and political performance on SatyaDheesh.`
   if (party.promises) {
     const kept = party.promises.filter(p => p.status === 'kept').length
     const broken = party.promises.filter(p => p.status === 'broken').length
     const ongoing = party.promises.filter(p => p.status === 'ongoing').length
-    description = `${partyName} (${party.coalition || ''}) promise tracker: ${kept} kept, ${broken} broken, and ${ongoing} ongoing political promises.`
+    description = `${partyName} (${party.coalition || ''}) promise tracker: ${kept} kept, ${broken} broken, and ${ongoing} ongoing political promises`
+      + (leadersWithCases > 0 ? `, plus criminal cases on record for ${leadersWithCases} tracked leader${leadersWithCases > 1 ? 's' : ''}.` : '.')
   }
 
   return {
