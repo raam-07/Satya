@@ -7,6 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let latestArticleDate = new Date('2026-06-18')
   let latestPromiseDate = new Date('2026-06-19')
+  let latestTimelineDate = new Date('2026-06-18')
 
   const dynamicRoutes: MetadataRoute.Sitemap = []
 
@@ -106,6 +107,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     })
 
+    // 5. All timelines (/event/[slug])
+    const eventsData = await api.eventsList()
+    const events = eventsData?.events ?? []
+    events.forEach(ev => {
+      const lastMod = ev.last_seen ? new Date(ev.last_seen * 1000) : new Date('2026-06-18')
+      if (lastMod.getTime() > latestTimelineDate.getTime()) {
+        latestTimelineDate = lastMod
+      }
+      dynamicRoutes.push({
+        url: `${baseUrl}/event/${ev.slug || ev.id}`,
+        lastModified: lastMod,
+        changeFrequency: 'daily' as const,
+        priority: 0.8,
+      })
+    })
+
   } catch (err) {
     console.error('Failed to generate dynamic sitemap routes:', err)
   }
@@ -117,6 +134,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/netas`, lastModified: new Date('2026-06-18'), changeFrequency: 'weekly' as const, priority: 0.7 },
     { url: `${baseUrl}/vaade`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/promises`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/timelines`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
   ]
 
   return [...staticRoutes, ...dynamicRoutes]
