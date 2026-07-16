@@ -98,6 +98,33 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
     return { stateOptions: sort(sc), partyOptions: sort(pc) }
   }, [events])
 
+  // Editorial curation — computed from signals we already have, so the top of
+  // the page answers "what matters right now" instead of dumping 120 equals.
+  const { topStories, developing, sagas } = useMemo(() => {
+    if (!events.length) return { topStories: [], developing: [], sagas: [] }
+    const maxSeen = Math.max(...events.map(e => e.last_seen ?? 0))
+    // Score: substance × freshness (14-day half-life relative to newest data)
+    const score = (e: EventSummary) =>
+      e.article_count * Math.exp(-Math.max(0, maxSeen - (e.last_seen ?? 0)) / (14 * 86400))
+    const ranked = [...events].sort((a, b) => score(b) - score(a))
+
+    const topStories = ranked.slice(0, 3)
+    const topIds = new Set(topStories.map(e => e.id))
+
+    const weekAgo = maxSeen - 7 * 86400
+    const developing = ranked
+      .filter(e => !topIds.has(e.id) && (e.last_seen ?? 0) >= weekAgo && e.article_count >= 3)
+      .slice(0, 10)
+    const devIds = new Set(developing.map(e => e.id))
+
+    const sagas = [...events]
+      .filter(e => !topIds.has(e.id) && !devIds.has(e.id) && (e.saga_id != null || eventDaySpan(e) >= 21) && e.article_count >= 4)
+      .sort((a, b) => eventDaySpan(b) - eventDaySpan(a))
+      .slice(0, 10)
+
+    return { topStories, developing, sagas }
+  }, [events])
+
   let shown = [...events]
   if (filter === 'ongoing') shown = shown.filter(e => e.state === 'open')
   if (filter === 'concluded') shown = shown.filter(e => e.state === 'closed')
@@ -110,8 +137,98 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
   const anyAdvanced = stateKey !== 'all' || partyKey !== 'all' || deepOnly
   const visible = shown.slice(0, visibleCount)
 
+  const noFiltersActive = filter === 'all' && !anyAdvanced
+
   return (
     <div className="px-4 md:px-6 py-4">
+      {/* ===== Editorial sections (hidden while any filter is active) ===== */}
+      {noFiltersActive && topStories.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)]">
+            Top stories right now
+          </div>
+          <div className="space-y-3">
+            {topStories.map((ev, i) => (
+              <Link
+                key={ev.id}
+                href={`/event/${ev.slug || ev.id}`}
+                className="flex gap-4 items-start bg-[var(--surface)] border rounded-sm p-4 transition-colors hover:border-[var(--accent)]"
+                style={{ borderColor: 'var(--border-md)' }}
+              >
+                <span className="text-[26px] font-black font-serif leading-none flex-shrink-0" style={{ color: 'var(--accent)', opacity: 0.55 }}>
+                  {i + 1}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-[16px] md:text-[17px] font-bold font-serif leading-snug text-[var(--text1)]">
+                    {cleanTitle(ev.title)}
+                  </h3>
+                  <p className="text-[10px] font-mono mt-1 text-[var(--text3)]">
+                    {ev.article_count} UPDATES · {epochToMonYear(ev.first_seen)}–{epochToMonYear(ev.last_seen)}
+                    {ev.state === 'open' && <span style={{ color: 'var(--green)' }}> · ● ONGOING</span>}
+                  </p>
+                  {ev.latest_milestone && (
+                    <p className="text-[12px] leading-relaxed mt-1 line-clamp-2 text-[var(--text2)]">
+                      {cleanTitle(ev.latest_milestone)}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {noFiltersActive && developing.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)]">
+            Developing this week
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+            {developing.map(ev => (
+              <Link
+                key={ev.id}
+                href={`/event/${ev.slug || ev.id}`}
+                className="flex-shrink-0 w-[240px] bg-[var(--surface)] border rounded-sm p-3 transition-colors hover:border-[var(--accent)]"
+                style={{ borderColor: 'var(--border-md)' }}
+              >
+                <p className="text-[9px] font-mono text-[var(--accent)]">{ev.article_count} UPDATES</p>
+                <h4 className="text-[13px] font-bold font-serif leading-snug mt-1 line-clamp-3 text-[var(--text1)]">
+                  {cleanTitle(ev.title)}
+                </h4>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {noFiltersActive && sagas.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)]">
+            Long-running sagas
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+            {sagas.map(ev => (
+              <Link
+                key={ev.id}
+                href={`/event/${ev.slug || ev.id}`}
+                className="flex-shrink-0 w-[240px] bg-[var(--surface)] border rounded-sm p-3 transition-colors hover:border-[var(--accent)]"
+                style={{ borderColor: 'var(--border-md)' }}
+              >
+                <p className="text-[9px] font-mono text-[var(--text3)]">{eventDaySpan(ev)} DAYS · {ev.article_count} UPDATES</p>
+                <h4 className="text-[13px] font-bold font-serif leading-snug mt-1 line-clamp-3 text-[var(--text1)]">
+                  {cleanTitle(ev.title)}
+                </h4>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Browse all ===== */}
+      <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)] border-t pt-5" style={{ borderColor: 'var(--border-md)' }}>
+        Browse all timelines
+      </div>
+
       {/* Filter chips */}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {FILTERS.map(f => {
