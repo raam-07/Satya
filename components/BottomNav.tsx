@@ -66,9 +66,6 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
             {tab.icon}
             <span className="text-[8px] font-mono tracking-wider flex items-center gap-1">
               {tab.label}
-              {tab.label === 'TIMELINES' && (
-                <span className="text-[6.5px] opacity-60 font-semibold uppercase tracking-normal">Soon</span>
-              )}
             </span>
           </Link>
         ))}

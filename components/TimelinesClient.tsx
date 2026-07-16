@@ -106,18 +106,6 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
 
   return (
     <div className="px-4 md:px-6 py-4">
-      {/* Coming Soon Hero Banner */}
-      <div className="border border-dashed border-[var(--accent)] bg-[rgba(191,74,7,0.03)] rounded p-6 md:p-8 text-center mb-6">
-        <span className="text-[10px] font-mono text-[var(--accent)] tracking-widest uppercase font-bold">Under Development</span>
-        <h2 className="text-[18px] md:text-[20px] font-serif font-black text-[var(--text1)] mt-2">Political Timelines Coming Soon</h2>
-        <p className="text-[12px] text-[var(--text2)] max-w-md mx-auto mt-2 leading-relaxed">
-          We are currently building and verifying our AI timeline generator. Soon, you will be able to track every major political event, scam, election, and policy battle milestone-by-milestone with verified sources.
-        </p>
-        <div className="flex items-center justify-center gap-1.5 mt-4 text-[10px] font-mono text-[var(--text3)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-          System integration in progress
-        </div>
-      </div>
       {/* Filter chips */}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {FILTERS.map(f => {
