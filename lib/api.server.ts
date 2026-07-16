@@ -287,7 +287,7 @@ export const serverApi = {
         res = await run(false);
       }
       return { events: res.rows.map(mapEventRow) };
-    }, { revalidate: 900 });
+    }, { revalidate: 259200 });
   },
 
   /** Uncapped, lightweight list for the sitemap: every titled+slugged event.
@@ -305,7 +305,7 @@ export const serverApi = {
         last_seen: Number(r.last_seen ?? 0),
         state: String(r.state ?? 'closed'),
       }));
-    }, { revalidate: 3600 });
+    }, { revalidate: 259200 });
   },
 
   async eventTimeline(slug: string): Promise<EventTimeline | null> {
@@ -352,7 +352,7 @@ export const serverApi = {
           category: r.category ? String(r.category) : undefined
         }))
       };
-    }, { revalidate: 900 });
+    }, { revalidate: 259200 });
   },
 
   async articleEvent(articleId: number): Promise<EventTimeline | null> {
@@ -367,7 +367,7 @@ export const serverApi = {
       if (!res.rows.length) return null;
       const ref = res.rows[0].slug ? String(res.rows[0].slug) : String(res.rows[0].id);
       return serverApi.eventTimeline(ref);
-    }, { revalidate: 900 });
+    }, { revalidate: 259200 });
   },
 
   async indiaOverview(): Promise<IndiaOverview | null> {
@@ -658,7 +658,7 @@ export const serverApi = {
         promises: partyPromises,
         recent_articles
       };
-    }, { revalidate: 259200 });
+    }, { revalidate: 900 });
   },
 
   async minister(name: string): Promise<Minister | null> {
@@ -761,7 +761,7 @@ export const serverApi = {
         promises: ministerPromises,
         recent_articles
       };
-    }, { revalidate: 259200 });
+    }, { revalidate: 900 });
   },
 
   async state(name: string): Promise<StateData | null> {
@@ -861,7 +861,7 @@ export const serverApi = {
         top_topics_30d,
         recent_articles
       };
-    }, { revalidate: 259200 });
+    }, { revalidate: 900 });
   },
 
   async topic(name: string): Promise<TopicData | null> {
@@ -925,7 +925,7 @@ export const serverApi = {
         },
         recent_articles
       };
-    }, { revalidate: 259200 });
+    }, { revalidate: 900 });
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
@@ -1189,7 +1189,7 @@ export const serverApi = {
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
       return { source: canonicalName, articles };
-    }, { revalidate: 259200 });
+    }, { revalidate: 900 });
   },
 
   async politicians(): Promise<any[] | null> {

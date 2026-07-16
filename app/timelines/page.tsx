@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import { TimelinesClient } from '@/components/TimelinesClient'
 import type { Metadata } from 'next'
 
-export const revalidate = 900
+export const revalidate = 259200 // 3 days — timelines change only on stitch/daily-run for now
 
 export const metadata: Metadata = {
   title: 'Timelines — Developing Political Stories Tracked Update by Update | SatyaDheesh',

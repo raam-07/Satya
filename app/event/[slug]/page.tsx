@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
-export const revalidate = 900
+export const revalidate = 259200 // 3 days
 
 interface Props {
   params: { slug: string }
@@ -102,7 +102,7 @@ export default async function EventPage({ params }: Props) {
         </h1>
 
         <p className="text-[10px] font-mono text-[var(--text3)] tracking-wider mt-3">
-          {event.article_count} UPDATES · {days} DAY{days > 1 ? 'S' : ''} ·{' '}
+          <span className="font-bold" style={{ color: 'var(--accent)' }}>{event.article_count} UPDATES</span> · {days} DAY{days > 1 ? 'S' : ''} ·{' '}
           {epochToDate(event.first_seen).toUpperCase()} — {epochToDate(event.last_seen).toUpperCase()}
         </p>
 

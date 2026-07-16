@@ -163,7 +163,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                     {cleanTitle(ev.title)}
                   </h3>
                   <p className="text-[10px] font-mono mt-1 text-[var(--text3)]">
-                    {ev.article_count} UPDATES · {epochToMonYear(ev.first_seen)}–{epochToMonYear(ev.last_seen)}
+                    <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} UPDATES</span> · {epochToMonYear(ev.first_seen)}–{epochToMonYear(ev.last_seen)}
                     {ev.state === 'open' && <span style={{ color: 'var(--green)' }}> · ● ONGOING</span>}
                   </p>
                   {ev.latest_milestone && (
@@ -214,7 +214,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                 className="flex-shrink-0 w-[240px] bg-[var(--surface)] border rounded-sm p-3 transition-colors hover:border-[var(--accent)]"
                 style={{ borderColor: 'var(--border-md)' }}
               >
-                <p className="text-[9px] font-mono text-[var(--text3)]">{eventDaySpan(ev)} DAYS · {ev.article_count} UPDATES</p>
+                <p className="text-[9px] font-mono text-[var(--text3)]">{eventDaySpan(ev)} DAYS · <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} UPDATES</span></p>
                 <h4 className="text-[13px] font-bold font-serif leading-snug mt-1 line-clamp-3 text-[var(--text1)]">
                   {cleanTitle(ev.title)}
                 </h4>
@@ -324,7 +324,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                   {ongoing ? `● ONGOING · ${days} DAY${days > 1 ? 'S' : ''}` : `CONCLUDED · ${epochToMonYear(ev.first_seen)}–${epochToMonYear(ev.last_seen)}`}
                 </span>
                 <span className="text-[9px] font-mono text-[var(--text3)] flex-shrink-0">
-                  {ev.article_count} UPDATE{ev.article_count > 1 ? 'S' : ''}
+                  <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} UPDATE{ev.article_count > 1 ? 'S' : ''}</span>
                 </span>
               </div>
 
