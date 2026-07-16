@@ -69,12 +69,30 @@ export function StoryTimeline({ milestones, currentArticleId, linkArticles = tru
               {isCurrent && ' · THIS STORY'}
               {m.source && <span className="normal-case"> {storyMode && !isFirst && !isLatest ? '' : '— '}{m.source}</span>}
             </p>
-            <p
-              className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isCurrent || isLatest ? 'font-semibold' : ''} ${linkArticles && !isCurrent ? 'group-hover:text-[var(--accent)] transition-colors' : ''}`}
-              style={{ color: isCurrent || isLatest ? 'var(--text1)' : 'var(--text2)' }}
-            >
-              {text}
-            </p>
+            {linkArticles && !isCurrent ? (
+              // Linked milestone: full-strength text with a warm accent
+              // underline + arrow — reads as important and tappable, not faded.
+              <p
+                className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isLatest ? 'font-semibold' : ''} underline underline-offset-4 decoration-[1.5px] transition-colors group-hover:text-[var(--accent)]`}
+                style={{ color: 'var(--text1)', textDecorationColor: 'rgba(191,74,7,0.35)' }}
+              >
+                {text}
+                <span
+                  className="ml-1.5 text-[10px] font-mono font-bold transition-opacity opacity-70 group-hover:opacity-100"
+                  style={{ color: 'var(--accent)' }}
+                  aria-hidden
+                >
+                  READ ↗
+                </span>
+              </p>
+            ) : (
+              <p
+                className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isCurrent || isLatest ? 'font-semibold' : ''}`}
+                style={{ color: isCurrent || isLatest ? 'var(--text1)' : 'var(--text2)' }}
+              >
+                {text}
+              </p>
+            )}
           </div>
         )
 
