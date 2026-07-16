@@ -47,8 +47,17 @@ interface BottomNavProps {
 export function BottomNav({ onSearchOpen }: BottomNavProps) {
   const pathname = usePathname()
 
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href)
+  // A tab owns its section's detail routes too: an /event/... page is part of
+  // TIMELINES, a /news/... article is part of FEED — the tab stays lit.
+  const SECTION_ROUTES: Record<string, string[]> = {
+    '/':          ['/news'],
+    '/timelines': ['/event'],
+    '/vaade':     ['/promises'],
+  }
+  const isActive = (href: string) => {
+    if (href === '/' ? pathname === '/' : pathname.startsWith(href)) return true
+    return (SECTION_ROUTES[href] ?? []).some(p => pathname.startsWith(p))
+  }
 
   return (
     <nav
