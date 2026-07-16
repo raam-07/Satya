@@ -58,8 +58,37 @@ const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "SatyaDheesh",
+  // Brand spelling/script variants people actually type — the legitimate,
+  // Google-documented way to claim them (never keyword-stuff pages).
+  "alternateName": [
+    "Satya Dheesh",
+    "Satyadheesh",
+    "SatyaDheesha",
+    "Satyadhish",
+    "सत्यधीश",
+    "सत्य धीश"
+  ],
   "url": "https://satyadheesh.in",
-  "logo": "https://satyadheesh.in/favicons/gavel-180.png"
+  "logo": "https://satyadheesh.in/favicons/gavel-180.png",
+  "description": "Independent tracker of Indian political promises, event timelines and accountability, built from verified news sources."
+}
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "SatyaDheesh",
+  "alternateName": ["Satya Dheesh", "Satyadheesh", "सत्यधीश"],
+  "url": "https://satyadheesh.in",
+  // Tells Google the site has its own search — eligible for the sitelinks
+  // search box on brand queries.
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://satyadheesh.in/search?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -71,6 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <JsonLd data={orgJsonLd} />
+        <JsonLd data={websiteJsonLd} />
         {primaryId && (
           <>
             <Script

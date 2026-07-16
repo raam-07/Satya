@@ -73,7 +73,11 @@ export function sentimentStyle(s?: string) {
 
 // Check if image_url is valid
 export function hasImage(url?: string): boolean {
-  return !!url && url !== 'No image available' && url.startsWith('http')
+  if (!url || url === 'No image available' || !url.startsWith('http')) return false
+  // Reject generic publisher placeholders (site-wide og banners, logos) —
+  // e.g. thehindu.com/theme/images/og-image.png. They make cards and shared
+  // pages look broken/off-brand.
+  return !/og[-_]?image|placeholder|default[-_.]|\/theme\/|\/logo/i.test(url)
 }
 
 // Render **bold** and *italics* markdown tags as JSX in React, auto-healing unmatched tags
