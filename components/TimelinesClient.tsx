@@ -72,11 +72,16 @@ function DotTrack({ ev }: { ev: EventSummary }) {
   )
 }
 
+const PAGE_SIZE = 30
+
 export function TimelinesClient({ events }: { events: EventSummary[] }) {
   const [filter, setFilter] = useState<Filter>('all')
   const [stateKey, setStateKey] = useState<string>('all')
   const [partyKey, setPartyKey] = useState<string>('all')
   const [deepOnly, setDeepOnly] = useState<boolean>(false)
+  // Render incrementally: hydrating/painting 120+ heavy cards at once blocks
+  // the main thread for seconds on mobile — the "site froze" feel.
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE)
 
   // Build dropdown options only from values actually present, with counts.
   const { stateOptions, partyOptions } = useMemo(() => {
@@ -103,6 +108,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
   if (filter === 'longest') shown.sort((a, b) => eventDaySpan(b) - eventDaySpan(a))
 
   const anyAdvanced = stateKey !== 'all' || partyKey !== 'all' || deepOnly
+  const visible = shown.slice(0, visibleCount)
 
   return (
     <div className="px-4 md:px-6 py-4">
@@ -113,7 +119,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
           return (
             <button
               key={f.id}
-              onClick={() => setFilter(f.id)}
+              onClick={() => { setFilter(f.id); setVisibleCount(PAGE_SIZE) }}
               className="text-[11px] font-mono px-2.5 py-1 rounded-[3px] transition-colors"
               style={
                 active
@@ -131,7 +137,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <select
           value={stateKey}
-          onChange={e => setStateKey(e.target.value)}
+          onChange={e => { setStateKey(e.target.value); setVisibleCount(PAGE_SIZE) }}
           className="text-[11px] font-mono px-2 py-1.5 rounded-[3px] bg-[var(--surface)] cursor-pointer"
           style={{ border: '1px solid var(--border-md)', color: stateKey !== 'all' ? 'var(--accent)' : 'var(--text2)' }}
         >
@@ -143,7 +149,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
 
         <select
           value={partyKey}
-          onChange={e => setPartyKey(e.target.value)}
+          onChange={e => { setPartyKey(e.target.value); setVisibleCount(PAGE_SIZE) }}
           className="text-[11px] font-mono px-2 py-1.5 rounded-[3px] bg-[var(--surface)] cursor-pointer"
           style={{ border: '1px solid var(--border-md)', color: partyKey !== 'all' ? 'var(--accent)' : 'var(--text2)' }}
         >
@@ -157,7 +163,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
           <input
             type="checkbox"
             checked={deepOnly}
-            onChange={e => setDeepOnly(e.target.checked)}
+            onChange={e => { setDeepOnly(e.target.checked); setVisibleCount(PAGE_SIZE) }}
             className="w-3.5 h-3.5 rounded-sm accent-[var(--accent)] cursor-pointer"
           />
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--text2)]">
@@ -183,7 +189,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
       )}
 
       <div className="space-y-2.5">
-        {shown.map(ev => {
+        {visible.map(ev => {
           const ongoing = ev.state === 'open'
           const days = eventDaySpan(ev)
           return (
@@ -191,7 +197,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
               key={ev.id}
               href={`/event/${ev.slug || ev.id}`}
               className="block bg-[var(--surface)] border rounded-sm p-4 transition-colors hover:border-[var(--accent)]"
-              style={{ borderColor: 'var(--border-md)', opacity: ongoing ? 1 : 0.8 }}
+              style={{ borderColor: 'var(--border-md)', opacity: ongoing ? 1 : 0.8, contentVisibility: 'auto', containIntrinsicSize: 'auto 130px' }}
             >
               <div className="flex items-center justify-between gap-3 mb-1.5">
                 <span
@@ -220,6 +226,19 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
           )
         })}
       </div>
+
+      {/* Incremental loading — keeps first paint & hydration light */}
+      {shown.length > visibleCount && (
+        <div className="text-center mt-5">
+          <button
+            onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+            className="text-[11px] font-mono uppercase tracking-widest px-5 py-2.5 rounded-[3px] border transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            style={{ borderColor: 'var(--border-md)', color: 'var(--text2)' }}
+          >
+            Show {Math.min(PAGE_SIZE, shown.length - visibleCount)} more · {shown.length - visibleCount} remaining
+          </button>
+        </div>
+      )}
     </div>
   )
 }
