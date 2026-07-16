@@ -169,6 +169,7 @@ export interface PoliticalPromise {
     evidence_url?: string
   }[]
   made_on?: string
+  reported_on?: string
   deadline?: string
   source_url?: string
   url?: string

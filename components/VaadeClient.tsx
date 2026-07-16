@@ -5,17 +5,26 @@ import Link from 'next/link'
 import { PBadge, StatusBadge } from './SrcTag'
 import type { PoliticalPromise, PromisesSummary } from '@/lib/api'
 
-type StatusFilterId = 'all' | 'broken' | 'ongoing' | 'kept' | 'void'
+type StatusFilterId = 'all' | 'broken' | 'overdue' | 'ongoing' | 'kept' | 'void'
 type PartyFilterId = 'all' | 'bjp' | 'inc' | 'aap'
 type TypeFilterId = 'all' | 'specific' | 'policy' | 'vision'
 
 const STATUS_FILTERS: { id: StatusFilterId; label: string }[] = [
   { id: 'all',     label: 'All' },
   { id: 'broken',  label: 'Broken' },
+  { id: 'overdue', label: 'Overdue' },
   { id: 'ongoing', label: 'Ongoing' },
   { id: 'kept',    label: 'Kept' },
   { id: 'void',    label: 'Void' },
 ]
+
+/** Still "ongoing" but its promised deadline year has already passed —
+ *  the most accountability-relevant state a promise can be in. */
+function isOverdue(p: PoliticalPromise): boolean {
+  if (p.status !== 'ongoing' || !p.deadline) return false
+  const year = parseInt(p.deadline, 10)
+  return Number.isFinite(year) && year >= 1990 && year < new Date().getFullYear()
+}
 
 const PARTY_FILTERS: { id: PartyFilterId; label: string }[] = [
   { id: 'all', label: 'All parties' },
@@ -78,6 +87,7 @@ export function VaadeClient({ data }: VaadeClientProps) {
   const [ptype, setPtype] = useState<TypeFilterId>('all')
   const [criticalOnly, setCriticalOnly] = useState<boolean>(true)
   const [showFilters, setShowFilters] = useState<boolean>(false)
+  const [query, setQuery] = useState<string>('')
 
   const byStatus = data?.by_status ?? {}
   const allPromises: PoliticalPromise[] = useMemo(() => [
@@ -90,18 +100,24 @@ export function VaadeClient({ data }: VaadeClientProps) {
 
   // Base pool: everything except the status choice, so status chips show
   // counts consistent with the other active filters.
+  const q = query.trim().toLowerCase()
   const basePromises = allPromises.filter(p => {
     if (criticalOnly && p.importance !== 'critical') return false
     if (ptype !== 'all' && p.promise_type !== ptype) return false
     if (topic !== 'all' && normalizeCategory(p.category) !== topic) return false
     if (party !== 'all' && p.party?.toLowerCase() !== party) return false
+    if (q && !(`${p.promise ?? ''} ${p.person ?? ''} ${p.category ?? ''}`.toLowerCase().includes(q))) return false
     return true
   })
 
-  const filteredPromises = basePromises.filter(p => status === 'all' || p.status === status)
+  const filteredPromises = basePromises.filter(p =>
+    status === 'all' ? true : status === 'overdue' ? isOverdue(p) : p.status === status
+  )
 
   const statusCount = (id: StatusFilterId) =>
-    id === 'all' ? basePromises.length : basePromises.filter(p => p.status === id).length
+    id === 'all' ? basePromises.length
+    : id === 'overdue' ? basePromises.filter(isOverdue).length
+    : basePromises.filter(p => p.status === id).length
 
   const advancedActive =
     (party !== 'all' ? 1 : 0) + (topic !== 'all' ? 1 : 0) + (ptype !== 'all' ? 1 : 0)
@@ -117,15 +133,17 @@ export function VaadeClient({ data }: VaadeClientProps) {
       >
         {STATUS_FILTERS.map(f => {
           const isActive = status === f.id
+          // Overdue is the accountability chip — it gets the alarm color.
+          const tone = f.id === 'overdue' ? '#B02828' : 'var(--accent)'
           return (
             <button
               key={f.id}
               onClick={() => setStatus(f.id)}
               className="flex-shrink-0 px-3 py-1.5 rounded-[2px] text-[10px] font-mono tracking-widest uppercase border transition-colors"
               style={{
-                borderColor: isActive ? 'var(--accent)' : 'var(--border-md)',
-                color: isActive ? 'var(--accent)' : 'var(--text3)',
-                background: isActive ? 'rgba(191,74,7,0.06)' : 'transparent',
+                borderColor: isActive ? tone : f.id === 'overdue' && statusCount('overdue') > 0 ? 'rgba(176,40,40,0.35)' : 'var(--border-md)',
+                color: isActive ? tone : f.id === 'overdue' && statusCount('overdue') > 0 ? '#B02828' : 'var(--text3)',
+                background: isActive ? (f.id === 'overdue' ? 'rgba(176,40,40,0.06)' : 'rgba(191,74,7,0.06)') : 'transparent',
               }}
             >
               {f.label}
@@ -247,19 +265,42 @@ export function VaadeClient({ data }: VaadeClientProps) {
         </div>
       )}
 
-      {/* Result count */}
-      <div className="px-4 md:px-6 py-2 border-b text-[10px] font-mono tracking-wider text-[var(--text3)] uppercase" style={{ borderColor: 'var(--border-md)' }}>
-        Showing {filteredPromises.length} promise{filteredPromises.length !== 1 ? 's' : ''}
+      {/* Search + result count */}
+      <div className="flex items-center gap-3 px-4 md:px-6 py-2 border-b" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="relative flex-1 max-w-[320px]">
+          <input
+            type="search"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search promises, leaders…"
+            className="w-full text-[12px] font-mono px-3 py-1.5 rounded-[3px] bg-[var(--bg-alt)] outline-none focus:ring-1"
+            style={{ border: '1px solid var(--border-md)', color: 'var(--text1)' }}
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[12px] text-[var(--text3)] hover:text-[var(--accent)]"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <span className="ml-auto flex-shrink-0 text-[10px] font-mono tracking-wider text-[var(--text3)] uppercase">
+          {filteredPromises.length} promise{filteredPromises.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       {/* Promise list — scannable rows; full evidence lives on the detail page */}
       <div>
         {filteredPromises.length === 0 && (
           <div className="p-12 text-center">
-            <p className="text-[13px] font-mono" style={{ color: 'var(--text3)' }}>No promises match this filter</p>
-            {(advancedActive > 0 || criticalOnly) && (
+            <p className="text-[13px] font-mono" style={{ color: 'var(--text3)' }}>
+              No promises match {q ? `"${query.trim()}"` : 'this filter'}
+            </p>
+            {(advancedActive > 0 || criticalOnly || q) && (
               <button
-                onClick={() => { resetAdvanced(); setCriticalOnly(false); setStatus('all') }}
+                onClick={() => { resetAdvanced(); setCriticalOnly(false); setStatus('all'); setQuery('') }}
                 className="mt-3 text-[11px] font-mono uppercase tracking-widest hover:underline"
                 style={{ color: 'var(--accent)' }}
               >
@@ -282,6 +323,15 @@ export function VaadeClient({ data }: VaadeClientProps) {
                 {/* Meta row: who + verdict */}
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   {p.status && <StatusBadge status={p.status} />}
+                  {isOverdue(p) && (
+                    <span
+                      className="text-[8.5px] font-bold tracking-[0.09em] rounded-[2px] px-[6px] py-[2px] font-mono text-white"
+                      style={{ background: '#B02828' }}
+                      title={`Deadline was ${p.deadline} and this promise is still marked ongoing`}
+                    >
+                      OVERDUE · {p.deadline}
+                    </span>
+                  )}
                   {p.importance === 'critical' && (
                     <span
                       className="text-[8.5px] font-bold tracking-[0.09em] rounded-[2px] px-[6px] py-[2px] font-mono text-white"
@@ -295,8 +345,8 @@ export function VaadeClient({ data }: VaadeClientProps) {
                   {p.person && (
                     <span className="text-[10px] font-mono truncate" style={{ color: 'var(--text2)' }}>{p.person}</span>
                   )}
-                  {p.made_on && (
-                    <span className="text-[9px] font-mono ml-auto flex-shrink-0" style={{ color: 'var(--text3)' }}>{p.made_on}</span>
+                  {(p.made_on || p.reported_on) && (
+                    <span className="text-[9px] font-mono ml-auto flex-shrink-0" style={{ color: 'var(--text3)' }}>{p.made_on || p.reported_on}</span>
                   )}
                 </div>
 
