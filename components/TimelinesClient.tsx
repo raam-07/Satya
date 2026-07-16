@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { EventSummary } from '@/lib/api'
 import { cleanTitle } from '@/lib/utils'
-import { epochToMonYear, eventDaySpan } from '@/lib/eventUtils'
+import { epochToMonYear, eventDaySpan, entityKeyLabel } from '@/lib/eventUtils'
 
 type Filter = 'all' | 'ongoing' | 'concluded' | 'most_updates' | 'longest'
 
@@ -14,6 +14,27 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'most_updates', label: 'Most updates' },
   { id: 'longest', label: 'Longest running' },
 ]
+
+// entity_keys mix parties, people, states and cities — these whitelists pick
+// out the two kinds users filter by. Keys are the classifier's snake_case slugs.
+const STATE_KEYS = new Set([
+  'andhra_pradesh', 'arunachal_pradesh', 'assam', 'bihar', 'chhattisgarh', 'goa',
+  'gujarat', 'haryana', 'himachal_pradesh', 'jharkhand', 'karnataka', 'kerala',
+  'madhya_pradesh', 'maharashtra', 'manipur', 'meghalaya', 'mizoram', 'nagaland',
+  'odisha', 'punjab', 'rajasthan', 'sikkim', 'tamil_nadu', 'telangana', 'tripura',
+  'uttar_pradesh', 'uttarakhand', 'west_bengal', 'delhi', 'jammu', 'kashmir',
+  'ladakh', 'puducherry', 'chandigarh',
+])
+
+const PARTY_KEYS = new Set([
+  'bjp', 'congress', 'inc', 'aap', 'tmc', 'trinamool', 'samajwadi_party', 'sp',
+  'bsp', 'ncp', 'nationalist_congress', 'shiv_sena', 'cpi', 'cpm', 'rjd', 'jdu',
+  'janata_dal', 'tdp', 'telugu_desam', 'ysrcp', 'dmk', 'aiadmk', 'pdp',
+  'national_conference', 'aimim', 'bjd', 'biju_janata_dal', 'jmm', 'akali_dal',
+  'sad', 'nda', 'upa', 'india_alliance',
+])
+
+const DEPTH_MIN = 5 // "substantial stories" floor
 
 function DotTrack({ ev }: { ev: EventSummary }) {
   const dates = ev.milestone_dates ?? []
@@ -53,12 +74,35 @@ function DotTrack({ ev }: { ev: EventSummary }) {
 
 export function TimelinesClient({ events }: { events: EventSummary[] }) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [stateKey, setStateKey] = useState<string>('all')
+  const [partyKey, setPartyKey] = useState<string>('all')
+  const [deepOnly, setDeepOnly] = useState<boolean>(false)
+
+  // Build dropdown options only from values actually present, with counts.
+  const { stateOptions, partyOptions } = useMemo(() => {
+    const sc = new Map<string, number>()
+    const pc = new Map<string, number>()
+    for (const ev of events) {
+      for (const k of ev.entity_keys ?? []) {
+        if (STATE_KEYS.has(k)) sc.set(k, (sc.get(k) ?? 0) + 1)
+        else if (PARTY_KEYS.has(k)) pc.set(k, (pc.get(k) ?? 0) + 1)
+      }
+    }
+    const sort = (m: Map<string, number>) =>
+      Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ key: k, label: entityKeyLabel(k), count: n }))
+    return { stateOptions: sort(sc), partyOptions: sort(pc) }
+  }, [events])
 
   let shown = [...events]
   if (filter === 'ongoing') shown = shown.filter(e => e.state === 'open')
   if (filter === 'concluded') shown = shown.filter(e => e.state === 'closed')
+  if (stateKey !== 'all') shown = shown.filter(e => (e.entity_keys ?? []).includes(stateKey))
+  if (partyKey !== 'all') shown = shown.filter(e => (e.entity_keys ?? []).includes(partyKey))
+  if (deepOnly) shown = shown.filter(e => e.article_count >= DEPTH_MIN)
   if (filter === 'most_updates') shown.sort((a, b) => b.article_count - a.article_count)
   if (filter === 'longest') shown.sort((a, b) => eventDaySpan(b) - eventDaySpan(a))
+
+  const anyAdvanced = stateKey !== 'all' || partyKey !== 'all' || deepOnly
 
   return (
     <div className="px-4 md:px-6 py-4">
@@ -95,11 +139,59 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
         })}
       </div>
 
+      {/* State / Party / Depth controls */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <select
+          value={stateKey}
+          onChange={e => setStateKey(e.target.value)}
+          className="text-[11px] font-mono px-2 py-1.5 rounded-[3px] bg-[var(--surface)] cursor-pointer"
+          style={{ border: '1px solid var(--border-md)', color: stateKey !== 'all' ? 'var(--accent)' : 'var(--text2)' }}
+        >
+          <option value="all">All states</option>
+          {stateOptions.map(o => (
+            <option key={o.key} value={o.key}>{o.label} ({o.count})</option>
+          ))}
+        </select>
+
+        <select
+          value={partyKey}
+          onChange={e => setPartyKey(e.target.value)}
+          className="text-[11px] font-mono px-2 py-1.5 rounded-[3px] bg-[var(--surface)] cursor-pointer"
+          style={{ border: '1px solid var(--border-md)', color: partyKey !== 'all' ? 'var(--accent)' : 'var(--text2)' }}
+        >
+          <option value="all">All parties</option>
+          {partyOptions.map(o => (
+            <option key={o.key} value={o.key}>{o.label} ({o.count})</option>
+          ))}
+        </select>
+
+        <label className="flex items-center gap-1.5 cursor-pointer select-none ml-auto">
+          <input
+            type="checkbox"
+            checked={deepOnly}
+            onChange={e => setDeepOnly(e.target.checked)}
+            className="w-3.5 h-3.5 rounded-sm accent-[var(--accent)] cursor-pointer"
+          />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--text2)]">
+            {DEPTH_MIN}+ updates
+          </span>
+        </label>
+      </div>
+
       {/* Event cards */}
       {shown.length === 0 && (
-        <p className="text-[13px] text-[var(--text3)] py-8 text-center font-mono">
-          No timelines here yet.
-        </p>
+        <div className="py-8 text-center">
+          <p className="text-[13px] text-[var(--text3)] font-mono">No timelines match these filters.</p>
+          {anyAdvanced && (
+            <button
+              onClick={() => { setStateKey('all'); setPartyKey('all'); setDeepOnly(false) }}
+              className="mt-3 text-[11px] font-mono uppercase tracking-widest hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       )}
 
       <div className="space-y-2.5">
