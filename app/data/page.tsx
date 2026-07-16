@@ -57,6 +57,9 @@ export default async function DataPage() {
           <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Civic Intelligence</span>
           <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">Data</h1>
           <p className="text-[13px] text-[var(--text2)] mt-1">India by the numbers — sourced, structured, transparent.</p>
+          <p className="text-[11px] font-mono font-bold tracking-wide mt-1.5" style={{ color: 'var(--accent)' }}>
+            ⚙ Fully autonomous — generated end-to-end by an AI pipeline, no human editorial intervention.
+          </p>
         </div>
         <div className="flex-shrink-0">
           <HardRefreshButton secret={process.env.REVALIDATE_SECRET} />

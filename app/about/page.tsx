@@ -36,6 +36,21 @@ export default function AboutPage() {
         <p className="text-[14px] leading-relaxed text-[var(--text1)] mt-3">
           No opinions. No editorials. Only sourced facts — every single data point linked back to where it came from.
         </p>
+
+        {/* Autonomy statement */}
+        <div
+          className="mt-5 p-4 rounded-sm border"
+          style={{ borderColor: 'rgba(191,74,7,0.35)', background: 'rgba(191,74,7,0.04)' }}
+        >
+          <p className="text-[13.5px] font-semibold leading-relaxed" style={{ color: 'var(--accent)' }}>
+            SatyaDheesh is a fully autonomous system. News ingestion, classification, event timelines,
+            and promise verdicts are produced end-to-end by an automated AI pipeline — running around
+            the clock with no human editorial intervention.
+          </p>
+          <p className="text-[11px] leading-relaxed mt-2 text-[var(--text3)]">
+            No editor decides what you see. The machine reports what the sources say — nothing more, nothing less.
+          </p>
+        </div>
       </section>
 
       {/* How it works */}
