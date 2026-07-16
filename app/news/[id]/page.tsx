@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { cleanTitle, formatDate, categoryLabel, renderMarkdown } from '@/lib/utils'
+import { cleanTitle, formatDate, categoryLabel, renderMarkdown, hasImage } from '@/lib/utils'
 import { PBadge, SentimentDot, TappableMinister, TappableState } from '@/components/SrcTag'
 import { EventStorySoFar } from '@/components/EventStorySoFar'
 import { SummaryMark } from '@/components/BrandMark'
@@ -22,7 +22,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const title = `${cleanTitle(article.rephrased_title ?? article.title)} — SatyaDheesh`
   const description = article.supporting_quote || article.title
-  const image = article.image_url || `https://satyadheesh.in/news/${article.id}/opengraph-image`
+  // Always use OUR generated card for social shares: publisher image URLs are
+  // often generic logo placeholders (e.g. thehindu.com/theme/images/og-image.png)
+  // and frequently block hotlinking — either way the share card looks broken.
+  const image = `https://satyadheesh.in/news/${article.id}/opengraph-image`
 
   return {
     title,
@@ -89,10 +92,11 @@ export default async function NewsArticlePage({ params }: PageProps) {
           {displayDate && <span className="text-[10px] font-mono text-[var(--text3)]">· {displayDate}</span>}
         </div>
 
-        {/* Featured image */}
-        {article.image_url && (
+        {/* Featured image — hasImage() rejects generic publisher placeholders;
+            no-referrer dodges hotlink blocking */}
+        {hasImage(article.image_url) && (
           <div className="w-full h-[240px] md:h-[320px] overflow-hidden border-b" style={{ borderColor: 'var(--border-md)' }}>
-            <img src={article.image_url} alt="" className="w-full h-full object-cover" />
+            <img src={article.image_url} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" />
           </div>
         )}
 
@@ -144,17 +148,10 @@ export default async function NewsArticlePage({ params }: PageProps) {
           {/* Story so far — event timeline (server-rendered for SEO) */}
           <EventStorySoFar articleId={article.id} initialEvent={storyEvent} />
 
-          {/* Framing statement */}
-          <div className="text-[14px] leading-relaxed text-[var(--text2)] mb-5 font-sans">
-            <p>
-              This verified news record has been cataloged in the SatyaDheesh promise tracking database library. 
-              We monitor accountability, media reports, and public statements to track governance performance.
-            </p>
-          </div>
-
-          {/* Copyright Excerpt Guard */}
-          {article.supporting_quote ? (
-            <blockquote 
+          {/* Verbatim excerpt — shown only when we actually have one; no
+              internal placeholder text for readers when we don't */}
+          {article.supporting_quote && (
+            <blockquote
               className="my-6 pl-4 border-l-2 text-[13.5px] italic leading-relaxed bg-[var(--bg-alt)] py-3 pr-4 rounded-sm font-sans"
               style={{ borderColor: 'var(--accent)', color: 'var(--text1)' }}
             >
@@ -163,10 +160,6 @@ export default async function NewsArticlePage({ params }: PageProps) {
                 — verbatim excerpt from {article.source || 'the publisher'}
               </span>
             </blockquote>
-          ) : (
-            <p className="text-[13px] font-mono italic text-[var(--text3)] mb-6">
-              [Verbatim quote excerpt unavailable for this archive record]
-            </p>
           )}
 
           {/* Mentioned Entities (Topics, Netas, States) */}
