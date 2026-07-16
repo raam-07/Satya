@@ -78,11 +78,11 @@ export function StoryTimeline({ milestones, currentArticleId, linkArticles = tru
               >
                 {text}
                 <span
-                  className="ml-1.5 text-[10px] font-mono font-bold transition-opacity opacity-70 group-hover:opacity-100"
+                  className="ml-1.5 text-[11px] font-mono font-bold transition-opacity opacity-70 group-hover:opacity-100"
                   style={{ color: 'var(--accent)' }}
                   aria-hidden
                 >
-                  READ ↗
+                  ↗
                 </span>
               </p>
             ) : (
