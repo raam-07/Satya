@@ -97,7 +97,12 @@ export function StoryTimeline({ milestones, currentArticleId, linkArticles = tru
         )
 
         const row = (
-          <div className="flex gap-3">
+          <div
+            className={`flex gap-3 ${isLatest ? 'rounded-md px-3 pt-3 -mx-3' : ''}`}
+            // Latest update gets a soft warm band so the eye lands on where
+            // the story currently stands.
+            style={isLatest ? { background: 'rgba(191,74,7,0.06)' } : undefined}
+          >
             {storyMode && <DateBlock ts={m.event_date} accent={isLatest} />}
 
             {/* Rail */}
