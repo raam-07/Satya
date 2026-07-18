@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { loadOgFont } from '@/lib/ogFont'
 import { api } from '@/lib/api'
 import { cleanTitle } from '@/lib/utils'
 
@@ -17,12 +18,8 @@ export default async function Image({ params }: { params: { slug: string } }) {
 
   // Load fonts locally
   const [dmSansData, playfairData] = await Promise.all([
-    fetch(new URL('../../../public/fonts/DMSans-Regular.ttf', import.meta.url)).then((res) =>
-      res.ok ? res.arrayBuffer() : null
-    ).catch(() => null),
-    fetch(new URL('../../../public/fonts/PlayfairDisplay-Bold.ttf', import.meta.url)).then((res) =>
-      res.ok ? res.arrayBuffer() : null
-    ).catch(() => null),
+    loadOgFont(new URL('../../../public/fonts/DMSans-Regular.ttf', import.meta.url)),
+    loadOgFont(new URL('../../../public/fonts/PlayfairDisplay-Bold.ttf', import.meta.url)),
   ])
 
   const fonts: any[] = []
