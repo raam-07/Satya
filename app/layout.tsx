@@ -30,6 +30,11 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'SatyaDheesh',        // home-screen icon label on iOS
+    statusBarStyle: 'default',
+  },
   openGraph: {
     title: 'SatyaDheesh — Track Every Political Promise in India',
     description: "They promised. Did they deliver? SatyaDheesh holds India's leaders to their word — sourced verdicts on every promise. The record they hoped you'd forget.",
