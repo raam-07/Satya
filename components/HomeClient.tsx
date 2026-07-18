@@ -13,6 +13,11 @@ interface HomeClientProps {
   initialTab?: string
 }
 
+// The feed renders 20 at a time and pages up; fetching 500 upfront just to
+// hold them in memory froze phones (huge JSON with every article's full text).
+// 150 is plenty of scroll headroom at a fraction of the payload/parse cost.
+const FEED_LIMIT = 150
+
 export function HomeClient({ overview, initialArticles, initialTab = 'all' }: HomeClientProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [articles, setArticles] = useState<Article[]>(
@@ -47,7 +52,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
       setLoading(true)
       try {
         fullLoaded.current.clear()
-        const res = await api.feed(activeTab, true)
+        const res = await api.feed(activeTab, true, FEED_LIMIT)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
         fullLoaded.current.add(activeTab)
@@ -80,7 +85,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
       // topping up a fast initial slice happens silently in the background.
       if (!cached) setLoading(true)
       try {
-        const res = await api.feed(activeTab)
+        const res = await api.feed(activeTab, false, FEED_LIMIT)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
         fullLoaded.current.add(activeTab)
@@ -150,7 +155,9 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
           <>
             <div className="flex flex-col">
               {paginatedArticles.map((article: Article, i: number) => (
-                <ArticleCard key={article.id ?? i} article={article} variant="default" onOpen={openModal} />
+                <div key={article.id ?? i} style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 140px' }}>
+                  <ArticleCard article={article} variant="default" onOpen={openModal} />
+                </div>
               ))}
             </div>
             {articles.length === 0 && <EmptyState message="No stories loaded — check back soon as coverage grows" />}

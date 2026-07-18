@@ -6,6 +6,7 @@ import { ManifestProvider } from '@/lib/ManifestContext'
 import { ToastProvider } from '@/lib/ToastContext'
 
 import { JsonLd } from '@/components/JsonLd'
+import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -123,6 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
       </head>
       <body>
+        <ServiceWorkerRegister />
         <ManifestProvider>
           <ToastProvider>
             <Shell>{children}</Shell>
