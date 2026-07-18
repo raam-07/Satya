@@ -26,12 +26,7 @@ function Bar({ value, max, color }: { value: number; max: number; color?: string
   )
 }
 
-export default async function DataPage({ searchParams }: { searchParams?: { admin?: string } }) {
-  // Admin-only refresh button: visible via /data?admin=true. The URL param is
-  // just visibility — real protection is the revalidation secret, which the
-  // button PROMPTS for (never shipped to the browser).
-  const isAdmin = searchParams?.admin === 'true'
-
+export default async function DataPage() {
   const [overview, promises] = await Promise.all([
     api.indiaOverview(),
     api.promises(),
@@ -66,13 +61,11 @@ export default async function DataPage({ searchParams }: { searchParams?: { admi
             ⚙ Fully autonomous — generated end-to-end by an AI pipeline, no human editorial intervention.
           </p>
         </div>
-        {isAdmin && (
-          <div className="flex-shrink-0">
-            {/* No secret prop: passing process.env.REVALIDATE_SECRET into a
-                client component leaks it in the page HTML. Prompt mode instead. */}
-            <HardRefreshButton />
-          </div>
-        )}
+        <div className="flex-shrink-0">
+          {/* Self-gates on ?admin=true (client-side) and prompts for the secret,
+              so nothing sensitive ships in the page HTML. */}
+          <HardRefreshButton />
+        </div>
       </div>
 
       {/* Key metrics */}

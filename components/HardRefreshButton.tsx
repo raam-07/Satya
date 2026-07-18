@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/ToastContext'
 import { event } from '@/lib/gtag'
@@ -11,6 +11,12 @@ interface HardRefreshButtonProps {
 
 export function HardRefreshButton({ secret }: HardRefreshButtonProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
+  // Admin gate read on the CLIENT, so it works even though the page is
+  // statically cached (server searchParams are empty in that case).
+  const [isAdmin, setIsAdmin] = useState(false)
+  useEffect(() => {
+    setIsAdmin(new URLSearchParams(window.location.search).get('admin') === 'true')
+  }, [])
   const router = useRouter()
   const { showToast } = useToast()
 
@@ -60,5 +66,27 @@ export function HardRefreshButton({ secret }: HardRefreshButtonProps) {
     }
   }
 
-  return null;
+  // Hidden for normal visitors; appears only with ?admin=true (client-checked).
+  if (!isAdmin) return null
+
+  return (
+    <>
+      <button
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-sm font-mono text-[11px] font-semibold tracking-wider uppercase transition-all duration-200 select-none
+          ${isRefreshing
+            ? 'bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text3)] cursor-not-allowed'
+            : 'bg-[var(--surface)] border-[var(--border-md)] text-[var(--text2)] hover:text-[var(--accent)] hover:border-[var(--accent)] active:scale-95 cursor-pointer shadow-sm hover:shadow-md'
+          }`}
+      >
+        <span className={`text-[12px] ${isRefreshing ? 'spin-icon' : ''}`} style={{ display: 'inline-block' }}>↻</span>
+        {isRefreshing ? 'Refreshing...' : 'Hard Refresh'}
+      </button>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin-icon { animation: spin 0.8s linear infinite; }
+      `}</style>
+    </>
+  )
 }
