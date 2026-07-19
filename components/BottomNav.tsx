@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 // Left side: FEED + NETAS | Center: S | Right: VAADE + DATA
 const LEFT_TABS = [
@@ -47,6 +48,13 @@ interface BottomNavProps {
 export function BottomNav({ onSearchOpen }: BottomNavProps) {
   const pathname = usePathname()
 
+  const [visited, setVisited] = useState<Record<string, boolean>>({
+    '/': true,
+    '/timelines': true,
+    '/vaade': true,
+    '/data': true,
+  })
+
   // A tab owns its section's detail routes too: an /event/... page is part of
   // TIMELINES, a /news/... article is part of FEED — the tab stays lit.
   const SECTION_ROUTES: Record<string, string[]> = {
@@ -59,11 +67,46 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
     return (SECTION_ROUTES[href] ?? []).some(p => pathname.startsWith(p))
   }
 
+  useEffect(() => {
+    const state: Record<string, boolean> = {}
+    ;['/', '/timelines', '/vaade', '/data'].forEach(href => {
+      const key = `satya_visited_${href === '/' ? 'feed' : href.replace('/', '')}`
+      state[href] = localStorage.getItem(key) === 'true'
+    })
+    setVisited(state)
+  }, [])
+
+  useEffect(() => {
+    ;['/', '/timelines', '/vaade', '/data'].forEach(href => {
+      if (isActive(href)) {
+        const key = `satya_visited_${href === '/' ? 'feed' : href.replace('/', '')}`
+        if (localStorage.getItem(key) !== 'true') {
+          localStorage.setItem(key, 'true')
+          setVisited(prev => ({ ...prev, [href]: true }))
+        }
+      }
+    })
+  }, [pathname])
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--surface)] border-t safe-bottom"
       style={{ borderColor: 'var(--border-md)' }}
     >
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes satya-beacon-pulse {
+              0% { transform: scale(0.9); opacity: 0.9; }
+              50% { transform: scale(1.4); opacity: 0.35; }
+              100% { transform: scale(0.9); opacity: 0.9; }
+            }
+            .satya-beacon-pulse-effect {
+              animation: satya-beacon-pulse 1.8s infinite ease-in-out;
+            }
+          `,
+        }}
+      />
       <div className="flex items-end h-14">
         {LEFT_TABS.map(tab => (
           <Link
@@ -72,7 +115,15 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
             className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors"
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
-            {tab.icon}
+            <div className="relative flex items-center justify-center">
+              {tab.icon}
+              {!visited[tab.href] && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                  <span className="satya-beacon-pulse-effect absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]" />
+                </span>
+              )}
+            </div>
             <span className="text-[8px] font-mono tracking-wider flex items-center gap-1">
               {tab.label}
             </span>
@@ -102,7 +153,15 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
             className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors"
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
-            {tab.icon}
+            <div className="relative flex items-center justify-center">
+              {tab.icon}
+              {!visited[tab.href] && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                  <span className="satya-beacon-pulse-effect absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]" />
+                </span>
+              )}
+            </div>
             <span className="text-[8px] font-mono tracking-wider">{tab.label}</span>
           </Link>
         ))}
