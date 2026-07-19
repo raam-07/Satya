@@ -360,12 +360,15 @@ export const api = {
     return fetchClientJSON<{ articles?: Article[] }>('category', name);
   },
 
-  async feed(type: string, forceRefresh: boolean = false, limit?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+  async feed(type: string, forceRefresh: boolean = false, limit?: number, offset?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.feed(type, limit);
+      return serverApi.feed(type, limit, offset);
     }
-    return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type, forceRefresh, limit ? { limit: String(limit) } : {});
+    const extra: Record<string, string> = {};
+    if (limit) extra.limit = String(limit);
+    if (offset) extra.offset = String(offset);
+    return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type, forceRefresh, extra);
   },
 
   async articleContent(id: number): Promise<{ content?: string } | null> {

@@ -1024,9 +1024,10 @@ export const serverApi = {
     });
   },
 
-  async feed(type: string, limit?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+  async feed(type: string, limit?: number, offset?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     const lim = Math.min(Math.max(Number(limit) || 500, 1), 500);
-    return cached(`feed:${type.toLowerCase()}:${lim}`, ['articles'], async () => {
+    const off = Math.max(Number(offset) || 0, 0);
+    return cached(`feed:${type.toLowerCase()}:${lim}:${off}`, ['articles'], async () => {
       let query = `
         SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -1060,15 +1061,15 @@ export const serverApi = {
         OR a.cities_mentioned    NOT IN ('[]',''))`;
 
       if (type === 'flagged') {
-        query += INDIA_FILTER + ` AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT ${lim}`;
+        query += INDIA_FILTER + ` AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
       } else if (category_map[type]) {
         if (category_map[type] !== 'international') {
           query += INDIA_FILTER;
         }
-        query += ` AND a.category = ? ORDER BY a.scraped_at DESC LIMIT ${lim}`;
+        query += ` AND a.category = ? ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
         args.push(category_map[type]);
       } else if (topic_map[type]) {
-        query += INDIA_FILTER + ` AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT ${lim}`;
+        query += INDIA_FILTER + ` AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
         args.push(`%${topic_map[type]}%`);
       } else {
         // 'all' feed
@@ -1080,7 +1081,7 @@ export const serverApi = {
             LEFT JOIN sources s ON a.source_id = s.id
             WHERE a.status IN ('classified', 'entity_processed', 'processed')
             ORDER BY a.scraped_at DESC
-            LIMIT ${Math.max(lim * 3, 200)}
+            LIMIT ${Math.max((lim + off) * 3, 200)}
           ) a
           WHERE (a.category != 'international'
             OR a.party_mentioned     NOT IN ('[]','')
@@ -1088,7 +1089,7 @@ export const serverApi = {
             OR a.states_mentioned    NOT IN ('[]','')
             OR a.cities_mentioned    NOT IN ('[]',''))
           ORDER BY a.scraped_at DESC
-          LIMIT ${lim}
+          LIMIT ${lim} OFFSET ${off}
         `;
       }
 
