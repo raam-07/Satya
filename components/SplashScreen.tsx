@@ -7,7 +7,6 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onExitStart, onComplete }: SplashScreenProps) {
-  const [mounted, setMounted] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
   useEffect(() => {
@@ -17,8 +16,6 @@ export function SplashScreen({ onExitStart, onComplete }: SplashScreenProps) {
       onComplete()
       return
     }
-
-    setMounted(true)
 
     // Disable body scroll when splash screen is active
     document.body.style.overflow = 'hidden'
@@ -43,11 +40,9 @@ export function SplashScreen({ onExitStart, onComplete }: SplashScreenProps) {
     }
   }, [onComplete, onExitStart])
 
-  if (!mounted) return null
-
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out splash-screen-container ${
         isExiting ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100'
       }`}
       style={{

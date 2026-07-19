@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import { VaadeClient } from '@/components/VaadeClient'
+import { NetasLinkButton } from '@/components/NetasLinkButton'
 import type { Metadata } from 'next'
 
 export const revalidate = false
@@ -36,13 +37,7 @@ export default async function VaadePage() {
             </h1>
             <p className="text-[13px] text-[var(--text2)] mt-1">Every tracked political promise with sources and verdicts.</p>
           </div>
-          <Link
-            href="/netas"
-            className="flex-shrink-0 mt-1 text-[10px] font-mono font-semibold tracking-wider uppercase px-3 py-2 rounded-[3px] transition-opacity hover:opacity-80"
-            style={{ border: '1px solid var(--accent)', color: 'var(--accent)', background: 'rgba(191,74,7,0.06)' }}
-          >
-            Netas →
-          </Link>
+          <NetasLinkButton />
         </div>
       </div>
 

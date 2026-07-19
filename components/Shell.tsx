@@ -13,12 +13,12 @@ export function Shell({ children }: { children: React.ReactNode; lastUpdated?: s
   const [searchOpen, setSearchOpen] = useState(false)
   const [modalArticle, setModalArticle] = useState<Article | null>(null)
 
-  // Splash shows once per session; it never blocks content from rendering.
-  const [showSplash, setShowSplash] = useState(false)
+  // Splash shows once per session; default to true on server to prevent first-paint flash.
+  const [showSplash, setShowSplash] = useState(true)
 
   useEffect(() => {
-    if (sessionStorage.getItem('satya_splash_seen') !== 'true') {
-      setShowSplash(true)
+    if (sessionStorage.getItem('satya_splash_seen') === 'true') {
+      setShowSplash(false)
     }
   }, [])
 

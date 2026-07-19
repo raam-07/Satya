@@ -106,6 +106,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" style={{ backgroundColor: '#FAF8F5' }}>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (sessionStorage.getItem('satya_splash_seen') === 'true') {
+                  document.documentElement.classList.add('splash-seen');
+                }
+              } catch (e) {}
+            `
+          }}
+        />
         <JsonLd data={orgJsonLd} />
         <JsonLd data={websiteJsonLd} />
         {primaryId && (

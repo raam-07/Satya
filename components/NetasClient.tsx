@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { PartyData, IndiaOverview } from '@/lib/api'
 import { slugify, partySlugify } from '@/lib/utils'
@@ -60,6 +60,10 @@ interface NetasClientProps {
 
 export function NetasClient({ partyData, overview, manifestMinisters, manifestStates, politicians }: NetasClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('parties')
+
+  useEffect(() => {
+    localStorage.setItem('satya_visited_netas', 'true')
+  }, [])
 
   const topMins   = overview?.top_ministers_30d ?? {}
   const topStates = overview?.top_states_30d ?? {}
