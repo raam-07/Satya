@@ -22,6 +22,15 @@ function gapLabel(prevTs?: number, ts?: number): string | null {
   return `${Math.round(days / 30)} months later`
 }
 
+function isSameDay(ts1?: number, ts2?: number): boolean {
+  if (!ts1 || !ts2) return false
+  const d1 = new Date(ts1 * 1000)
+  const d2 = new Date(ts2 * 1000)
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate()
+}
+
 function DateBlock({ ts, accent }: { ts?: number; accent?: boolean }) {
   if (!ts) return <div style={{ width: 34 }} />
   const d = new Date(ts * 1000)
@@ -40,100 +49,150 @@ function DateBlock({ ts, accent }: { ts?: number; accent?: boolean }) {
 export function StoryTimeline({ milestones, currentArticleId, linkArticles = true, storyMode = false, ongoing = false }: StoryTimelineProps) {
   if (!milestones.length) return null
 
+  // Pre-process milestones with their original global index
+  const processedMilestones = milestones.map((m, index) => ({
+    m,
+    globalIndex: index,
+    isCurrent: currentArticleId != null && m.article_id === currentArticleId,
+    isFirst: index === 0,
+    isLast: index === milestones.length - 1,
+    isLatest: storyMode && index === milestones.length - 1,
+    text: cleanTitle(m.milestone)
+  }))
+
+  // Group adjacent milestones that occur on the same calendar day
+  const groups: {
+    event_date: number
+    items: typeof processedMilestones
+  }[] = []
+
+  processedMilestones.forEach((item) => {
+    const lastGroup = groups[groups.length - 1]
+    if (lastGroup && isSameDay(lastGroup.event_date, item.m.event_date)) {
+      lastGroup.items.push(item)
+    } else {
+      groups.push({
+        event_date: item.m.event_date,
+        items: [item],
+      })
+    }
+  })
+
   let lastYear: number | null = null
 
   return (
     <div>
-      {milestones.map((m, i) => {
-        const isCurrent = currentArticleId != null && m.article_id === currentArticleId
-        const isLast = i === milestones.length - 1
-        const isFirst = i === 0
-        const isLatest = storyMode && isLast
-        const text = cleanTitle(m.milestone)
+      {groups.map((group, groupIdx) => {
+        const isGroupLast = groupIdx === groups.length - 1
+        const hasCurrent = group.items.some(item => item.isCurrent)
+        const hasLatest = group.items.some(item => item.isLatest)
 
+        const dotAccent = hasCurrent || hasLatest
+        
         // Year divider + long-gap divider (story mode only)
-        const year = m.event_date ? new Date(m.event_date * 1000).getFullYear() : null
+        const year = group.event_date ? new Date(group.event_date * 1000).getFullYear() : null
         const showYear = storyMode && year !== null && year !== lastYear && lastYear !== null
         if (year !== null) lastYear = year
-        const gap = storyMode && i > 0 ? gapLabel(milestones[i - 1].event_date, m.event_date) : null
-
-        const body = (
-          <div className={storyMode ? 'pb-6' : 'pb-5'}>
-            <p
-              className="text-[10px] font-mono tracking-wider"
-              style={{ color: isCurrent || isLatest ? 'var(--accent)' : 'var(--text3)' }}
-            >
-              {!storyMode && epochToDate(m.event_date).toUpperCase()}
-              {isFirst && storyMode && 'STORY BEGINS'}
-              {isLatest && !isFirst && 'LATEST UPDATE'}
-              {isCurrent && ' · THIS STORY'}
-              {m.source && <span className="normal-case"> {storyMode && !isFirst && !isLatest ? '' : '— '}{m.source}</span>}
-            </p>
-            {linkArticles && !isCurrent ? (
-              // Linked milestone: full-strength text with a warm accent
-              // underline + arrow — reads as important and tappable, not faded.
-              <p
-                className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isLatest ? 'font-semibold' : ''} underline underline-offset-4 decoration-[1.5px] transition-colors group-hover:text-[var(--accent)]`}
-                style={{ color: 'var(--text1)', textDecorationColor: 'rgba(191,74,7,0.35)' }}
-              >
-                {text}
-                <span
-                  className="ml-1.5 text-[11px] font-mono font-bold transition-opacity opacity-70 group-hover:opacity-100"
-                  style={{ color: 'var(--accent)' }}
-                  aria-hidden
-                >
-                  ↗
-                </span>
-              </p>
-            ) : (
-              <p
-                className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isCurrent || isLatest ? 'font-semibold' : ''}`}
-                style={{ color: isCurrent || isLatest ? 'var(--text1)' : 'var(--text2)' }}
-              >
-                {text}
-              </p>
-            )}
-          </div>
-        )
+        const gap = storyMode && groupIdx > 0 ? gapLabel(groups[groupIdx - 1].event_date, group.event_date) : null
 
         const row = (
           <div
-            className={`flex gap-3 ${isLatest ? 'rounded-md px-3 pt-3 -mx-3' : ''}`}
-            // Latest update gets a soft warm band so the eye lands on where
-            // the story currently stands.
-            style={isLatest ? { background: 'rgba(191,74,7,0.06)' } : undefined}
+            className={`flex gap-3 ${hasLatest ? 'rounded-md px-3 pt-3 -mx-3' : ''}`}
+            style={hasLatest ? { background: 'rgba(191,74,7,0.06)' } : undefined}
           >
-            {storyMode && <DateBlock ts={m.event_date} accent={isLatest} />}
+            {storyMode && <DateBlock ts={group.event_date} accent={hasLatest} />}
 
             {/* Rail */}
             <div className="flex flex-col items-center flex-shrink-0" style={{ width: 12 }}>
               <div
                 className="rounded-full flex-shrink-0 mt-[5px]"
                 style={{
-                  width: isCurrent || isLatest ? 9 : 7,
-                  height: isCurrent || isLatest ? 9 : 7,
-                  background: isCurrent || isLatest ? 'var(--accent)' : 'var(--text3)',
-                  boxShadow: isCurrent || isLatest ? '0 0 0 3px rgba(191,74,7,0.15)' : undefined,
+                  width: dotAccent ? 9 : 7,
+                  height: dotAccent ? 9 : 7,
+                  background: dotAccent ? 'var(--accent)' : 'var(--text3)',
+                  boxShadow: dotAccent ? '0 0 0 3px rgba(191,74,7,0.15)' : undefined,
                 }}
               />
-              {(!isLast || (storyMode && ongoing)) && (
+              {(!isGroupLast || (storyMode && ongoing)) && (
                 <div className="w-px flex-1" style={{ background: 'var(--border-md)' }} />
               )}
             </div>
 
-            {/* Content */}
-            {linkArticles && !isCurrent ? (
-              <Link href={`/news/${m.article_id}`} className="group flex-1 min-w-0">
-                {body}
-              </Link>
-            ) : (
-              <div className="flex-1 min-w-0">{body}</div>
-            )}
+            {/* Content Column */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              {/* Date Header for non-storyMode (printed once per group) */}
+              {!storyMode && (
+                <p className="text-[10px] font-mono tracking-wider mb-1" style={{ color: dotAccent ? 'var(--accent)' : 'var(--text3)' }}>
+                  {epochToDate(group.event_date).toUpperCase()}
+                </p>
+              )}
+
+              {/* Sub-feed of same-day milestones */}
+              <div 
+                className={`flex flex-col space-y-4 ${group.items.length > 1 ? 'border-l pl-3 ml-1' : ''}`}
+                style={group.items.length > 1 ? { borderColor: 'var(--border-md)' } : undefined}
+              >
+                {group.items.map((item) => {
+                  const { m, isCurrent, isFirst, isLatest, text } = item
+
+                  const body = (
+                    <div className="group/item">
+                      <p
+                        className="text-[10px] font-mono tracking-wider flex items-center gap-1.5"
+                        style={{ color: isCurrent || isLatest ? 'var(--accent)' : 'var(--text3)' }}
+                      >
+                        {isFirst && storyMode && 'STORY BEGINS'}
+                        {isLatest && !isFirst && 'LATEST UPDATE'}
+                        {isCurrent && ' · THIS STORY'}
+                        {m.source && <span className="normal-case"> {storyMode && !isFirst && !isLatest ? '' : '— '}{m.source}</span>}
+                      </p>
+                      {linkArticles && !isCurrent ? (
+                        <p
+                          className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isLatest ? 'font-semibold' : ''} underline underline-offset-4 decoration-[1.5px] transition-colors group-hover/item:text-[var(--accent)]`}
+                          style={{ color: 'var(--text1)', textDecorationColor: 'rgba(191,74,7,0.35)' }}
+                        >
+                          {text}
+                          <span
+                            className="ml-1.5 text-[11px] font-mono font-bold transition-opacity opacity-70 group-hover/item:opacity-100"
+                            style={{ color: 'var(--accent)' }}
+                            aria-hidden
+                          >
+                            ↗
+                          </span>
+                        </p>
+                      ) : (
+                        <p
+                          className={`text-[13px] md:text-[13.5px] leading-relaxed mt-0.5 ${isCurrent || isLatest ? 'font-semibold' : ''}`}
+                          style={{ color: isCurrent || isLatest ? 'var(--text1)' : 'var(--text2)' }}
+                        >
+                          {text}
+                        </p>
+                      )}
+                    </div>
+                  )
+
+                  return (
+                    <div key={m.article_id} className="relative">
+                      {linkArticles && !isCurrent ? (
+                        <Link href={`/news/${m.article_id}`} className="block">
+                          {body}
+                        </Link>
+                      ) : (
+                        <div>{body}</div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* Spacing spacer between day rows */}
+              <div className={storyMode ? 'pb-6' : 'pb-5'} />
+            </div>
           </div>
         )
 
         return (
-          <div key={`${m.article_id}-${i}`}>
+          <div key={`${group.event_date}-${groupIdx}`}>
             {(gap || showYear) && (
               <div className="flex items-center gap-3 mb-4" style={{ paddingLeft: storyMode ? 46 : 0 }}>
                 <div className="h-px flex-1 max-w-[60px]" style={{ background: 'var(--border-md)' }} />
