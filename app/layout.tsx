@@ -13,6 +13,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
+  themeColor: '#FAF8F5',
 }
 
 export const metadata: Metadata = {
@@ -103,7 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const primaryId = gaIds[0]
 
   return (
-    <html lang="en">
+    <html lang="en" style={{ backgroundColor: '#FAF8F5' }}>
       <head>
         <JsonLd data={orgJsonLd} />
         <JsonLd data={websiteJsonLd} />
@@ -128,7 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
       </head>
-      <body>
+      <body style={{ backgroundColor: '#FAF8F5' }}>
         <ServiceWorkerRegister />
         <ManifestProvider>
           <ToastProvider>
