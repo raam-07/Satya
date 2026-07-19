@@ -8,7 +8,7 @@
 //   • skipWaiting + clients.claim: a new SW version takes over on next launch.
 //
 // Bump CACHE_VERSION on any deploy where you want caches wiped.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `satya-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `satya-runtime-${CACHE_VERSION}`;
 
