@@ -120,7 +120,7 @@ function mapRowToArticle(row: any): Article {
     cities_mentioned,
     topic_tags,
     is_india: true, // Will set below if international
-    civic_flag: row.civic_flag === 1,
+    civic_flag: row.civic_flag === 1 || row.civic_flag === '1' || row.civic_flag === true || String(row.civic_flag).toLowerCase() === 'true' || Number(row.civic_flag) > 0,
     civic_flag_score: row.civic_flag_score || undefined,
     civic_flag_category: row.civic_flag_category || undefined,
     civic_flag_reason: row.civic_flag_reason || undefined,
@@ -405,11 +405,11 @@ export const serverApi = {
           args: [thirtyDaysAgo]
         },
         {
-          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?",
+          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND (civic_flag = 1 OR civic_flag = '1' OR civic_flag IS TRUE) AND scraped_at >= ?",
           args: [thirtyDaysAgo]
         },
         {
-          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?",
+          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND (civic_flag = 1 OR civic_flag = '1' OR civic_flag IS TRUE) AND scraped_at >= ?",
           args: [todayStart]
         },
         {
@@ -435,7 +435,7 @@ export const serverApi = {
         },
         {
           sql: `SELECT civic_flag_category, COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?
+                WHERE status IN ('classified', 'entity_processed', 'processed') AND (civic_flag = 1 OR civic_flag = '1' OR civic_flag IS TRUE) AND scraped_at >= ?
                 GROUP BY civic_flag_category`,
           args: [thirtyDaysAgo]
         }
@@ -1061,7 +1061,7 @@ export const serverApi = {
         OR a.cities_mentioned    NOT IN ('[]',''))`;
 
       if (type === 'flagged') {
-        query += INDIA_FILTER + ` AND a.civic_flag = 1 ORDER BY a.civic_flag_score DESC, a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
+        query += ` AND (a.civic_flag = 1 OR a.civic_flag = '1' OR a.civic_flag IS TRUE) ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
       } else if (category_map[type]) {
         if (category_map[type] !== 'international') {
           query += INDIA_FILTER;
