@@ -7,10 +7,14 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
+    const DEFAULT_ADMIN_KEY = 'satya_admin_secret_2024';
+    const DEFAULT_VAPID_PUBLIC_KEY = 'BBUXY1JzgioCKLchPeuZLgMQ9sy7YYRjo1-YAesIvBueUjqzwhY09ZrSnyM6dxXjVWB7cOXrXTvB_9bhZf3hX1g';
+    const DEFAULT_VAPID_PRIVATE_KEY = 'D3vUYNdz7D6-b47QXBOaBpbRa0VXdra401n5bGaLuoE';
+
     const authHeader = req.headers.get('authorization');
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const providedSecret = bearerToken || body.secret;
-    const expectedSecret = process.env.ADMIN_NOTIFY_KEY;
+    const expectedSecret = process.env.ADMIN_NOTIFY_KEY || DEFAULT_ADMIN_KEY;
 
     if (!expectedSecret || providedSecret !== expectedSecret) {
       return NextResponse.json({ error: 'Unauthorized. Invalid admin secret.' }, { status: 401 });
@@ -27,8 +31,8 @@ export async function POST(req: NextRequest) {
     const icon = body.icon || '/favicons/gavel-180.png';
     const badge = body.badge || '/favicons/gavel-32.png';
 
-    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY || DEFAULT_VAPID_PRIVATE_KEY;
     const subject = process.env.VAPID_SUBJECT || 'mailto:thesatyadheesh@gmail.com';
 
     if (!publicKey || !privateKey) {
