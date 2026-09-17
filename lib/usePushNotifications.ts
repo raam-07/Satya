@@ -20,8 +20,6 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export type NotificationPermissionState = 'default' | 'granted' | 'denied' | 'unsupported';
 
-const DEFAULT_VAPID_PUBLIC_KEY = 'BBUXY1JzgioCKLchPeuZLgMQ9sy7YYRjo1-YAesIvBueUjqzwhY09ZrSnyM6dxXjVWB7cOXrXTvB_9bhZf3hX1g';
-
 export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermissionState>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -29,7 +27,7 @@ export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const { showToast } = useToast();
 
-  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
   // Initialize and check current status
   useEffect(() => {
