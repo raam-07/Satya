@@ -43,14 +43,41 @@ export function usePushNotifications() {
 
     setPermission(Notification.permission as NotificationPermissionState);
 
-    // Check if there is already an active push subscription
+    // Check and auto-sync subscription if permission was already granted
     navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => {
-        setIsSubscribed(Boolean(sub));
+      .then(async (reg) => {
+        let sub = await reg.pushManager.getSubscription();
+
+        // If user already granted permission but subscription isn't created yet, subscribe now
+        if (!sub && Notification.permission === 'granted' && vapidPublicKey) {
+          try {
+            const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: convertedVapidKey as unknown as BufferSource,
+            });
+          } catch (e) {
+            console.warn('Auto-subscribe error:', e);
+          }
+        }
+
+        if (sub) {
+          setIsSubscribed(true);
+          // Auto-sync with backend database silently so already-granted users are always registered
+          fetch('/api/notifications/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subscription: sub.toJSON(),
+              userAgent: navigator.userAgent,
+            }),
+          }).catch((err) => console.warn('Silent subscription sync failed:', err));
+        } else {
+          setIsSubscribed(false);
+        }
       })
       .catch((err) => console.warn('Could not check push subscription status:', err));
-  }, []);
+  }, [vapidPublicKey]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!isSupported) {
