@@ -8,7 +8,7 @@
 //   • skipWaiting + clients.claim: a new SW version takes over on next launch.
 //
 // Bump CACHE_VERSION on any deploy where you want caches wiped.
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `satya-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `satya-runtime-${CACHE_VERSION}`;
 
@@ -66,4 +66,64 @@ self.addEventListener('fetch', (event) => {
       throw new Error('offline and uncached');
     }
   })());
+});
+
+// --- WEB PUSH NOTIFICATIONS ---
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'SatyaDheesh Alert',
+    body: 'New critical civic development.',
+    url: '/',
+    tag: 'satya-alert',
+  };
+
+  if (event.data) {
+    try {
+      data = { ...data, ...event.data.json() };
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/favicons/gavel-180.png',
+    badge: data.badge || '/favicons/gavel-32.png',
+    image: data.image || undefined,
+    data: {
+      url: data.url || '/',
+      timestamp: Date.now(),
+    },
+    tag: data.tag || 'satya-alert',
+    renotify: true,
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window is already open, focus it and navigate
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          if ('navigate' in client) {
+            return client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+      // Otherwise open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });

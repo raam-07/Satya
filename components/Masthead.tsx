@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { BackButton } from './BackButton'
+import { NotificationBell } from './NotificationBell'
 
 const TAB_PATHS = ['/', '/netas', '/vaade', '/data']
 
@@ -63,9 +64,12 @@ export function Masthead() {
         ) : (
           <span className="text-[9.5px] font-mono text-[var(--text2)] flex-1 truncate">{today}</span>
         )}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <div className="w-[5px] h-[5px] rounded-full" style={{ background: 'var(--green)', boxShadow: '0 0 4px #1b7050' }} />
-          <span className="text-[9px] font-mono font-semibold tracking-widest" style={{ color: 'var(--green)' }}>LIVE</span>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          <NotificationBell />
+          <div className="flex items-center gap-1.5">
+            <div className="w-[5px] h-[5px] rounded-full" style={{ background: 'var(--green)', boxShadow: '0 0 4px #1b7050' }} />
+            <span className="text-[9px] font-mono font-semibold tracking-widest" style={{ color: 'var(--green)' }}>LIVE</span>
+          </div>
         </div>
       </div>
     </div>
