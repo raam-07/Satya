@@ -116,18 +116,34 @@ export async function POST(req: NextRequest) {
             return { status: 'purged', id };
           }
           console.error(`Failed to push to subscriber ${id}:`, error?.message || error);
-          return { status: 'failed', id, error: error?.message };
+          return {
+            status: 'failed',
+            id,
+            error: error?.body || error?.message || String(error),
+            statusCode: error?.statusCode,
+          };
         }
       })
     );
 
+    const failureDetails: Array<{ id?: number; error: string; statusCode?: number }> = [];
     for (const r of results) {
       if (r.status === 'fulfilled') {
         if (r.value.status === 'sent') sent++;
         else if (r.value.status === 'purged') purged++;
-        else failed++;
+        else {
+          failed++;
+          failureDetails.push({
+            id: r.value.id,
+            error: r.value.error || 'Unknown error',
+            statusCode: r.value.statusCode,
+          });
+        }
       } else {
         failed++;
+        failureDetails.push({
+          error: r.reason?.message || String(r.reason),
+        });
       }
     }
 
@@ -155,6 +171,7 @@ export async function POST(req: NextRequest) {
       failed,
       purged,
       total: rows.length,
+      failures: failureDetails.length > 0 ? failureDetails : undefined,
     });
   } catch (error: any) {
     console.error('Error broadcasting push notification:', error);
