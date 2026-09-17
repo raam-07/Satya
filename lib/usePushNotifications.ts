@@ -48,6 +48,31 @@ export function usePushNotifications() {
       .then(async (reg) => {
         let sub = await reg.pushManager.getSubscription();
 
+        // If a subscription exists, verify that it was created with the current VAPID key
+        if (sub && vapidPublicKey) {
+          try {
+            const currentKeyBytes = urlBase64ToUint8Array(vapidPublicKey);
+            const rawExistingKey = sub.options.applicationServerKey;
+            if (rawExistingKey) {
+              const existingBytes = new Uint8Array(rawExistingKey);
+              const isMatch =
+                currentKeyBytes.length === existingBytes.length &&
+                currentKeyBytes.every((b, i) => b === existingBytes[i]);
+
+              if (!isMatch) {
+                // Key rotated: unsubscribe stale subscription and re-subscribe with current key
+                await sub.unsubscribe();
+                sub = await reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: currentKeyBytes as unknown as BufferSource,
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('Subscription key migration error:', e);
+          }
+        }
+
         // If user already granted permission but subscription isn't created yet, subscribe now
         if (!sub && Notification.permission === 'granted' && vapidPublicKey) {
           try {

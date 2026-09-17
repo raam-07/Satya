@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
           );
           return { status: 'sent', id };
         } catch (error: any) {
-          if (error.statusCode === 404 || error.statusCode === 410) {
-            // Subscription expired or revoked by browser
+          if (error.statusCode === 404 || error.statusCode === 410 || error.statusCode === 403) {
+            // Subscription expired, revoked, or signed with outdated VAPID key
             idsToPurge.push(id);
             return { status: 'purged', id };
           }
