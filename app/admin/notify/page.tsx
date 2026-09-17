@@ -30,6 +30,7 @@ export default function AdminNotifyPage() {
   const [broadcasting, setBroadcasting] = useState(false);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  const [failureList, setFailureList] = useState<Array<{ id?: number; error: string; statusCode?: number }>>([]);
 
   const { isSubscribed, subscribe } = usePushNotifications();
 
@@ -55,12 +56,13 @@ export default function AdminNotifyPage() {
         sessionStorage.setItem('satya_admin_key', key);
       } else {
         setAuthenticated(false);
-        setResultMessage('Invalid admin key. Please try again.');
+        const errData = await res.json().catch(() => ({}));
+        setResultMessage(`Authentication failed: ${errData.error || 'Invalid admin key.'}`);
         setIsError(true);
       }
-    } catch (err) {
+    } catch (err: any) {
       setAuthenticated(false);
-      setResultMessage('Failed to connect to notification status service.');
+      setResultMessage(`Connection error: ${err.message || 'Failed to connect to notification status service.'}`);
       setIsError(true);
     } finally {
       setLoadingStats(false);
@@ -83,6 +85,7 @@ export default function AdminNotifyPage() {
 
     setBroadcasting(true);
     setResultMessage(null);
+    setFailureList([]);
     setIsError(false);
 
     try {
@@ -102,21 +105,33 @@ export default function AdminNotifyPage() {
 
       const data = await res.json();
       if (res.ok) {
+        const hasFailures = (data.failed && data.failed > 0) || (data.failures && data.failures.length > 0);
         setResultMessage(
-          `✓ Broadcast complete! Delivered: ${data.sent}, Failed: ${data.failed}, Purged: ${data.purged} (Total: ${data.total})`
+          `Broadcast finished: Delivered: ${data.sent || 0}, Failed: ${data.failed || 0}, Purged: ${data.purged || 0} (Total: ${data.total || 0})`
         );
-        setIsError(false);
-        setTitle('');
-        setBody('');
-        setUrl('/');
-        // Refresh status logs
+        setIsError(hasFailures);
+        if (data.failures && data.failures.length > 0) {
+          setFailureList(data.failures);
+        } else {
+          setFailureList([]);
+        }
+
+        if (!hasFailures) {
+          setTitle('');
+          setBody('');
+          setUrl('/');
+        }
+        // Refresh status logs and subscriber count
         checkAuth(adminKey);
       } else {
-        setResultMessage(`Error: ${data.error || 'Broadcast failed'}`);
+        setResultMessage(`Server Error: ${data.error || 'Broadcast failed'}`);
         setIsError(true);
+        if (data.failures) {
+          setFailureList(data.failures);
+        }
       }
     } catch (err: any) {
-      setResultMessage(`Broadcast error: ${err.message}`);
+      setResultMessage(`Network/Broadcast error: ${err.message}`);
       setIsError(true);
     } finally {
       setBroadcasting(false);
@@ -344,11 +359,41 @@ export default function AdminNotifyPage() {
 
               {resultMessage && (
                 <div
-                  className={`p-3 rounded text-xs font-mono ${
+                  className={`p-3.5 rounded text-xs font-mono ${
                     isError ? 'bg-red-50 text-[var(--red)] border border-red-200' : 'bg-green-50 text-[var(--green)] border border-green-200'
                   }`}
                 >
-                  {resultMessage}
+                  <div className="font-semibold">{resultMessage}</div>
+                  {failureList.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-red-200 space-y-2">
+                      <div className="font-bold uppercase tracking-wider text-[10px] text-[var(--red)]">
+                        Delivery Failure Diagnostics ({failureList.length}):
+                      </div>
+                      {failureList.map((f, idx) => (
+                        <div key={idx} className="bg-white/90 p-2.5 rounded border border-red-200 text-[11px] space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-[var(--text2)]">
+                            <span className="font-semibold">{f.id ? `Subscriber #${f.id}` : 'Target Device'}</span>
+                            {f.statusCode && (
+                              <span className="bg-red-100 px-1.5 py-0.5 rounded font-bold text-red-800">
+                                HTTP {f.statusCode}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[var(--red)] break-words font-sans text-xs">{f.error}</div>
+                          {f.statusCode === 403 && (
+                            <div className="text-[10.5px] text-[var(--text2)] bg-amber-50 p-1.5 rounded border border-amber-200">
+                              ℹ <strong>Key Mismatch:</strong> Token was created with an older VAPID key. It was automatically purged and will re-register on device refresh.
+                            </div>
+                          )}
+                          {(f.statusCode === 404 || f.statusCode === 410) && (
+                            <div className="text-[10.5px] text-[var(--text2)] bg-gray-50 p-1.5 rounded border border-gray-200">
+                              ℹ <strong>Expired / Revoked:</strong> Subscription was unregistered by user or expired by push service. Cleaned from database.
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
