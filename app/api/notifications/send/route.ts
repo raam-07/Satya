@@ -3,6 +3,29 @@ import webpush from 'web-push';
 import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+// Broadcasting to a large subscriber base can take a while; give it room.
+export const maxDuration = 300;
+
+/**
+ * Push payload budget. Web Push caps the encrypted payload at ~4KB across push
+ * services, so we keep the visible text well inside that and truncate rather
+ * than let one long headline fail the entire broadcast.
+ */
+const MAX_TITLE = 120;
+const MAX_BODY = 350;
+
+function clamp(value: string, max: number): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (trimmed.length <= max) return trimmed;
+  return trimmed.slice(0, max - 1).trimEnd() + '…';
+}
+
+type SendOutcome =
+  | { status: 'sent'; id: number }
+  | { status: 'gone'; id: number }
+  | { status: 'rejected'; id: number; error: string; statusCode?: number }
+  | { status: 'failed'; id: number; error: string; statusCode?: number };
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,16 +39,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized. Invalid admin secret.' }, { status: 401 });
     }
 
-    const title = body.title?.trim();
+    const title = clamp(body.title || '', MAX_TITLE);
     if (!title) {
       return NextResponse.json({ error: 'Title is required for notification.' }, { status: 400 });
     }
 
-    const notificationBody = body.body?.trim() || '';
+    const notificationBody = clamp(body.body || '', MAX_BODY);
     const targetUrl = body.url?.trim() || '/';
     const tag = body.tag || 'satya-alert';
-    const icon = body.icon || '/favicons/gavel-180.png';
+    const icon = body.icon || '/favicons/gavel-192.png';
     const badge = body.badge || '/favicons/gavel-32.png';
+    const image = typeof body.image === 'string' && body.image.trim() ? body.image.trim() : undefined;
+    const requireInteraction = Boolean(body.requireInteraction);
+    const actions = Array.isArray(body.actions) ? body.actions.slice(0, 2) : undefined;
 
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -47,32 +73,44 @@ export async function POST(req: NextRequest) {
       tag,
       icon,
       badge,
+      image,
+      requireInteraction,
+      actions,
+      timestamp: Date.now(),
     });
 
-    // Handle single-target test mode
+    if (payload.length > 3800) {
+      return NextResponse.json(
+        { error: `Notification payload is too large (${payload.length} bytes). Shorten the text or drop the image URL.` },
+        { status: 400 }
+      );
+    }
+
+    // --- Single-target test mode -------------------------------------------
     if (body.testSubscription) {
       const sub = body.testSubscription;
       try {
         await webpush.sendNotification(
           {
             endpoint: sub.endpoint,
-            keys: {
-              p256dh: sub.keys.p256dh,
-              auth: sub.keys.auth,
-            },
+            keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
           },
           payload
         );
-        return NextResponse.json({ success: true, message: 'Test notification delivered successfully' });
+        return NextResponse.json({ success: true, test: true, message: 'Test notification delivered successfully' });
       } catch (err: any) {
         return NextResponse.json(
-          { error: `Test notification failed: ${err.message}` },
+          {
+            error: `Test notification failed: ${err.message}`,
+            statusCode: err?.statusCode,
+            detail: err?.body,
+          },
           { status: 500 }
         );
       }
     }
 
-    // Query all active subscriptions
+    // --- Broadcast ----------------------------------------------------------
     const queryRes = await db.execute('SELECT id, endpoint, p256dh, auth FROM push_subscriptions');
     const rows = queryRes.rows || [];
 
@@ -89,95 +127,136 @@ export async function POST(req: NextRequest) {
 
     let sent = 0;
     let failed = 0;
-    let purged = 0;
-    const idsToPurge: number[] = [];
 
-    // Process in batches to prevent socket exhaustion and rate limits
-    const BATCH_SIZE = 100;
+    /**
+     * Purge policy.
+     *
+     * 404 / 410 come straight from the push service and mean the subscription
+     * genuinely no longer exists - those are always safe to delete.
+     *
+     * 403 is ambiguous. It usually means "signed with an outdated VAPID key",
+     * but it is ALSO what every single subscriber returns when OUR OWN config
+     * is broken (mismatched key pair, malformed VAPID subject, clock skew).
+     * Deleting on 403 unconditionally means one bad env var can wipe the entire
+     * subscriber list in a single broadcast. So 403s are quarantined and only
+     * purged if the run as a whole looks healthy.
+     */
+    const goneIds: number[] = [];
+    const rejectedIds: number[] = [];
     const failureDetails: Array<{ id?: number; error: string; statusCode?: number }> = [];
+
+    const BATCH_SIZE = 100;
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE);
-      
+
       const results = await Promise.allSettled(
-        batch.map(async (row: any) => {
+        batch.map(async (row: any): Promise<SendOutcome> => {
           const id = Number(row.id);
           const endpoint = String(row.endpoint);
           const p256dh = String(row.p256dh);
           const auth = String(row.auth);
 
           try {
-            await webpush.sendNotification(
-              {
-                endpoint,
-                keys: { p256dh, auth },
-              },
-              payload
-            );
+            await webpush.sendNotification({ endpoint, keys: { p256dh, auth } }, payload);
             return { status: 'sent', id };
           } catch (error: any) {
-            if (error.statusCode === 404 || error.statusCode === 410 || error.statusCode === 403) {
-              // Subscription expired, revoked, or signed with outdated VAPID key
-              idsToPurge.push(id);
-              return { status: 'purged', id };
+            const statusCode = error?.statusCode;
+            const message = error?.body || error?.message || String(error);
+
+            if (statusCode === 404 || statusCode === 410) {
+              return { status: 'gone', id };
             }
-            console.error(`Failed to push to subscriber ${id}:`, error?.message || error);
-            return {
-              status: 'failed',
-              id,
-              error: error?.body || error?.message || String(error),
-              statusCode: error?.statusCode,
-            };
+            if (statusCode === 403) {
+              return { status: 'rejected', id, error: message, statusCode };
+            }
+
+            console.error(`Failed to push to subscriber ${id}:`, message);
+            return { status: 'failed', id, error: message, statusCode };
           }
         })
       );
 
       for (const r of results) {
         if (r.status === 'fulfilled') {
-          if (r.value.status === 'sent') sent++;
-          else if (r.value.status === 'purged') purged++;
-          else {
+          const outcome = r.value;
+          if (outcome.status === 'sent') {
+            sent++;
+          } else if (outcome.status === 'gone') {
+            goneIds.push(outcome.id);
+          } else if (outcome.status === 'rejected') {
+            rejectedIds.push(outcome.id);
+            failureDetails.push({ id: outcome.id, error: outcome.error, statusCode: outcome.statusCode });
+          } else {
             failed++;
-            failureDetails.push({
-              id: r.value.id,
-              error: r.value.error || 'Unknown error',
-              statusCode: r.value.statusCode,
-            });
+            failureDetails.push({ id: outcome.id, error: outcome.error, statusCode: outcome.statusCode });
           }
         } else {
           failed++;
-          failureDetails.push({
-            error: r.reason?.message || String(r.reason),
-          });
+          failureDetails.push({ error: r.reason?.message || String(r.reason) });
         }
       }
     }
 
-    // Purge expired endpoints
-    if (idsToPurge.length > 0) {
-      for (const id of idsToPurge) {
+    // --- Safety valve -------------------------------------------------------
+    // If almost nothing got through, the problem is far more likely to be our
+    // configuration than every subscriber simultaneously going stale. In that
+    // case we keep every row and tell the operator to investigate.
+    const total = rows.length;
+    const unreachable = goneIds.length + rejectedIds.length + failed;
+    const successRate = total > 0 ? sent / total : 0;
+    const looksLikeServerFault = total >= 5 && successRate < 0.5;
+
+    let purged = 0;
+    let purgeSkipped = false;
+    let warning: string | undefined;
+
+    const idsToPurge = looksLikeServerFault ? [] : [...goneIds, ...rejectedIds];
+
+    if (looksLikeServerFault) {
+      purgeSkipped = true;
+      warning =
+        `Purge skipped as a safety measure: only ${sent} of ${total} sends succeeded ` +
+        `(${unreachable} unreachable). A near-total failure usually means a server-side ` +
+        `problem - mismatched VAPID key pair, bad VAPID_SUBJECT, or clock skew - not that ` +
+        `every subscriber expired at once. No subscriptions were deleted. Verify your VAPID ` +
+        `configuration and send again.`;
+      console.error('[notifications] ' + warning);
+    } else if (idsToPurge.length > 0) {
+      // One statement instead of N round trips to Turso.
+      const placeholders = idsToPurge.map(() => '?').join(',');
+      try {
         await db.execute({
-          sql: 'DELETE FROM push_subscriptions WHERE id = ?',
-          args: [id],
-        }).catch(() => {});
+          sql: `DELETE FROM push_subscriptions WHERE id IN (${placeholders})`,
+          args: idsToPurge,
+        });
+        purged = idsToPurge.length;
+      } catch (e) {
+        console.error('Failed to purge dead subscriptions:', e);
       }
     }
 
-    // Log notification in notification_logs
+    // Failures we did not purge still count as failures for reporting.
+    const reportedFailed = failed + (purgeSkipped ? rejectedIds.length : 0);
+
     const now = Math.floor(Date.now() / 1000);
-    await db.execute({
-      sql: `INSERT INTO notification_logs (title, body, url, sent_count, failed_count, purged_count, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [title, notificationBody, targetUrl, sent, failed, purged, now],
-    }).catch(e => console.error('Failed to write notification log:', e));
+    await db
+      .execute({
+        sql: `INSERT INTO notification_logs (title, body, url, sent_count, failed_count, purged_count, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [title, notificationBody, targetUrl, sent, reportedFailed, purged, now],
+      })
+      .catch((e) => console.error('Failed to write notification log:', e));
 
     return NextResponse.json({
       success: true,
       sent,
-      failed,
+      failed: reportedFailed,
       purged,
-      total: rows.length,
-      failures: failureDetails.length > 0 ? failureDetails : undefined,
+      total,
+      purgeSkipped,
+      warning,
+      failures: failureDetails.length > 0 ? failureDetails.slice(0, 50) : undefined,
     });
   } catch (error: any) {
     console.error('Error broadcasting push notification:', error);

@@ -3,135 +3,196 @@
 import { useState, useEffect } from 'react';
 import { usePushNotifications } from '@/lib/usePushNotifications';
 
+const DISMISS_KEY = 'satya_notif_dismissed';
+const DISMISS_COUNT_KEY = 'satya_notif_dismiss_count';
+
+const DAY = 24 * 60 * 60 * 1000;
+const FIRST_COOLDOWN = 14 * DAY;   // asked once, said no → wait a fortnight
+const FINAL_COOLDOWN = 120 * DAY;  // said no twice → stop pestering
+
+function safeGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* private mode / storage blocked — non-fatal */
+  }
+}
+
 export function NotificationBanner() {
   const { isSupported, permission, isSubscribed, loading, subscribe } = usePushNotifications();
-  const [dismissed, setDismissed] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
-    // Only check localStorage on client
     if (typeof window === 'undefined') return;
 
-    const storedDismissed = localStorage.getItem('satya_notif_dismissed');
-    if (storedDismissed) {
-      const timestamp = parseInt(storedDismissed, 10);
-      // Re-surface after 14 days if user previously dismissed
-      const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-      if (Date.now() - timestamp < fourteenDaysMs) {
-        setDismissed(true);
-        return;
-      }
+    const dismissedAt = safeGet(DISMISS_KEY);
+    if (dismissedAt) {
+      const when = parseInt(dismissedAt, 10);
+      const count = parseInt(safeGet(DISMISS_COUNT_KEY) || '1', 10);
+      const cooldown = count >= 2 ? FINAL_COOLDOWN : FIRST_COOLDOWN;
+      if (Number.isFinite(when) && Date.now() - when < cooldown) return;
     }
 
-    // Wait 2.5 seconds after page load before showing the prompt
+    // Let the reader actually start reading before asking for anything.
     const timer = setTimeout(() => {
-      setDismissed(false);
-    }, 2500);
+      setVisible(true);
+      requestAnimationFrame(() => setEntered(true));
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Do not show if unsupported, already subscribed, already decided (granted/denied), or dismissed
-  if (!isSupported || isSubscribed || permission !== 'default' || dismissed) {
+  if (!isSupported || isSubscribed || permission !== 'default' || !visible) {
     return null;
   }
 
+  const close = () => {
+    setEntered(false);
+    setTimeout(() => setVisible(false), 220);
+  };
+
   const handleDismiss = () => {
-    setDismissed(true);
-    try {
-      localStorage.setItem('satya_notif_dismissed', Date.now().toString());
-    } catch {}
+    const count = parseInt(safeGet(DISMISS_COUNT_KEY) || '0', 10) + 1;
+    safeSet(DISMISS_KEY, Date.now().toString());
+    safeSet(DISMISS_COUNT_KEY, String(count));
+    close();
   };
 
   const handleEnable = async () => {
-    const success = await subscribe();
-    if (success) {
-      setDismissed(true);
-    }
+    const ok = await subscribe();
+    if (ok) close();
   };
 
   return (
     <div
       role="region"
-      aria-label="Notification subscription banner"
-      className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-[#FFFFFF] border rounded-lg shadow-2xl overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
-      style={{ borderColor: 'var(--border-md)' }}
+      aria-label="Enable civic dispatch alerts"
+      className="fixed z-50 bottom-3 left-3 right-3 sm:left-auto sm:right-5 sm:bottom-5 sm:w-[370px]"
+      style={{
+        transform: entered ? 'translateY(0)' : 'translateY(14px)',
+        opacity: entered ? 1 : 0,
+        transition: 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease',
+      }}
     >
-      {/* Top editorial accent bar */}
-      <div className="h-[3px]" style={{ background: 'var(--accent)' }} />
+      <div
+        className="overflow-hidden border shadow-[0_18px_44px_-12px_rgba(26,26,26,0.35)]"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border-md)' }}
+      >
+        {/* Masthead accent stripe */}
+        <div className="h-[3px]" style={{ background: 'var(--accent)' }} />
 
-      <div className="p-4 sm:p-5">
-        <div className="flex items-start gap-3">
-          {/* Bell Icon with pulse ring */}
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-            style={{ background: 'var(--bg-alt)', color: 'var(--accent)' }}
+        {/* Edition strip — mirrors the site masthead */}
+        <div
+          className="flex items-center justify-between px-3.5 pt-2 pb-1.5 border-b"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <span className="text-[8.5px] font-mono tracking-[0.22em] uppercase text-[var(--text3)]">
+            Dispatch Service
+          </span>
+          <button
+            onClick={handleDismiss}
+            aria-label="Dismiss"
+            className="-mr-1 p-1 text-[var(--text3)] hover:text-[var(--text1)] transition-colors"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-3.5 pt-3 pb-3.5">
+          <div className="flex gap-3">
+            {/* Gavel mark */}
+            <div
+              className="flex-shrink-0 w-9 h-9 flex items-center justify-center border"
+              style={{ borderColor: 'var(--border-md)', background: 'var(--bg-alt)' }}
             >
-              <path
+              <svg
+                className="w-[18px] h-[18px]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--accent)"
+                strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-mono tracking-widest uppercase font-semibold text-[var(--accent)]">
-                Civic Dispatches
-              </span>
-              <button
-                onClick={handleDismiss}
-                aria-label="Dismiss notification prompt"
-                className="text-[var(--text3)] hover:text-[var(--text1)] p-0.5 rounded transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                <path d="M13.5 3.5l7 7" />
+                <path d="M16.5 2l5.5 5.5-3 3L13.5 5z" />
+                <path d="M11.5 7l5.5 5.5-7.5 7.5-5.5-5.5z" />
+                <path d="M2 22h9" />
+              </svg>
             </div>
 
-            <h2 className="font-serif font-bold text-sm text-[var(--text1)] mt-1 leading-snug">
-              Urgent Public Interest Alerts
-            </h2>
-
-            <p className="text-[11.5px] leading-relaxed text-[var(--text2)] mt-1">
-              Receive notifications for critical investigative reports, high-priority governance alerts, and breaking constitutional developments. Zero marketing spam.
-            </p>
-
-            <div className="flex items-center gap-3 mt-3">
-              <button
-                onClick={handleEnable}
-                disabled={loading}
-                className="px-3.5 py-1.5 rounded text-[11px] font-medium tracking-wide text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
-                style={{ background: 'var(--text1)' }}
-              >
-                {loading ? (
-                  <>
-                    <span className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Connecting...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Enable Alerts</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={handleDismiss}
-                className="text-[11px] text-[var(--text3)] hover:text-[var(--text2)] font-mono tracking-tight transition-colors py-1"
-              >
-                Maybe later
-              </button>
+            <div className="min-w-0">
+              <h2 className="font-display font-black text-[15px] leading-[1.15] text-[var(--text1)] tracking-tight">
+                Get the verdict first.
+              </h2>
+              <div className="font-display font-bold text-[10.5px] mt-0.5" style={{ color: 'var(--accent)' }}>
+                सत्याधीश अलर्ट
+              </div>
             </div>
           </div>
+
+          <p className="text-[11.5px] leading-[1.55] text-[var(--text2)] mt-3">
+            We only interrupt you when a promise is marked kept or broken, or when a
+            major governance story breaks. That is the whole list.
+          </p>
+
+          {/* What you actually get — editorial rule list */}
+          <div className="mt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+            {[
+              ['01', 'Promise verdicts as they change'],
+              ['02', 'Breaking governance developments'],
+              ['03', 'Nothing else. No marketing.'],
+            ].map(([n, label]) => (
+              <div
+                key={n}
+                className="flex items-baseline gap-2.5 py-1.5 border-b"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <span className="text-[8.5px] font-mono tracking-widest text-[var(--text3)]">{n}</span>
+                <span className="text-[11px] text-[var(--text2)] leading-snug">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 mt-3.5">
+            <button
+              onClick={handleEnable}
+              disabled={loading}
+              className="flex-1 h-9 text-[10.5px] font-mono font-semibold tracking-[0.14em] uppercase text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: 'var(--accent)' }}
+            >
+              {loading ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Connecting
+                </>
+              ) : (
+                'Enable Alerts'
+              )}
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="h-9 px-3.5 text-[10.5px] font-mono tracking-[0.1em] uppercase text-[var(--text3)] hover:text-[var(--text1)] border transition-colors"
+              style={{ borderColor: 'var(--border-md)' }}
+            >
+              Not now
+            </button>
+          </div>
+
+          <p className="text-[9px] font-mono tracking-wide text-[var(--text3)] mt-2.5 text-center">
+            Turn off anytime from the bell in the masthead
+          </p>
         </div>
       </div>
     </div>

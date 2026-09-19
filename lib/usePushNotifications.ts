@@ -70,6 +70,10 @@ export function usePushNotifications() {
             }
           } catch (e) {
             console.warn('Subscription key migration error:', e);
+            // The old subscription was already unsubscribed above, so it is dead
+            // no matter why the re-subscribe failed. Null it out instead of
+            // reporting a revoked subscription to the UI (and the server) as live.
+            sub = null;
           }
         }
 

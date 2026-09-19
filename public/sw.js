@@ -8,7 +8,7 @@
 //   • skipWaiting + clients.claim: a new SW version takes over on next launch.
 //
 // Bump CACHE_VERSION on any deploy where you want caches wiped.
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `satya-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `satya-runtime-${CACHE_VERSION}`;
 
@@ -68,10 +68,22 @@ self.addEventListener('fetch', (event) => {
   })());
 });
 
-// --- WEB PUSH NOTIFICATIONS ---
+// ---------------------------------------------------------------------------
+// WEB PUSH NOTIFICATIONS
+// ---------------------------------------------------------------------------
+
+const DEFAULT_ICON = '/favicons/gavel-192.png';
+const DEFAULT_BADGE = '/favicons/gavel-32.png';
+
+// Two actions is the practical maximum most platforms will render.
+const DEFAULT_ACTIONS = [
+  { action: 'open', title: 'Read full story' },
+  { action: 'dismiss', title: 'Dismiss' },
+];
+
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'SatyaDheesh Alert',
+    title: 'SatyaDheesh',
     body: 'New critical civic development.',
     url: '/',
     tag: 'satya-alert',
@@ -85,45 +97,119 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Only offer the "Read full story" action when there is somewhere to go.
+  const hasDestination = Boolean(data.url) && data.url !== '/';
+  const actions = Array.isArray(data.actions) && data.actions.length
+    ? data.actions.slice(0, 2)
+    : (hasDestination ? DEFAULT_ACTIONS : [{ action: 'dismiss', title: 'Dismiss' }]);
+
   const options = {
     body: data.body,
-    icon: data.icon || '/favicons/gavel-180.png',
-    badge: data.badge || '/favicons/gavel-32.png',
+    icon: data.icon || DEFAULT_ICON,
+    badge: data.badge || DEFAULT_BADGE,
+    // Hero image shown when the notification is expanded (Android / desktop).
     image: data.image || undefined,
     data: {
       url: data.url || '/',
-      timestamp: Date.now(),
+      tag: data.tag || 'satya-alert',
+      sentAt: data.timestamp || Date.now(),
     },
     tag: data.tag || 'satya-alert',
+    // Replace an older alert carrying the same tag, but still alert the user.
     renotify: true,
-    vibrate: [200, 100, 200],
+    // Critical alerts stay on screen until acted on; routine ones auto-dismiss.
+    requireInteraction: Boolean(data.requireInteraction),
+    timestamp: data.timestamp || Date.now(),
+    vibrate: [180, 90, 180],
+    lang: data.lang || 'en-IN',
+    dir: 'auto',
+    actions,
   };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+  event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window is already open, focus it and navigate
-      for (const client of clientList) {
-        if ('focus' in client) {
-          client.focus();
-          if ('navigate' in client) {
-            return client.navigate(targetUrl);
-          }
-          return;
-        }
+  // The dismiss action should close the notification and nothing else.
+  if (event.action === 'dismiss') return;
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  const targetPath = new URL(targetUrl, self.location.origin).href;
+
+  event.waitUntil((async () => {
+    const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+    // Prefer a tab already showing the destination — just focus it.
+    for (const client of clientList) {
+      if (client.url === targetPath && 'focus' in client) {
+        return client.focus();
       }
-      // Otherwise open a new window
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+    }
+
+    // Otherwise reuse any open tab and navigate it there.
+    for (const client of clientList) {
+      if ('focus' in client && 'navigate' in client) {
+        await client.focus();
+        return client.navigate(targetPath);
       }
-    })
-  );
+    }
+
+    // No window open at all.
+    if (clients.openWindow) {
+      return clients.openWindow(targetPath);
+    }
+  })());
 });
+
+/**
+ * The browser can silently invalidate and rotate a push subscription on its own
+ * (expiry, FCM re-registration, storage pressure). Without this handler the user
+ * stops receiving alerts and we only find out the next time they happen to open
+ * the site. Here we re-subscribe immediately, in the background, and tell the
+ * server about the new endpoint.
+ */
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil((async () => {
+    try {
+      // Reuse the key the old subscription was created with when the browser
+      // gives it to us; otherwise ask the server for the current public key.
+      let applicationServerKey = event.oldSubscription?.options?.applicationServerKey;
+
+      if (!applicationServerKey) {
+        const res = await fetch('/api/notifications/vapid-key');
+        const { publicKey } = await res.json();
+        if (!publicKey) return;
+        applicationServerKey = urlBase64ToUint8Array(publicKey);
+      }
+
+      const newSub = await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+
+      await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: newSub.toJSON(),
+          userAgent: self.navigator ? self.navigator.userAgent : '',
+        }),
+      });
+    } catch (err) {
+      // Nothing more we can do from here; the foreground hook will repair the
+      // subscription the next time the user opens the site.
+      console.warn('[sw] pushsubscriptionchange re-subscribe failed:', err);
+    }
+  })());
+});
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+  return output;
+}
