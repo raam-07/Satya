@@ -27,6 +27,46 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
  * no notification ever arrives. Register explicitly when nothing is there, and
  * put a ceiling on the wait so a stall surfaces as a real error instead.
  */
+/**
+ * Hand a subscription to the server, and repair it if the server reports it dead.
+ *
+ * When a push service retires an endpoint, the browser keeps returning that same
+ * endpoint forever - so a client that simply re-registers on each visit stays
+ * permanently unreachable while its UI insists the user is subscribed. Only the
+ * server finds out the endpoint died, so when it says so we discard the old
+ * subscription and mint a fresh one. The user is never asked to do anything.
+ */
+async function registerWithServer(
+  sub: PushSubscription,
+  reg: ServiceWorkerRegistration,
+  vapidPublicKey?: string,
+  allowReplace = true
+): Promise<PushSubscription | null> {
+  const res = await fetch('/api/notifications/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subscription: sub.toJSON(), userAgent: navigator.userAgent }),
+  });
+
+  const data: any = await res.json().catch(() => ({}));
+
+  if (data?.stale) {
+    if (!allowReplace || !vapidPublicKey) return null;
+    await sub.unsubscribe().catch(() => {});
+    const fresh = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as unknown as BufferSource,
+    });
+    // One replacement only - never loop if the new one is somehow refused too.
+    return registerWithServer(fresh, reg, vapidPublicKey, false);
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.error || 'Failed to save subscription');
+  }
+  return sub;
+}
+
 export async function getReadyRegistration(timeoutMs = 10000): Promise<ServiceWorkerRegistration> {
   const existing = await navigator.serviceWorker.getRegistration();
   if (!existing) {
@@ -121,16 +161,14 @@ export function usePushNotifications() {
         }
 
         if (sub) {
-          setIsSubscribed(true);
-          // Auto-sync with backend database silently so already-granted users are always registered
-          fetch('/api/notifications/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              subscription: sub.toJSON(),
-              userAgent: navigator.userAgent,
-            }),
-          }).catch((err) => console.warn('Silent subscription sync failed:', err));
+          // Reconcile with the server on every visit. If it reports this endpoint
+          // is dead, registerWithServer quietly swaps in a working subscription,
+          // so a user who went stale starts receiving alerts again by themselves.
+          const live = await registerWithServer(sub, reg, vapidPublicKey).catch((err) => {
+            console.warn('Subscription sync failed:', err);
+            return sub;
+          });
+          setIsSubscribed(Boolean(live));
         } else {
           setIsSubscribed(false);
         }
@@ -178,19 +216,10 @@ export function usePushNotifications() {
         });
       }
 
-      // 4. Send subscription to Satya API
-      const res = await fetch('/api/notifications/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription: sub.toJSON(),
-          userAgent: navigator.userAgent,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save subscription');
+      // 4. Register with the server, replacing the subscription if it is stale
+      const live = await registerWithServer(sub, reg, vapidPublicKey);
+      if (!live) {
+        throw new Error('Could not register this device for notifications. Please try again.');
       }
 
       setIsSubscribed(true);

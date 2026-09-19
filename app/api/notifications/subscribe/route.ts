@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { isEndpointDead, forgetDeadEndpoint } from '@/lib/pushStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If the push service already told us this endpoint is dead, saying "saved"
+    // would leave the user permanently unreachable while the UI claims they are
+    // subscribed. Tell the client instead, so it can mint a fresh subscription.
+    if (await isEndpointDead(endpoint).catch(() => false)) {
+      return NextResponse.json({
+        success: false,
+        stale: true,
+        message: 'This subscription is no longer accepted by the push service. Re-subscribe to get a new one.',
+      });
+    }
+
     const now = Math.floor(Date.now() / 1000);
 
     await db.execute({
@@ -31,6 +43,9 @@ export async function POST(req: NextRequest) {
               last_active = excluded.last_active`,
       args: [endpoint, p256dh, auth, userAgent, now, now],
     });
+
+    // A fresh endpoint may reuse a string we once buried; keep the graveyard tidy.
+    await forgetDeadEndpoint(endpoint).catch(() => {});
 
     return NextResponse.json({ success: true, message: 'Push subscription stored successfully' });
   } catch (error: any) {

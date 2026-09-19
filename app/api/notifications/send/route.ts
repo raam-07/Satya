@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { db } from '@/lib/db';
+import { markEndpointsDead } from '@/lib/pushStore';
 
 export const dynamic = 'force-dynamic';
 // Broadcasting to a large subscriber base can take a while; give it room.
@@ -23,8 +24,8 @@ function clamp(value: string, max: number): string {
 
 type SendOutcome =
   | { status: 'sent'; id: number }
-  | { status: 'gone'; id: number }
-  | { status: 'rejected'; id: number; error: string; statusCode?: number }
+  | { status: 'gone'; id: number; endpoint: string }
+  | { status: 'rejected'; id: number; endpoint: string; error: string; statusCode?: number }
   | { status: 'failed'; id: number; error: string; statusCode?: number };
 
 export async function POST(req: NextRequest) {
@@ -99,11 +100,21 @@ export async function POST(req: NextRequest) {
         );
         return NextResponse.json({ success: true, test: true, message: 'Test notification delivered successfully' });
       } catch (err: any) {
+        const statusCode = err?.statusCode;
+
+        // A test that comes back gone/rejected is proof this endpoint is dead.
+        // Record it so the next page load silently swaps in a fresh subscription
+        // rather than leaving the tester to fix it by hand.
+        if (statusCode === 404 || statusCode === 410 || statusCode === 403) {
+          await markEndpointsDead([{ endpoint: sub.endpoint, statusCode }]).catch(() => {});
+        }
+
         return NextResponse.json(
           {
             error: `Test notification failed: ${err.message}`,
-            statusCode: err?.statusCode,
+            statusCode,
             detail: err?.body,
+            willSelfHeal: statusCode === 404 || statusCode === 410 || statusCode === 403,
           },
           { status: 500 }
         );
@@ -143,6 +154,7 @@ export async function POST(req: NextRequest) {
      */
     const goneIds: number[] = [];
     const rejectedIds: number[] = [];
+    const deadEndpoints: Array<{ endpoint: string; statusCode?: number }> = [];
     const failureDetails: Array<{ id?: number; error: string; statusCode?: number }> = [];
 
     const BATCH_SIZE = 100;
@@ -165,10 +177,10 @@ export async function POST(req: NextRequest) {
             const message = error?.body || error?.message || String(error);
 
             if (statusCode === 404 || statusCode === 410) {
-              return { status: 'gone', id };
+              return { status: 'gone', id, endpoint };
             }
             if (statusCode === 403) {
-              return { status: 'rejected', id, error: message, statusCode };
+              return { status: 'rejected', id, endpoint, error: message, statusCode };
             }
 
             console.error(`Failed to push to subscriber ${id}:`, message);
@@ -184,8 +196,10 @@ export async function POST(req: NextRequest) {
             sent++;
           } else if (outcome.status === 'gone') {
             goneIds.push(outcome.id);
+            deadEndpoints.push({ endpoint: outcome.endpoint, statusCode: 410 });
           } else if (outcome.status === 'rejected') {
             rejectedIds.push(outcome.id);
+            deadEndpoints.push({ endpoint: outcome.endpoint, statusCode: outcome.statusCode });
             failureDetails.push({ id: outcome.id, error: outcome.error, statusCode: outcome.statusCode });
           } else {
             failed++;
@@ -231,6 +245,12 @@ export async function POST(req: NextRequest) {
           args: idsToPurge,
         });
         purged = idsToPurge.length;
+
+        // Remember these endpoints. Without this the browser hands the same dead
+        // endpoint back on the user's next visit and it gets re-registered forever.
+        await markEndpointsDead(deadEndpoints).catch((e) =>
+          console.error('Failed to record dead endpoints:', e)
+        );
       } catch (e) {
         console.error('Failed to purge dead subscriptions:', e);
       }
