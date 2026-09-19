@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { getReadyRegistration } from '@/lib/usePushNotifications';
 
 interface Check {
   label: string;
@@ -174,7 +175,7 @@ export function PushDiagnostics() {
           return;
         }
       }
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getReadyRegistration();
       await reg.showNotification('SatyaDheesh · local test', {
         body: 'If you can see this, your browser and OS can display notifications.',
         icon: '/favicons/gavel-192.png',

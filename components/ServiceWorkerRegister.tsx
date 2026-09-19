@@ -8,13 +8,28 @@ import { useEffect } from 'react'
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
-    const onLoad = () => {
+
+    const register = () => {
       navigator.serviceWorker
         .register('/sw.js', { updateViaCache: 'none' })
-        .catch(() => { /* SW is a progressive enhancement; ignore failures */ })
+        .catch((err) => {
+          // SW is a progressive enhancement for caching, but push depends on it,
+          // so make the failure visible rather than swallowing it silently.
+          console.error('[sw] registration failed:', err)
+        })
     }
-    window.addEventListener('load', onLoad)
-    return () => window.removeEventListener('load', onLoad)
+
+    // React effects run after hydration, which on a warm cache frequently happens
+    // AFTER window's load event has already fired. Listening for a load event that
+    // has already passed means the callback never runs and the worker is never
+    // registered - which silently breaks push for that visitor. So check first.
+    if (document.readyState === 'complete') {
+      register()
+      return
+    }
+
+    window.addEventListener('load', register)
+    return () => window.removeEventListener('load', register)
   }, [])
   return null
 }

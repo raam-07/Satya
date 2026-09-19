@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { usePushNotifications } from '@/lib/usePushNotifications';
+import { usePushNotifications, getReadyRegistration } from '@/lib/usePushNotifications';
 import { PushDiagnostics } from '@/components/PushDiagnostics';
 
 interface NotificationLog {
@@ -195,7 +195,7 @@ export default function AdminNotifyPage() {
           return;
         }
       }
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getReadyRegistration();
       const sub = await reg.pushManager.getSubscription();
       if (!sub) throw new Error('No push subscription found on this device.');
 

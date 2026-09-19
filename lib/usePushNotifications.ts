@@ -18,6 +18,36 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+/**
+ * Resolve a usable service worker registration.
+ *
+ * navigator.serviceWorker.ready NEVER rejects. If no worker was ever registered
+ * it simply hangs forever, so every caller that awaits it stalls with no error,
+ * no rejection and nothing in the console - the subscribe button just spins and
+ * no notification ever arrives. Register explicitly when nothing is there, and
+ * put a ceiling on the wait so a stall surfaces as a real error instead.
+ */
+export async function getReadyRegistration(timeoutMs = 10000): Promise<ServiceWorkerRegistration> {
+  const existing = await navigator.serviceWorker.getRegistration();
+  if (!existing) {
+    await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+  }
+
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error('The service worker never became ready. Reload the page and try again.')),
+      timeoutMs
+    );
+  });
+
+  try {
+    return await Promise.race([navigator.serviceWorker.ready, timeout]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
 export type NotificationPermissionState = 'default' | 'granted' | 'denied' | 'unsupported';
 
 export function usePushNotifications() {
@@ -44,7 +74,7 @@ export function usePushNotifications() {
     setPermission(Notification.permission as NotificationPermissionState);
 
     // Check and auto-sync subscription if permission was already granted
-    navigator.serviceWorker.ready
+    getReadyRegistration()
       .then(async (reg) => {
         let sub = await reg.pushManager.getSubscription();
 
@@ -135,7 +165,7 @@ export function usePushNotifications() {
       }
 
       // 2. Wait for Service Worker
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getReadyRegistration();
 
       // 3. Subscribe with PushManager
       const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
@@ -179,7 +209,7 @@ export function usePushNotifications() {
     if (!isSupported) return false;
     setLoading(true);
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getReadyRegistration();
       const sub = await reg.pushManager.getSubscription();
 
       if (sub) {
