@@ -126,7 +126,20 @@ self.addEventListener('push', (event) => {
     actions,
   };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  event.waitUntil((async () => {
+    await self.registration.showNotification(data.title, options);
+
+    // Tell any open tab that a push actually landed here. This is what lets the
+    // admin diagnostics distinguish "the push never reached this device" from
+    // "the push arrived but the OS refused to display it" — the single most
+    // common failure on macOS, where Chrome itself can be muted system-wide.
+    try {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const c of windows) {
+        c.postMessage({ type: 'satya-push-received', title: data.title, at: Date.now() });
+      }
+    } catch {}
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {

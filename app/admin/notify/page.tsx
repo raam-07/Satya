@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { usePushNotifications } from '@/lib/usePushNotifications';
+import { PushDiagnostics } from '@/components/PushDiagnostics';
 
 interface NotificationLog {
   id: number;
@@ -250,9 +251,8 @@ export default function AdminNotifyPage() {
         <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(160deg,#3f3b36,#1f1d1b)' }}>
           <div className="rounded-[18px] p-3 backdrop-blur" style={{ background: 'rgba(255,255,255,0.92)' }}>
             <div className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-[7px] flex-shrink-0 flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-                <span className="text-white text-[11px] font-black">स</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/favicons/gavel-192.png" alt="" className="w-7 h-7 rounded-[7px] flex-shrink-0 object-cover" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[9px] font-semibold tracking-wide uppercase text-black/50">SatyaDheesh</span>
@@ -263,6 +263,13 @@ export default function AdminNotifyPage() {
               </div>
             </div>
           </div>
+          {(image.trim() || showActions || requireInteraction) && (
+            <div className="mt-2.5 px-2.5 py-2 rounded-lg text-[10px] leading-relaxed" style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.75)' }}>
+              iOS drops{' '}
+              {[image.trim() && 'the hero image', showActions && 'action buttons', requireInteraction && 'stay-on-screen'].filter(Boolean).join(', ')}
+              {' '}— it shows title and text only, and only once the site is installed to the Home Screen.
+            </div>
+          )}
           <div className="text-center text-[8.5px] font-mono tracking-widest text-white/40 mt-2.5">iOS LOCK SCREEN</div>
         </div>
       );
@@ -274,9 +281,8 @@ export default function AdminNotifyPage() {
           <div className="rounded-lg overflow-hidden shadow-xl" style={{ background: '#ffffff' }}>
             <div className="p-3">
               <div className="flex gap-3">
-                <div className="w-10 h-10 rounded flex-shrink-0 flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-                  <span className="text-white text-[15px] font-black">स</span>
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/favicons/gavel-192.png" alt="" className="w-10 h-10 rounded flex-shrink-0 object-cover" />
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-semibold text-black leading-snug break-words">{previewTitle}</div>
                   <div className="text-[12px] text-black/70 leading-snug mt-0.5 break-words">{previewBody}</div>
@@ -307,9 +313,8 @@ export default function AdminNotifyPage() {
         <div className="rounded-2xl overflow-hidden" style={{ background: '#f1f3f4' }}>
           <div className="p-3">
             <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-                <span className="text-white text-[7px] font-black">स</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/favicons/gavel-192.png" alt="" className="w-4 h-4 rounded-full flex-shrink-0 object-cover" />
               <span className="text-[10px] text-black/60">SatyaDheesh</span>
               <span className="text-[10px] text-black/40">· now</span>
               {requireInteraction && (
@@ -616,6 +621,11 @@ export default function AdminNotifyPage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Diagnostics */}
+        <div className="mt-5">
+          <PushDiagnostics />
         </div>
 
         {/* History */}
