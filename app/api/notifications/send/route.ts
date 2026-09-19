@@ -92,58 +92,64 @@ export async function POST(req: NextRequest) {
     let purged = 0;
     const idsToPurge: number[] = [];
 
-    // Send in parallel with Promise.allSettled
-    const results = await Promise.allSettled(
-      rows.map(async (row: any) => {
-        const id = Number(row.id);
-        const endpoint = String(row.endpoint);
-        const p256dh = String(row.p256dh);
-        const auth = String(row.auth);
-
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint,
-              keys: { p256dh, auth },
-            },
-            payload
-          );
-          return { status: 'sent', id };
-        } catch (error: any) {
-          if (error.statusCode === 404 || error.statusCode === 410 || error.statusCode === 403) {
-            // Subscription expired, revoked, or signed with outdated VAPID key
-            idsToPurge.push(id);
-            return { status: 'purged', id };
-          }
-          console.error(`Failed to push to subscriber ${id}:`, error?.message || error);
-          return {
-            status: 'failed',
-            id,
-            error: error?.body || error?.message || String(error),
-            statusCode: error?.statusCode,
-          };
-        }
-      })
-    );
-
+    // Process in batches to prevent socket exhaustion and rate limits
+    const BATCH_SIZE = 100;
     const failureDetails: Array<{ id?: number; error: string; statusCode?: number }> = [];
-    for (const r of results) {
-      if (r.status === 'fulfilled') {
-        if (r.value.status === 'sent') sent++;
-        else if (r.value.status === 'purged') purged++;
-        else {
+
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+      
+      const results = await Promise.allSettled(
+        batch.map(async (row: any) => {
+          const id = Number(row.id);
+          const endpoint = String(row.endpoint);
+          const p256dh = String(row.p256dh);
+          const auth = String(row.auth);
+
+          try {
+            await webpush.sendNotification(
+              {
+                endpoint,
+                keys: { p256dh, auth },
+              },
+              payload
+            );
+            return { status: 'sent', id };
+          } catch (error: any) {
+            if (error.statusCode === 404 || error.statusCode === 410 || error.statusCode === 403) {
+              // Subscription expired, revoked, or signed with outdated VAPID key
+              idsToPurge.push(id);
+              return { status: 'purged', id };
+            }
+            console.error(`Failed to push to subscriber ${id}:`, error?.message || error);
+            return {
+              status: 'failed',
+              id,
+              error: error?.body || error?.message || String(error),
+              statusCode: error?.statusCode,
+            };
+          }
+        })
+      );
+
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          if (r.value.status === 'sent') sent++;
+          else if (r.value.status === 'purged') purged++;
+          else {
+            failed++;
+            failureDetails.push({
+              id: r.value.id,
+              error: r.value.error || 'Unknown error',
+              statusCode: r.value.statusCode,
+            });
+          }
+        } else {
           failed++;
           failureDetails.push({
-            id: r.value.id,
-            error: r.value.error || 'Unknown error',
-            statusCode: r.value.statusCode,
+            error: r.reason?.message || String(r.reason),
           });
         }
-      } else {
-        failed++;
-        failureDetails.push({
-          error: r.reason?.message || String(r.reason),
-        });
       }
     }
 
