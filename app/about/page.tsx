@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const revalidate = false
 
 export const metadata: Metadata = {
-  title: "About SatyaDheesh — India's Ground Truth Record | SatyaDheesh",
+  title: "About SatyaDheesh — India's Ground Truth Record",
   description: "SatyaDheesh is an independent, non-partisan civic intelligence platform tracking political accountability in India with evidence.",
   alternates: {
     canonical: 'https://satyadheesh.in/about',

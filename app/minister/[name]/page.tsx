@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: { name: string } })
     ? `${name} — promises, criminal cases & controversies | SatyaDheesh`
     : `${name} — promises kept, broken & pending | SatyaDheesh`
   const descParts = [
-    `Track the full public record of ${name} (${roleParty}) on SatyaDheesh: ${kept} promises kept, ${broken} broken, ${ongoing} pending`,
+    `Track the full public record of ${name} (${roleParty}) on SatyaDheesh: ${kept} ${kept === 1 ? 'promise' : 'promises'} kept, ${broken} broken, ${ongoing} pending`,
   ]
   if (cases > 0) descParts.push(`${cases} criminal case${cases > 1 ? 's' : ''} on record`)
   if ((minister.controversies?.length ?? 0) > 0) descParts.push(`controversies and gaffes as reported in the news`)

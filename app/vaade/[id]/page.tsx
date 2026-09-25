@@ -8,6 +8,22 @@ import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
+const VERDICT_LABEL: Record<string, string> = {
+  kept: 'Kept',
+  broken: 'Broken',
+  ongoing: 'Ongoing',
+  void: 'Void',
+}
+
+/** Shorten at a word boundary so a trimmed promise still reads as words. */
+function truncateAtWord(text: string, max: number): string {
+  const t = (text || '').trim()
+  if (t.length <= max) return t
+  const cut = t.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:\u2013\u2014-]+$/, '') + '\u2026'
+}
+
 export const revalidate = false
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
@@ -30,16 +46,22 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     }
   }
 
-  const cleanPromise = promise.promise && promise.promise.length > 25
-    ? promise.promise.substring(0, 22) + '...'
-    : promise.promise;
-
   const canonicalId = String(promise.id)
-  const title = `"${cleanPromise}" — ${promise.person} | SatyaDheesh`
-  let description = `Promise: "${promise.promise}" | Verdict: ${promise.status?.toUpperCase()}. Sourced status of this promise made by ${promise.person}.`
-  if (description.length > 155) {
-    description = description.substring(0, 152) + '...'
-  }
+  const verdict = VERDICT_LABEL[promise.status ?? ''] ?? 'Ongoing'
+
+  // Results show roughly 60 characters of a title. Spend them on what people
+  // actually search for - the promise, who made it, and the verdict - so if
+  // anything gets trimmed it is the brand suffix, not the words that matter.
+  // (This used to cut the promise to 22 characters and leave the verdict out.)
+  const tail = ` — ${promise.person}: ${verdict}`
+  const promiseBudget = Math.max(25, 60 - tail.length - 2)
+  const title = `"${truncateAtWord(promise.promise ?? '', promiseBudget)}"${tail} | SatyaDheesh`
+
+  // Lead with the verdict so it survives however long the promise is.
+  const descLead = `Verdict: ${verdict}. ${promise.person} promised `
+  const descTail = `. See the sourced evidence behind the verdict on SatyaDheesh.`
+  const descBudget = Math.max(40, 155 - descLead.length - descTail.length - 2)
+  const description = `${descLead}"${truncateAtWord(promise.promise ?? '', descBudget)}"${descTail}`
 
   return {
     title,
@@ -205,9 +227,9 @@ export default async function PromisePage({ params }: { params: { id: string } }
         <div className="flex gap-3">
           <div className="w-[3px] self-stretch rounded-full flex-shrink-0" style={{ background: statusColor, opacity: 0.5 }} />
           <div className="flex-1">
-            <p className="text-[18px] md:text-[22px] font-bold font-serif leading-relaxed" style={{ color: 'var(--text1)' }}>
+            <h1 className="text-[18px] md:text-[22px] font-bold font-serif leading-relaxed" style={{ color: 'var(--text1)' }}>
               {promise.promise}
-            </p>
+            </h1>
             {promise.supporting_quote && (
               <blockquote
                 className="mt-3 pl-4 border-l-2 text-[13px] italic leading-relaxed"

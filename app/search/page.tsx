@@ -1,5 +1,13 @@
 import { api } from '@/lib/api'
 import { ArticleList } from '@/components/ArticleList'
+import type { Metadata } from 'next'
+
+// Search results are endless near-duplicate pages (one per query string).
+// Keep them out of the index, but let Google follow the links to real pages.
+export const metadata: Metadata = {
+  title: 'Search | SatyaDheesh',
+  robots: { index: false, follow: true },
+}
 
 export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
   const query = searchParams.q?.trim() || ''

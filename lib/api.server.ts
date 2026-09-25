@@ -1061,7 +1061,8 @@ export const serverApi = {
         OR a.cities_mentioned    NOT IN ('[]',''))`;
 
       if (type === 'flagged') {
-        query += ` AND (a.civic_flag = 1 OR a.civic_flag = '1' OR a.civic_flag IS TRUE) ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
+        // Civic Alerts is an India accountability feed; keep foreign-only stories out of it too.
+        query += INDIA_FILTER + ` AND (a.civic_flag = 1 OR a.civic_flag = '1' OR a.civic_flag IS TRUE) ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
       } else if (category_map[type]) {
         if (category_map[type] !== 'international') {
           query += INDIA_FILTER;

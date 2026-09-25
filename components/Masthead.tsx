@@ -10,6 +10,9 @@ export function Masthead() {
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const isDetailPage = !TAB_PATHS.includes(pathname)
+  // The masthead is the homepage's only real headline, so there it is the h1.
+  // Every other page supplies its own h1, so here it stays a plain div.
+  const BrandTag: 'h1' | 'div' = pathname === '/' ? 'h1' : 'div'
 
   useEffect(() => {
     setMounted(true)
@@ -43,9 +46,9 @@ export function Masthead() {
 
       {/* Logo */}
       <div className="text-center px-4 py-2">
-        <div className="font-display font-black text-[32px] tracking-[0.22em] uppercase text-[var(--text1)] leading-none">
+        <BrandTag className="font-display font-black text-[32px] tracking-[0.22em] uppercase text-[var(--text1)] leading-none">
           SatyaDheesh
-        </div>
+        </BrandTag>
         <div className="font-display font-bold text-[14px] leading-none mt-1" style={{ color: 'var(--accent)' }}>
           सत्याधीश
         </div>
