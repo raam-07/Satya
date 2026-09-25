@@ -1,0 +1,23 @@
+name: IndexNow
+
+# Tell Bing (and the other IndexNow engines) about new and changed pages.
+# ChatGPT search draws on Bing, so this is how new promises and timelines
+# reach it quickly. Only changed URLs are sent, so running hourly is polite.
+on:
+  schedule:
+    - cron: '17 * * * *'   # hourly, off the top of the hour when GitHub is busiest
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Submit new and changed URLs
+        run: |
+          # --fail-with-body turns a rejected submission into a visibly failed
+          # run with the reason printed, rather than a silent "success".
+          # The long timeout covers the server waking from idle.
+          curl --fail-with-body -sS -X POST --max-time 180 \
+            https://satyadheesh.in/api/indexnow
+          echo
