@@ -137,6 +137,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/vaade`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/promises`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/timelines`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.8 },
   ]
 
   return [...staticRoutes, ...dynamicRoutes]

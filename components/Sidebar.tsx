@@ -16,6 +16,7 @@ const canonicalizeHref = (href: string): string => {
 const NAV = [
   { label: 'Feed',           href: '/',          icon: '◉' },
   { label: 'Timelines',      href: '/timelines', icon: '◈' },
+  { label: 'UPSC',           href: '/upsc',      icon: '◇' },
   { label: 'Vaade',          href: '/vaade', icon: '◧',
     children: [
       { label: 'All Promises', href: '/vaade' },
