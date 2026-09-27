@@ -28,8 +28,8 @@ export default async function AdminPage() {
   const latestArticles = latestRes.rows.map(r => ({
     id: r.id,
     title: r.title,
-    scraped_at: r.scraped_at ? new Date(Number(r.scraped_at)*1000).toLocaleString() : 'N/A',
-    classified_at: r.classified_at ? new Date(Number(r.classified_at)*1000).toLocaleString() : 'N/A'
+    scraped_at: r.scraped_at ? new Date(Number(r.scraped_at)*1000).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }) : 'N/A',
+    classified_at: r.classified_at ? new Date(Number(r.classified_at)*1000).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }) : 'N/A'
   }))
 
   return (
