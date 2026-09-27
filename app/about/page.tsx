@@ -43,12 +43,12 @@ export default function AboutPage() {
           style={{ borderColor: 'rgba(191,74,7,0.35)', background: 'rgba(191,74,7,0.04)' }}
         >
           <p className="text-[13.5px] font-semibold leading-relaxed" style={{ color: 'var(--accent)' }}>
-            SatyaDheesh is a fully autonomous system. News ingestion, classification, event timelines,
-            and promise verdicts are produced end-to-end by an automated AI pipeline — running around
-            the clock with no human editorial intervention.
+            SatyaDheesh runs on an automated AI pipeline. News ingestion, classification, event timelines
+            and first-pass promise verdicts run around the clock, without anyone choosing the stories.
           </p>
           <p className="text-[11px] leading-relaxed mt-2 text-[var(--text3)]">
-            No editor decides what you see. The machine reports what the sources say — nothing more, nothing less.
+            Contested promise verdicts are checked by an editor against primary sources. Every such change is
+            marked &ldquo;editor review&rdquo; in the promise&rsquo;s verdict history.
           </p>
         </div>
       </section>
@@ -73,6 +73,30 @@ export default function AboutPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Verdict rules (linked from every promise page) */}
+      <section id="verdicts" className="mb-8 scroll-mt-20">
+        <h2 className="text-[14px] font-mono tracking-widest uppercase text-[var(--text2)] mb-3 border-b border-[var(--border-md)] pb-2">
+          How verdicts are decided
+        </h2>
+        <div className="space-y-3">
+          {[
+            { word: 'Kept', color: '#1B7050', desc: 'Delivered, according to sourced evidence. A promise with no deadline is marked kept only after five years of monitoring, because results can be reversed.' },
+            { word: 'Broken', color: '#B02828', desc: 'Not delivered by the deadline. When no deadline was given, the promise is judged three years after it was made.' },
+            { word: 'Ongoing', color: '#BF4A07', desc: 'The deadline has not arrived yet, or the promise was delivered and is still being monitored.' },
+            { word: 'Void', color: '#6B7280', desc: 'Cannot be judged: for example, it depended on winning an election the party lost, or it set nothing measurable.' },
+          ].map(({ word, color, desc }) => (
+            <div key={word} className="flex gap-4">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider flex-shrink-0 w-16 pt-0.5" style={{ color }}>{word}</span>
+              <p className="text-[12px] leading-relaxed text-[var(--text2)]">{desc}</p>
+            </div>
+          ))}
+          <p className="text-[12px] leading-relaxed text-[var(--text2)] pt-1">
+            Quotes are the politician&rsquo;s own words as printed by the outlet credited beside them. Where outlets read the
+            same words differently, the page shows each reading with its source.
+          </p>
         </div>
       </section>
 

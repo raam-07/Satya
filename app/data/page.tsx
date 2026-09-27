@@ -58,7 +58,7 @@ export default async function DataPage() {
           <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">Data</h1>
           <p className="text-[13px] text-[var(--text2)] mt-1">India by the numbers — sourced, structured, transparent.</p>
           <p className="text-[11px] font-mono font-bold tracking-wide mt-1.5" style={{ color: 'var(--accent)' }}>
-            ⚙ Fully autonomous — generated end-to-end by an AI pipeline, no human editorial intervention.
+            ⚙ Generated end-to-end by an AI pipeline; contested promise verdicts are checked by an editor.
           </p>
         </div>
         <div className="flex-shrink-0">

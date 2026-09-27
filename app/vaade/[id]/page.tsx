@@ -282,15 +282,28 @@ export default async function PromisePage({ params }: { params: { id: string } }
   const outcomeCount = evidence.filter((e) => e.verified || (e.evidence_type && e.evidence_type !== 'declaration')).length
 
   // Time is the hook for a promise with no verdict: how long it has been open.
+  // A promise with no deadline is judged 3 years after it was made, and marked
+  // kept only after 5 years of monitoring (promise_rules.py in the tracker).
   const made = parseDate(promise.made_on)
-  const hasDeadline = promise.deadline && promise.deadline !== 'ongoing'
-  const due = hasDeadline ? parseDate(promise.deadline) : null
+  const hasDeadline = Boolean(promise.deadline) && !['ongoing', 'none', 'null', 'n/a'].includes(String(promise.deadline).toLowerCase())
+  const impliedDue = !hasDeadline
+    ? parseDate(promise.implied_deadline) ?? (made ? new Date(Date.UTC(made.getUTCFullYear() + 3, made.getUTCMonth(), made.getUTCDate())) : null)
+    : null
+  const due = hasDeadline ? parseDate(promise.deadline) : impliedDue
+  const dueLabel = hasDeadline ? `the ${fmtDate(promise.deadline)} deadline` : due ? `${fmtDate(due.toISOString().slice(0, 10))}, 3 years after it was made` : ''
+  const monitoring = promise.monitoring as { since?: string } | undefined
+  const monitoredUntil = made ? new Date(Date.UTC(made.getUTCFullYear() + 5, made.getUTCMonth(), made.getUTCDate())) : null
   let clock: { big: string; small: string } | null = null
   if (status === 'ongoing') {
-    if (due && due > now) {
-      clock = { big: spanText(monthsBetween(now, due)), small: `left until the ${fmtDate(promise.deadline)} deadline` }
+    if (monitoring && monitoredUntil) {
+      clock = {
+        big: spanText(monthsBetween(now, monitoredUntil)),
+        small: `delivered · monitored until ${fmtDate(monitoredUntil.toISOString().slice(0, 10))} before it can be marked kept`,
+      }
+    } else if (due && due > now) {
+      clock = { big: spanText(monthsBetween(now, due)), small: `left until ${dueLabel}` }
     } else if (due && due <= now) {
-      clock = { big: spanText(monthsBetween(due, now)), small: `past the ${fmtDate(promise.deadline)} deadline, still no verdict` }
+      clock = { big: spanText(monthsBetween(due, now)), small: `past ${dueLabel}, still no verdict` }
     } else if (made) {
       clock = { big: spanText(monthsBetween(made, now)), small: 'since it was promised · no deadline was set' }
     }
@@ -380,7 +393,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
               {tone.word}
             </div>
             <div className="mt-2 text-[11px] font-mono leading-relaxed text-[var(--text2)]">
-              {tone.sub}
+              {status === 'ongoing' && monitoring ? 'Delivered, still being monitored' : tone.sub}
               {reviewed && <> · as of {fmtDate(reviewed)}</>}
               {status !== 'ongoing' && outcomeCount > 0 && (
                 <> · based on {outcomeCount} report{outcomeCount === 1 ? '' : 's'}</>
@@ -496,6 +509,14 @@ export default async function PromisePage({ params }: { params: { id: string } }
               </a>
             )}
             {hasDeadline && <div className="text-[var(--text3)]">Deadline: {fmtDate(promise.deadline)}</div>}
+            {!hasDeadline && due && (status === 'broken' || (status === 'ongoing' && !monitoring)) && (
+              <div className="text-[var(--text3)]">
+                No deadline was given · judged on {fmtDate(due.toISOString().slice(0, 10))}, 3 years after it was made
+              </div>
+            )}
+            {!hasDeadline && status === 'kept' && (
+              <div className="text-[var(--text3)]">No deadline was given · marked kept after at least 5 years of monitoring</div>
+            )}
           </div>
         </Section>
 
@@ -542,6 +563,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
                       <span className="text-[11px] font-mono font-bold uppercase tracking-wider" style={{ color: c }}>{h.status}</span>
                       <span className="text-[10.5px] font-mono text-[var(--text3)]">{fmtDate(h.changed_at)}</span>
                       {h.by === 'editor' && <span className="text-[10.5px] font-mono text-[var(--text3)]">· editor review</span>}
+                      {h.by === 'rule' && <span className="text-[10.5px] font-mono text-[var(--text3)]">· no-deadline rule</span>}
                       {h.evidence_url && (
                         <a href={h.evidence_url} target="_blank" rel="noopener noreferrer" className="text-[10.5px] font-mono text-[var(--accent)] hover:underline">
                           evidence ↗
@@ -584,7 +606,7 @@ export default async function PromisePage({ params }: { params: { id: string } }
       )}
 
       <footer className="px-4 md:px-8 py-8 flex flex-wrap gap-x-5 gap-y-2 text-[10.5px] font-mono text-[var(--text3)]">
-        <Link href="/about" className="hover:text-[var(--text1)] hover:underline">How verdicts are decided</Link>
+        <Link href="/about#verdicts" className="hover:text-[var(--text1)] hover:underline">How verdicts are decided</Link>
         <a href={`mailto:thesatyadheesh@gmail.com?subject=${encodeURIComponent(`Correction: promise ${canonicalId}`)}`} className="hover:text-[var(--text1)] hover:underline">
           Report an error
         </a>
