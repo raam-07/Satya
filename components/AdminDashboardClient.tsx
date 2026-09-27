@@ -5,7 +5,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
   AreaChart, Area, PieChart, Pie, Cell 
 } from 'recharts'
-import { Calendar, Filter, Loader2 } from 'lucide-react'
+import { Calendar, Filter, Loader2, CheckSquare, Square } from 'lucide-react'
 
 const SENTIMENT_COLORS = { Positive: '#4ade80', Neutral: '#9ca3af', Negative: '#f87171' };
 const SOURCE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#eab308'];
@@ -14,6 +14,11 @@ export function AdminDashboardClient() {
   const [days, setDays] = useState('30')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  // Chart Visibility Toggles (Hindi disabled by default)
+  const [showScraped, setShowScraped] = useState(true)
+  const [showClassified, setShowClassified] = useState(true)
+  const [showHindi, setShowHindi] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -32,6 +37,17 @@ export function AdminDashboardClient() {
     }
     setLoading(false)
   }
+
+  const ToggleCheckbox = ({ label, checked, onChange, color }: any) => (
+    <button 
+      onClick={onChange} 
+      className="flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-80"
+      style={{ color: checked ? color : '#737373' }}
+    >
+      {checked ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+      {label}
+    </button>
+  )
 
   return (
     <div className="mt-12">
@@ -92,7 +108,14 @@ export function AdminDashboardClient() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Pipeline Throughput Trend */}
             <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
-              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Pipeline Throughput (Daily)</h3>
+              <div className="flex justify-between items-center mb-6 border-b border-neutral-800 pb-2">
+                <h3 className="text-lg font-bold">Pipeline Throughput (Daily)</h3>
+                <div className="flex gap-4">
+                  <ToggleCheckbox label="Scraped" checked={showScraped} onChange={() => setShowScraped(!showScraped)} color="#60a5fa" />
+                  <ToggleCheckbox label="Classified" checked={showClassified} onChange={() => setShowClassified(!showClassified)} color="#4ade80" />
+                  <ToggleCheckbox label="Hindi" checked={showHindi} onChange={() => setShowHindi(!showHindi)} color="#f43f5e" />
+                </div>
+              </div>
               <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.trends}>
@@ -100,10 +123,10 @@ export function AdminDashboardClient() {
                     <XAxis dataKey="day" stroke="#737373" fontSize={12} tickMargin={10} />
                     <YAxis stroke="#737373" fontSize={12} />
                     <Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
-                    <Line type="monotone" dataKey="scraped" name="Scraped" stroke="#60a5fa" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="classified" name="Classified" stroke="#4ade80" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="translated" name="Translated (HI)" stroke="#f43f5e" strokeWidth={2} dot={false} />
+                    <Legend wrapperStyle={{ fontSize: '12px', display: 'none' }} />
+                    {showScraped && <Line type="monotone" dataKey="scraped" name="Scraped" stroke="#60a5fa" strokeWidth={2} dot={false} />}
+                    {showClassified && <Line type="monotone" dataKey="classified" name="Classified" stroke="#4ade80" strokeWidth={2} dot={false} />}
+                    {showHindi && <Line type="monotone" dataKey="translated" name="Translated (HI)" stroke="#f43f5e" strokeWidth={2} dot={false} />}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

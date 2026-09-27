@@ -20,10 +20,18 @@ export async function GET(request: Request) {
     `);
     const pRow = pendingRes.rows[0];
     
-    // Timeline pending
+    // Timeline pending (Exact logic mirroring timeline_pipeline.py)
     const timelineRes = await db.execute(`
       SELECT COUNT(*) as c FROM articles 
-      WHERE status IN ('classified', 'entity_processed', 'processed') 
+      WHERE id > (SELECT COALESCE(MAX(last_article_id), 0) FROM timeline_checkpoint WHERE id = 1)
+      AND status IN ('classified', 'entity_processed', 'processed') 
+      AND (
+        category != 'international' 
+        OR party_mentioned NOT IN ('[]','') 
+        OR ministers_mentioned NOT IN ('[]','') 
+        OR states_mentioned NOT IN ('[]','') 
+        OR cities_mentioned NOT IN ('[]','')
+      )
       AND id NOT IN (SELECT article_id FROM event_articles)
     `);
     const pendingTimeline = timelineRes.rows[0]?.c || 0;
