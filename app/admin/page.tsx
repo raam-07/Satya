@@ -43,7 +43,7 @@ export default async function AdminPage() {
         
         {/* Force Refresh Button */}
         <form action={forceRefresh}>
-          <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-lg">
+          <button type="submit" className="bg-orange-500 hover:bg-orange-400 text-black font-black py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.4)] border border-orange-400 uppercase tracking-wide transition-all">
             Force Refresh App Cache
           </button>
         </form>
