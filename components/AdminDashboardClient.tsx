@@ -1,8 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts'
-import { Calendar, Filter, Loader2, ArrowRight } from 'lucide-react'
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  AreaChart, Area, PieChart, Pie, Cell 
+} from 'recharts'
+import { Calendar, Filter, Loader2 } from 'lucide-react'
+
+const SENTIMENT_COLORS = { Positive: '#4ade80', Neutral: '#9ca3af', Negative: '#f87171' };
+const SOURCE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#eab308'];
 
 export function AdminDashboardClient() {
   const [days, setDays] = useState('30')
@@ -120,6 +126,42 @@ export function AdminDashboardClient() {
               </div>
             </div>
 
+            {/* Source Distribution Pie Chart */}
+            <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
+              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Top 5 Media Sources ({days} Days)</h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={data.sources} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                      {data.sources.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={SOURCE_COLORS[index % SOURCE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Sentiment Distribution Pie Chart */}
+            <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
+              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Sentiment Overview ({days} Days)</h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={data.sentiments} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} label>
+                      {data.sentiments.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={(SENTIMENT_COLORS as any)[entry.name] || '#a8a29e'} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
             {/* Category Distribution Bar Chart */}
             <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 lg:col-span-2">
               <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Category Distribution ({days} Days)</h3>
@@ -131,6 +173,22 @@ export function AdminDashboardClient() {
                     <YAxis dataKey="name" type="category" stroke="#a3a3a3" fontSize={12} tickMargin={10} />
                     <Tooltip cursor={{ fill: '#262626' }} contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
                     <Bar dataKey="count" name="Articles" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Civic Threat Vectors Bar Chart */}
+            <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 lg:col-span-2">
+              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Civic Flag Threat Vectors ({days} Days)</h3>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.civicCats} layout="vertical" margin={{ left: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" horizontal={false} />
+                    <XAxis type="number" stroke="#737373" fontSize={12} />
+                    <YAxis dataKey="name" type="category" stroke="#a3a3a3" fontSize={12} tickMargin={10} />
+                    <Tooltip cursor={{ fill: '#262626' }} contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
+                    <Bar dataKey="count" name="Flags Triggered" fill="#ea580c" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

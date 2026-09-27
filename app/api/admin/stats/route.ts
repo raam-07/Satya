@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       translated: Number(r.translated_count)
     }));
 
-    // 3. Category Breakdown (last X days)
+    // 3. Category Breakdown
     const categoryRes = await db.execute({
       sql: `
         SELECT category, COUNT(*) as c
@@ -68,6 +68,56 @@ export async function GET(request: Request) {
       count: Number(r.c)
     }));
 
+    // 4. Sentiment Breakdown
+    const sentimentRes = await db.execute({
+      sql: `
+        SELECT sentiment, COUNT(*) as c
+        FROM articles
+        WHERE scraped_at >= ? AND sentiment IS NOT NULL AND status IN ('classified', 'entity_processed', 'processed')
+        GROUP BY sentiment
+      `,
+      args: [startTs]
+    });
+    const sentiments = sentimentRes.rows.map(r => ({
+      name: String(r.sentiment).charAt(0).toUpperCase() + String(r.sentiment).slice(1),
+      value: Number(r.c)
+    }));
+
+    // 5. Source Breakdown
+    const sourceRes = await db.execute({
+      sql: `
+        SELECT s.name, COUNT(*) as c
+        FROM articles a
+        JOIN sources s ON a.source_id = s.id
+        WHERE a.scraped_at >= ? AND a.status IN ('classified', 'entity_processed', 'processed')
+        GROUP BY s.id
+        ORDER BY c DESC
+        LIMIT 5
+      `,
+      args: [startTs]
+    });
+    const sources = sourceRes.rows.map(r => ({
+      name: r.name,
+      value: Number(r.c)
+    }));
+
+    // 6. Civic Flag Categories
+    const civicCatRes = await db.execute({
+      sql: `
+        SELECT civic_flag_category, COUNT(*) as c
+        FROM articles
+        WHERE scraped_at >= ? AND civic_flag = 1 AND civic_flag_category IS NOT NULL
+        GROUP BY civic_flag_category
+        ORDER BY c DESC
+        LIMIT 5
+      `,
+      args: [startTs]
+    });
+    const civicCats = civicCatRes.rows.map(r => ({
+      name: r.civic_flag_category,
+      count: Number(r.c)
+    }));
+
     return NextResponse.json({
       pending: {
         rephrase: Number(pRow?.pending_rephrase || 0),
@@ -76,7 +126,10 @@ export async function GET(request: Request) {
         timeline: Number(pendingTimeline)
       },
       trends,
-      categories
+      categories,
+      sentiments,
+      sources,
+      civicCats
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
