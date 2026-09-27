@@ -67,7 +67,7 @@ function Chip({ to, active, children }: { to: string; active: boolean; children:
 
 function Card({ it }: { it: UpscItem }) {
   return (
-    <article className="border rounded-xl px-4 md:px-5 py-4 bg-[var(--surface)]" style={{ borderColor: 'var(--border)' }}>
+    <article id={`a${it.articleId}`} className="scroll-mt-24 border rounded-xl px-4 md:px-5 py-4 bg-[var(--surface)]" style={{ borderColor: 'var(--border)' }}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono text-[var(--text3)] mb-1.5">
         <span className="font-semibold text-[var(--accent)]">{it.paper}</span>
         <span>{subjectLabel(it.subject)} › {nodeLabel(it.subject, it.node)}</span>

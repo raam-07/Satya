@@ -9,6 +9,7 @@ import { PBadge, SentimentDot, SrcTag, TappableMinister, TappableState } from '.
 import { EventStorySoFar } from './EventStorySoFar'
 import { SummaryMark } from './BrandMark'
 import { useToast } from '@/lib/ToastContext'
+import { UpscChip } from '@/components/UpscChip'
 
 // Topic display names per spec
 const TOPIC_LABELS: Record<string, string> = {
@@ -219,6 +220,8 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
             <h2 className="text-[22px] md:text-[26px] font-bold font-serif leading-tight mb-4" style={{ color: 'var(--text1)' }}>
               {displayTitle}
             </h2>
+
+            {article.id != null && <UpscChip articleId={Number(article.id)} />}
 
             {/* Civic Warning Alert Box */}
             {article.civic_flag && (

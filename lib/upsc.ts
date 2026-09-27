@@ -179,3 +179,25 @@ export const getUpscStats = () =>
     p.rows.forEach(r => { papers[String(r.gs_paper)] = Number(r.n) })
     return { today: Number(c.rows[0]?.today ?? 0), week: Number(c.rows[0]?.week ?? 0), papers }
   }), ['upsc-stats'], { revalidate: 300, tags: ['upsc'] })()
+
+export type UpscTag = { paper: string; subject: string; node: string; pointers: number; hasMains: boolean }
+
+/** Syllabus tag for one article, or null if it has no UPSC note. */
+export const getUpscTag = (articleId: number) =>
+  unstable_cache(() => safe(null as UpscTag | null, async () => {
+    if (!upscDb) return null
+    const r = await upscDb.execute({
+      sql: `SELECT gs_paper, subject, syllabus_node, prelims_pointers, mains_question
+            FROM upsc_articles WHERE article_id = ?`,
+      args: [articleId],
+    })
+    const row = r.rows[0]
+    if (!row) return null
+    return {
+      paper: String(row.gs_paper),
+      subject: String(row.subject),
+      node: String(row.syllabus_node),
+      pointers: arr(row.prelims_pointers).length,
+      hasMains: !!row.mains_question,
+    }
+  }), ['upsc-tag', String(articleId)], { revalidate: 600, tags: ['upsc'] })()

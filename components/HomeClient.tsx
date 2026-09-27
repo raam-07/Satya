@@ -6,6 +6,7 @@ import { api, type Article, type IndiaOverview } from '@/lib/api'
 import { ArticleCard } from '@/components/ArticleCard'
 import { ArticleModal } from '@/components/ArticleModal'
 import { CategoryTabs } from '@/components/CategoryTabs'
+import { UpscStrip } from '@/components/UpscStrip'
 
 interface HomeClientProps {
   overview: IndiaOverview | null
@@ -240,6 +241,8 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
           </span>
           {loading && <span className="text-[9.5px] font-mono animate-pulse ml-auto" style={{ color: 'var(--text3)' }}>Updating...</span>}
         </div>
+
+        {activeTab === 'all' && <UpscStrip />}
 
         {loading ? (
           <div className="p-4 space-y-4">

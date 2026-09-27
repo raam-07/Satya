@@ -6,6 +6,7 @@ import { cleanTitle, formatDate, categoryLabel, renderMarkdown, hasImage } from 
 import { PBadge, SentimentDot, TappableMinister, TappableState } from '@/components/SrcTag'
 import { EventStorySoFar } from '@/components/EventStorySoFar'
 import { SummaryMark } from '@/components/BrandMark'
+import { UpscChip } from '@/components/UpscChip'
 
 export const revalidate = false
 
@@ -112,6 +113,8 @@ export default async function NewsArticlePage({ params }: PageProps) {
           <h1 className="text-[24px] md:text-[30px] font-bold font-serif leading-tight mb-5 text-[var(--text1)]">
             {displayTitle}
           </h1>
+
+          <UpscChip articleId={article.id} />
 
           {/* Civic Warning Alert Box */}
           {article.civic_flag && (
