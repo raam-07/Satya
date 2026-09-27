@@ -36,6 +36,13 @@ export function UpscStrip() {
         href="/upsc"
         className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2.5 text-[12.5px] transition-colors hover:bg-[var(--bg-alt)]"
       >
+        {/* live dot: pings only when there are notes from today; reduced-motion users get a static dot */}
+        <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+          {counts.today > 0 && (
+            <span className="absolute inline-flex h-full w-full rounded-full opacity-75 motion-safe:animate-ping" style={{ background: 'var(--accent)' }} />
+          )}
+          <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
+        </span>
         <span className="font-mono text-[9.5px] font-bold uppercase tracking-widest shrink-0" style={{ color: 'var(--accent)' }}>
           For UPSC aspirants
         </span>
