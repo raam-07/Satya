@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
   // Basic Auth for Admin Area
   if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/api/admin')) {
     const basicAuth = request.headers.get('authorization')
-    const secret = process.env.ADMIN_NOTIFY_KEY || process.env.REVALIDATE_SECRET || 'satya_admin_secret_2024'
+    const secret = process.env.REVALIDATE_SECRET
     
     if (basicAuth) {
       const authValue = basicAuth.split(' ')[1]
