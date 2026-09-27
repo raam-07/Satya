@@ -6,6 +6,13 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const days = parseInt(searchParams.get('days') || '30', 10);
+
+  const secret = searchParams.get('secret') || '';
+  const expected = process.env.ADMIN_NOTIFY_KEY || process.env.REVALIDATE_SECRET || 'satya_admin_secret_2024';
+  if (secret !== expected) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const startTs = Math.floor(Date.now() / 1000) - (days * 24 * 3600);
 
   try {

@@ -11,7 +11,17 @@ async function forceRefresh() {
   revalidatePath('/', 'layout')
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: { secret?: string }
+}) {
+  const secret = searchParams?.secret || '';
+  const expected = process.env.ADMIN_NOTIFY_KEY || process.env.REVALIDATE_SECRET || 'satya_admin_secret_2024';
+  if (secret !== expected) {
+    return <div className="p-8 text-red-500 font-bold text-center mt-20 text-2xl">Unauthorized. Please provide ?secret= in URL.</div>
+  }
+
   const todayStart = Math.floor(new Date(new Date().setUTCHours(0,0,0,0)).getTime() / 1000)
 
   // 1. Classified Today
@@ -57,7 +67,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Interactive Charts Client Component */}
-      <AdminDashboardClient />
+      <AdminDashboardClient secret={secret} />
 
       <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 mt-12">
         <h2 className="text-xl font-bold mb-4 border-b border-neutral-700 pb-2">Latest Article Activity (Scraped)</h2>
