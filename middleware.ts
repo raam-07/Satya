@@ -12,6 +12,28 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301)
   }
   
+  
+  // Basic Auth for Admin Area
+  if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/api/admin')) {
+    const basicAuth = request.headers.get('authorization')
+    const secret = process.env.ADMIN_NOTIFY_KEY || process.env.REVALIDATE_SECRET || 'satya_admin_secret_2024'
+    
+    if (basicAuth) {
+      const authValue = basicAuth.split(' ')[1]
+      const [user, pwd] = atob(authValue).split(':')
+      
+      // User can be anything, password must match the secret
+      if (pwd === secret) {
+        return NextResponse.next()
+      }
+    }
+    
+    return new NextResponse('Auth Required', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="Secure Admin Area"' },
+    })
+  }
+
   return NextResponse.next()
 }
 

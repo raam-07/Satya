@@ -10,7 +10,7 @@ import { Calendar, Filter, Loader2, CheckSquare, Square } from 'lucide-react'
 const SENTIMENT_COLORS = { Positive: '#4ade80', Neutral: '#9ca3af', Negative: '#f87171' };
 const SOURCE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#eab308'];
 
-export function AdminDashboardClient({ secret }: { secret: string }) {
+export function AdminDashboardClient() {
   const [days, setDays] = useState('30')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -27,7 +27,7 @@ export function AdminDashboardClient({ secret }: { secret: string }) {
   async function fetchData() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/stats?days=${days}&secret=${secret}`)
+      const res = await fetch(`/api/admin/stats?days=${days}`)
       if (res.ok) {
         const json = await res.json()
         setData(json)
