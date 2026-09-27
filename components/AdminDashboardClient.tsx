@@ -1,0 +1,144 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { Calendar, Filter, Loader2, ArrowRight } from 'lucide-react'
+
+export function AdminDashboardClient() {
+  const [days, setDays] = useState('30')
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchData()
+  }, [days])
+
+  async function fetchData() {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/stats?days=${days}`)
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="mt-12">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 bg-neutral-900 p-4 rounded-xl border border-neutral-800">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-orange-500" /> 
+          Trend Analytics
+        </h2>
+        <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <label className="text-sm text-neutral-400">Time Period:</label>
+          <select 
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            className="bg-neutral-800 border border-neutral-700 text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 p-2"
+          >
+            <option value="7">Last 7 Days</option>
+            <option value="15">Last 15 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+          </select>
+          <button onClick={fetchData} className="bg-neutral-800 hover:bg-neutral-700 p-2 rounded-lg border border-neutral-700">
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {loading || !data ? (
+        <div className="flex justify-center items-center h-64 bg-neutral-900 rounded-xl border border-neutral-800">
+          <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        </div>
+      ) : (
+        <div className="space-y-8">
+          
+          {/* Pending Bottlenecks Row */}
+          <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
+            <h3 className="text-lg font-bold mb-4 border-b border-neutral-800 pb-2">Pending Pipeline Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-neutral-800 p-4 rounded-lg text-center">
+                <p className="text-xs text-neutral-400 uppercase tracking-wide">To Be Rephrased</p>
+                <p className="text-3xl font-black text-white mt-1">{data.pending.rephrase}</p>
+              </div>
+              <div className="bg-neutral-800 p-4 rounded-lg text-center">
+                <p className="text-xs text-neutral-400 uppercase tracking-wide">To Be Classified</p>
+                <p className="text-3xl font-black text-white mt-1">{data.pending.classify}</p>
+              </div>
+              <div className="bg-neutral-800 p-4 rounded-lg text-center">
+                <p className="text-xs text-neutral-400 uppercase tracking-wide">To Be Entitied</p>
+                <p className="text-3xl font-black text-white mt-1">{data.pending.entity}</p>
+              </div>
+              <div className="bg-neutral-800 p-4 rounded-lg text-center border border-orange-900/50 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
+                <p className="text-xs text-neutral-400 uppercase tracking-wide">To Be Timelined</p>
+                <p className="text-3xl font-black text-orange-400 mt-1">{data.pending.timeline}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Pipeline Throughput Trend */}
+            <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
+              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Pipeline Throughput (Daily)</h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.trends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                    <XAxis dataKey="day" stroke="#737373" fontSize={12} tickMargin={10} />
+                    <YAxis stroke="#737373" fontSize={12} />
+                    <Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Line type="monotone" dataKey="scraped" name="Scraped" stroke="#60a5fa" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="classified" name="Classified" stroke="#4ade80" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="translated" name="Translated (HI)" stroke="#f43f5e" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Civic Alerts Area Chart */}
+            <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
+              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Civic Alert Volume</h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.trends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                    <XAxis dataKey="day" stroke="#737373" fontSize={12} tickMargin={10} />
+                    <YAxis stroke="#737373" fontSize={12} />
+                    <Tooltip contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Area type="monotone" dataKey="civic" name="Civic Alerts Flagged" fill="#f97316" stroke="#ea580c" fillOpacity={0.3} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Category Distribution Bar Chart */}
+            <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 lg:col-span-2">
+              <h3 className="text-lg font-bold mb-6 border-b border-neutral-800 pb-2">Category Distribution ({days} Days)</h3>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.categories} layout="vertical" margin={{ left: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" horizontal={false} />
+                    <XAxis type="number" stroke="#737373" fontSize={12} />
+                    <YAxis dataKey="name" type="category" stroke="#a3a3a3" fontSize={12} tickMargin={10} />
+                    <Tooltip cursor={{ fill: '#262626' }} contentStyle={{ backgroundColor: '#171717', borderColor: '#404040' }} />
+                    <Bar dataKey="count" name="Articles" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
