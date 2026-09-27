@@ -35,18 +35,26 @@ async function loadEntities(): Promise<any> {
   }
 }
 
+// Records an editor has taken off the site (not a promise, a duplicate, or the
+// wrong person) stay in promises.json with editorial.exclude, so the pipeline
+// does not add them again, but no page, count or sitemap ever shows them.
+function withoutExcluded(registry: any): any {
+  if (!registry || !Array.isArray(registry.promises)) return registry;
+  return { ...registry, promises: registry.promises.filter((p: any) => !p?.editorial?.exclude) };
+}
+
 async function loadPromisesRegistry(): Promise<any> {
   const localPath = path.join(process.cwd(), '../Satya-promise-tracker/promises.json');
   if (fs.existsSync(localPath)) {
     try {
-      return JSON.parse(fs.readFileSync(localPath, 'utf8'));
+      return withoutExcluded(JSON.parse(fs.readFileSync(localPath, 'utf8')));
     } catch {}
   }
   try {
     const res = await fetch('https://raw.githubusercontent.com/raam-07/Satya-promise-tracker/main/promises.json', {
       next: { revalidate: 900 }
     });
-    return await res.json();
+    return withoutExcluded(await res.json());
   } catch {
     return null;
   }
@@ -1021,6 +1029,33 @@ export const serverApi = {
         by_person: byPerson,
         by_party: byParty
       };
+    });
+  },
+
+  /**
+   * The full, unabridged record for one promise. The listing payload above is
+   * deliberately lean because it is shipped to the browser for all promises at
+   * once; the detail page needs the heavier fields - the editorial write-up,
+   * notes, analysis and full evidence - for just the one it is showing.
+   */
+  /** Whether the entity library has a profile page for this person. */
+  async isKnownPolitician(name: string): Promise<boolean> {
+    if (!name) return false;
+    return cached(`known-politician:${name.toLowerCase()}`, ['entities'], async () => {
+      const entities = await loadEntities();
+      if (!entities) return false;
+      const lower = name.toLowerCase();
+      const slug = slugify(name);
+      return getAllPoliticians(entities).some((m: any) =>
+        m.name?.toLowerCase() === lower || slugify(m.name || '') === slug ||
+        m.aliases?.some((a: string) => a.toLowerCase() === lower || slugify(a) === slug));
+    });
+  },
+
+  async promiseDetail(id: string): Promise<any | null> {
+    return cached(`promise:${id}`, ['promises'], async () => {
+      const registry = await loadPromisesRegistry();
+      return (registry?.promises || []).find((p: any) => String(p.id) === String(id)) ?? null;
     });
   },
 
