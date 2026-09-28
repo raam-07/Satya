@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { db } from './db';
+import { transDb } from './db.translation';
 import { slugify, partySlugify } from './utils';
 import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
 import type {
@@ -104,12 +105,63 @@ function decompressText(blob: any): string {
     } else if (typeof blob === 'object' && blob.data) {
       // Handle json serialization format for buffers
       buffer = Buffer.from(blob.data);
+    } else if (typeof blob === 'object' && blob.base64) {
+      buffer = Buffer.from(blob.base64, 'base64');
+    } else if (typeof blob === 'string') {
+      buffer = Buffer.from(blob, 'base64');
     } else {
       buffer = Buffer.from(blob);
     }
     return zlib.inflateSync(buffer).toString('utf-8');
   } catch (e) {
     return '';
+  }
+}
+
+// --- Strict Hindi Article Hydration & Filtering ---
+async function hydrateHindiArticles(articles: Article[]): Promise<Article[]> {
+  if (!articles.length || !transDb) return [];
+  const ids = articles.map(a => a.id);
+  const ph = ids.map(() => '?').join(',');
+
+  try {
+    const res = await transDb.execute({
+      sql: `SELECT article_id, rephrased_title_hi, rephrased_article_hi FROM translations WHERE article_id IN (${ph})`,
+      args: ids,
+    });
+
+    const transMap = new Map<number, { title_hi: string; article_hi: any }>();
+    for (const r of res.rows) {
+      const artId = Number(r.article_id);
+      const titleHi = String(r.rephrased_title_hi || '').trim();
+      if (titleHi) {
+        transMap.set(artId, {
+          title_hi: titleHi,
+          article_hi: r.rephrased_article_hi,
+        });
+      }
+    }
+
+    // STRICT FILTER: Only return articles that have an active Hindi translation!
+    // If not processed in Hindi, omit it entirely ("if not processed then dont show")
+    const hindiArticles: Article[] = [];
+    for (const art of articles) {
+      const trans = transMap.get(art.id);
+      if (!trans || !trans.title_hi) continue; // Skip untranslated articles!
+
+      const decompressedBody = decompressText(trans.article_hi);
+      hindiArticles.push({
+        ...art,
+        title: trans.title_hi,
+        rephrased_title: trans.title_hi,
+        rephrased_article: decompressedBody || art.rephrased_article,
+      });
+    }
+
+    return hindiArticles;
+  } catch (e) {
+    console.error('[translation] Hydrate failed:', e);
+    return [];
   }
 }
 
@@ -450,6 +502,7 @@ export const serverApi = {
                   FROM articles a INDEXED BY idx_articles_scraped
                   LEFT JOIN sources s ON a.source_id = s.id
                   WHERE a.status IN ('classified', 'entity_processed', 'processed')
+                  ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''}
                   ORDER BY a.scraped_at DESC
                   LIMIT 200
                 ) a
@@ -478,7 +531,10 @@ export const serverApi = {
       const flagged30d = Number(flagged30dRes.rows[0]?.c || 0);
       const flaggedToday = Number(flaggedTodayRes.rows[0]?.c || 0);
 
-      const topStories = storiesRes.rows.map(row => mapRowToArticle(row));
+      let topStories = storiesRes.rows.map(row => mapRowToArticle(row));
+      if (lang === 'hi') {
+        topStories = await hydrateHindiArticles(topStories);
+      }
 
       const category_breakdown_30d: Record<string, number> = {};
       catBreakdownRes.rows.forEach(r => {
@@ -1082,10 +1138,10 @@ export const serverApi = {
     });
   },
 
-  async feed(type: string, limit?: number, offset?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+  async feed(type: string, limit?: number, offset?: number, lang: string = 'en'): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     const lim = Math.min(Math.max(Number(limit) || 500, 1), 500);
     const off = Math.max(Number(offset) || 0, 0);
-    return cached(`feed:${type.toLowerCase()}:${lim}:${off}`, ['articles'], async () => {
+    return cached(`feed:${type.toLowerCase()}:${lim}:${off}:${lang}`, ['articles'], async () => {
       let query = `
         SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -1120,15 +1176,15 @@ export const serverApi = {
 
       if (type === 'flagged') {
         // Civic Alerts is an India accountability feed; keep foreign-only stories out of it too.
-        query += INDIA_FILTER + ` AND (a.civic_flag = 1 OR a.civic_flag = '1' OR a.civic_flag IS TRUE) ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
+        query += INDIA_FILTER + ` AND (a.civic_flag = 1 OR a.civic_flag = '1' OR a.civic_flag IS TRUE) ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
       } else if (category_map[type]) {
         if (category_map[type] !== 'international') {
           query += INDIA_FILTER;
         }
-        query += ` AND a.category = ? ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
+        query += ` AND a.category = ? ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
         args.push(category_map[type]);
       } else if (topic_map[type]) {
-        query += INDIA_FILTER + ` AND a.topic_tags LIKE ? ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
+        query += INDIA_FILTER + ` AND a.topic_tags LIKE ? ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
         args.push(`%${topic_map[type]}%`);
       } else {
         // 'all' feed
@@ -1139,6 +1195,7 @@ export const serverApi = {
             FROM articles a INDEXED BY idx_articles_scraped
             LEFT JOIN sources s ON a.source_id = s.id
             WHERE a.status IN ('classified', 'entity_processed', 'processed')
+            ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''}
             ORDER BY a.scraped_at DESC
             LIMIT ${Math.max((lim + off) * 3, 200)}
           ) a
@@ -1153,7 +1210,10 @@ export const serverApi = {
       }
 
       const res = await db.execute({ sql: query, args });
-      const articles = res.rows.map(row => mapRowToArticle(row));
+      let articles = res.rows.map(row => mapRowToArticle(row));
+      if (lang === 'hi') {
+        articles = await hydrateHindiArticles(articles);
+      }
 
       return {
         generated_at: new Date().toISOString(),
@@ -1268,8 +1328,8 @@ export const serverApi = {
     });
   },
 
-  async article(id: number): Promise<Article | null> {
-    return cached(`article:${id}`, ['articles', 'promises'], async () => {
+  async article(id: number, lang: string = 'en'): Promise<Article | null> {
+    return cached(`article:${id}:${lang}`, ['articles', 'promises'], async () => {
       const res = await db.execute({
         sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
                      a.rephrased_article, a.content,
@@ -1280,7 +1340,16 @@ export const serverApi = {
         args: [id]
       });
       if (!res.rows.length) return null;
-      const art = mapRowToArticle(res.rows[0]);
+      let art = mapRowToArticle(res.rows[0]);
+
+      if (lang === 'hi') {
+        const hydrated = await hydrateHindiArticles([art]);
+        if (!hydrated.length) {
+          // Untranslated article: strictly do not show in Hindi mode
+          return null;
+        }
+        art = hydrated[0];
+      }
 
       // Backfill durability fields from the promises registry if matched by URL
       try {

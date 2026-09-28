@@ -1,5 +1,7 @@
+import { cookies } from 'next/headers'
 import { api } from '@/lib/api'
 import { HomeClient } from '@/components/HomeClient'
+import { getLanguage } from '@/lib/i18n'
 import type { Metadata } from 'next'
 
 // Title and description come from the root layout. The canonical lives here,
@@ -12,11 +14,14 @@ export const metadata: Metadata = {
 export const revalidate = false
 
 export default async function HomePage() {
+  const cookieStore = cookies()
+  const lang = getLanguage(cookieStore.get('satya_lang')?.value)
+
   // Fast first paint: only 60 articles server-side; the client tops up to the
   // full feed in the background after hydration.
   const [overview, feedData] = await Promise.all([
-    api.indiaOverview(),
-    api.feed('all', false, 60),
+    api.indiaOverview(false, lang),
+    api.feed('all', false, 60, 0, lang),
   ])
 
   const initialArticles = feedData?.articles ?? []
@@ -25,6 +30,7 @@ export default async function HomePage() {
     <HomeClient
       overview={overview}
       initialArticles={initialArticles}
+      currentLang={lang}
     />
   )
 }

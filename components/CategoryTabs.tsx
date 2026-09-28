@@ -1,6 +1,8 @@
 'use client'
 import { useRef } from 'react'
 
+import type { Language } from '@/lib/i18n'
+
 // Exactly 8 tabs per spec — tab id maps to feed API key in HomeClient
 const TABS = [
   { id: 'all',        label: 'All' },
@@ -14,12 +16,25 @@ const TABS = [
   { id: 'world',      label: 'World' },
 ]
 
+const TAB_LABELS_HI: Record<string, string> = {
+  all: 'सभी',
+  flagged: 'नागरिक अलर्ट ⚑',
+  governance: 'शासन',
+  economy: 'अर्थव्यवस्था',
+  justice: 'न्याय व अपराध',
+  health: 'स्वास्थ्य',
+  farmers: 'किसान व कृषि',
+  corruption: 'भ्रष्टाचार',
+  world: 'विश्व',
+}
+
 interface CategoryTabsProps {
   activeTab: string
   onChangeTab: (id: string) => void
+  currentLang?: Language
 }
 
-export function CategoryTabs({ activeTab, onChangeTab }: CategoryTabsProps) {
+export function CategoryTabs({ activeTab, onChangeTab, currentLang = 'en' }: CategoryTabsProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   return (
@@ -53,7 +68,7 @@ export function CategoryTabs({ activeTab, onChangeTab }: CategoryTabsProps) {
                 fontWeight: isFlagged ? 'bold' : '600'
               }}
             >
-              {tab.label}
+              {currentLang === 'hi' ? (TAB_LABELS_HI[tab.id] || tab.label) : tab.label}
             </span>
           </button>
         )

@@ -7,11 +7,13 @@ import { ArticleCard } from '@/components/ArticleCard'
 import { ArticleModal } from '@/components/ArticleModal'
 import { CategoryTabs } from '@/components/CategoryTabs'
 import { UpscStrip } from '@/components/UpscStrip'
+import type { Language } from '@/lib/i18n'
 
 interface HomeClientProps {
   overview: IndiaOverview | null
   initialArticles: Article[]
   initialTab?: string
+  currentLang?: Language
 }
 
 // The feed renders 20 at a time and pages up; fetching 500 upfront just to
@@ -21,7 +23,7 @@ const BATCH_SIZE = 60
 const PAGE_SIZE = 20
 const MAX_FEED_LIMIT = 1000
 
-export function HomeClient({ overview, initialArticles, initialTab = 'all' }: HomeClientProps) {
+export function HomeClient({ overview, initialArticles, initialTab = 'all', currentLang = 'en' }: HomeClientProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [articles, setArticles] = useState<Article[]>(
     initialArticles
@@ -59,7 +61,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     setLoadingMore(true)
     try {
       const currentOffset = articles.length
-      const res = await api.feed(activeTab, false, BATCH_SIZE, currentOffset)
+      const res = await api.feed(activeTab, false, BATCH_SIZE, currentOffset, currentLang)
       const newArticles = res?.articles ?? []
       
       const hasMore = newArticles.length >= BATCH_SIZE
@@ -80,7 +82,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     } finally {
       setLoadingMore(false)
     }
-  }, [activeTab, articles, loading, loadingMore, hasMoreOnServer])
+  }, [activeTab, articles, loading, loadingMore, hasMoreOnServer, currentLang])
 
   // Listen for custom pull-to-refresh event
   useEffect(() => {
@@ -90,7 +92,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
       try {
         fullLoaded.current.clear()
         serverHasMoreMap.current.clear()
-        const res = await api.feed(activeTab, true, BATCH_SIZE, 0)
+        const res = await api.feed(activeTab, true, BATCH_SIZE, 0, currentLang)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
         fullLoaded.current.add(activeTab)
@@ -107,7 +109,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     }
     window.addEventListener('satya-refresh-feed', handleRefresh)
     return () => window.removeEventListener('satya-refresh-feed', handleRefresh)
-  }, [activeTab])
+  }, [activeTab, currentLang])
 
   // Fetch / Switch tabs
   useEffect(() => {
@@ -128,7 +130,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
       // topping up a fast initial slice happens silently in the background.
       if (!cached) setLoading(true)
       try {
-        const res = await api.feed(activeTab, false, BATCH_SIZE, 0)
+        const res = await api.feed(activeTab, false, BATCH_SIZE, 0, currentLang)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
         fullLoaded.current.add(activeTab)
@@ -147,7 +149,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
     }
     loadFeed()
     return () => { active = false }
-  }, [activeTab])
+  }, [activeTab, currentLang])
 
   const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId)
@@ -215,19 +217,24 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
   const gov          = overview?.current_government
   const catBreakdown = overview?.category_breakdown_30d ?? {}
 
-  const tabLabel = 
-    activeTab === 'all' 
-      ? "Today's Reality" 
-      : (activeTab === 'flagged' 
-          ? "Critical Civic Alerts — What Needs Attention" 
-          : `${activeTab.charAt(0).toUpperCase()}${activeTab.slice(1)} Edition`)
+  const tabLabel = currentLang === 'hi'
+    ? (activeTab === 'all'
+        ? 'आज की वास्तविकता'
+        : (activeTab === 'flagged'
+            ? 'नागरिक अलर्ट — तत्काल ध्यान देने योग्य'
+            : `${activeTab} संस्करण`))
+    : (activeTab === 'all' 
+        ? "Today's Reality" 
+        : (activeTab === 'flagged' 
+            ? "Critical Civic Alerts — What Needs Attention" 
+            : `${activeTab.charAt(0).toUpperCase()}${activeTab.slice(1)} Edition`))
 
   return (
     <div>
 
       {/* Sticky Category Tabs */}
       <div className="sticky top-0 z-30 shadow-sm" style={{ background: 'var(--surface)' }}>
-        <CategoryTabs activeTab={activeTab} onChangeTab={handleTabChange} />
+        <CategoryTabs activeTab={activeTab} onChangeTab={handleTabChange} currentLang={currentLang} />
       </div>
 
       {/* ── Single column layout (mobile-first, all screens) ── */}
@@ -239,7 +246,11 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
           <span className="text-[9.5px] font-mono tracking-widest uppercase" style={{ color: 'var(--text2)' }}>
             {tabLabel}
           </span>
-          {loading && <span className="text-[9.5px] font-mono animate-pulse ml-auto" style={{ color: 'var(--text3)' }}>Updating...</span>}
+          {loading && (
+            <span className="text-[9.5px] font-mono animate-pulse ml-auto" style={{ color: 'var(--text3)' }}>
+              {currentLang === 'hi' ? 'अपडेट हो रहा है...' : 'Updating...'}
+            </span>
+          )}
         </div>
 
         {activeTab === 'all' && <UpscStrip />}
@@ -257,13 +268,19 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
                 </div>
               ))}
             </div>
-            {articles.length === 0 && <EmptyState message="No stories loaded — check back soon as coverage grows" />}
+            {articles.length === 0 && (
+              <EmptyState 
+                message={currentLang === 'hi' 
+                  ? 'इस श्रेणी में अभी कोई हिन्दी लेख उपलब्ध नहीं हैं — अनुवाद प्रगति पर है' 
+                  : 'No stories loaded — check back soon as coverage grows'} 
+              />
+            )}
             {hasMore && (
               <div className="p-4 text-center">
                 {isObserverSupported ? (
                   <div ref={sentinelRef} className="py-4 flex justify-center items-center">
                     <span className="text-[10px] font-mono tracking-wider animate-pulse" style={{ color: 'var(--text3)' }}>
-                      Loading more headlines...
+                      {currentLang === 'hi' ? 'और समाचार लोड हो रहे हैं...' : 'Loading more headlines...'}
                     </span>
                   </div>
                 ) : (
@@ -280,7 +297,9 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all' }: Ho
                     style={{ borderColor: 'var(--border-hi)', color: 'var(--text2)' }}
                     disabled={loadingMore}
                   >
-                    {loadingMore ? 'Loading...' : 'Load More Headlines ↗'}
+                    {loadingMore 
+                      ? (currentLang === 'hi' ? 'लोड हो रहा है...' : 'Loading...') 
+                      : (currentLang === 'hi' ? 'और समाचार लोड करें ↗' : 'Load More Headlines ↗')}
                   </button>
                 )}
               </div>

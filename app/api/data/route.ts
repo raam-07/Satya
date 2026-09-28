@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get('type');
   const param = searchParams.get('param') || '';
+  const lang = searchParams.get('lang') || req.cookies.get('satya_lang')?.value || 'en';
 
   try {
     switch (type) {
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
         clearCache();
         return NextResponse.json({ success: true });
       case 'indiaOverview':
-        return NextResponse.json(await serverApi.indiaOverview());
+        return NextResponse.json(await serverApi.indiaOverview(lang));
       case 'manifest':
         return NextResponse.json(await serverApi.manifest());
       case 'politicians':
@@ -43,7 +44,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(await serverApi.feed(
           param,
           isNaN(feedLimit) ? undefined : feedLimit,
-          isNaN(feedOffset) ? undefined : feedOffset
+          isNaN(feedOffset) ? undefined : feedOffset,
+          lang
         ));
       case 'search':
         return NextResponse.json(await serverApi.search(param));
@@ -52,7 +54,7 @@ export async function GET(req: NextRequest) {
       case 'article':
         const artId = parseInt(param, 10);
         if (isNaN(artId)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });
-        return NextResponse.json(await serverApi.article(artId));
+        return NextResponse.json(await serverApi.article(artId, lang));
       case 'eventsList':
         return NextResponse.json(await serverApi.eventsList());
       case 'eventTimeline':

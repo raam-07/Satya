@@ -304,12 +304,12 @@ export const api = {
     return fetchClientJSON<any[]>('politicians');
   },
 
-  async article(id: number): Promise<Article | null> {
+  async article(id: number, lang: string = 'en'): Promise<Article | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.article(id);
+      return serverApi.article(id, lang);
     }
-    return fetchClientJSON<Article>('article', String(id));
+    return fetchClientJSON<Article>('article', String(id), false, { lang });
   },
 
   async party(name: string): Promise<PartyData | null> {
@@ -360,12 +360,12 @@ export const api = {
     return fetchClientJSON<{ articles?: Article[] }>('category', name);
   },
 
-  async feed(type: string, forceRefresh: boolean = false, limit?: number, offset?: number): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
+  async feed(type: string, forceRefresh: boolean = false, limit?: number, offset?: number, lang: string = 'en'): Promise<{ generated_at?: string; total?: number; articles?: Article[] } | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.feed(type, limit, offset);
+      return serverApi.feed(type, limit, offset, lang);
     }
-    const extra: Record<string, string> = {};
+    const extra: Record<string, string> = { lang };
     if (limit) extra.limit = String(limit);
     if (offset) extra.offset = String(offset);
     return fetchClientJSON<{ generated_at?: string; total?: number; articles?: Article[] }>('feed', type, forceRefresh, extra);

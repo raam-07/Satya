@@ -8,6 +8,9 @@ import { EventStorySoFar } from '@/components/EventStorySoFar'
 import { SummaryMark } from '@/components/BrandMark'
 import { UpscChip } from '@/components/UpscChip'
 
+import { cookies } from 'next/headers'
+import { getLanguage } from '@/lib/i18n'
+
 export const revalidate = false
 
 interface PageProps {
@@ -18,7 +21,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const idNum = Number(params.id)
   if (isNaN(idNum)) return { robots: { index: false } }
 
-  const article = await api.article(idNum).catch(() => null)
+  const cookieStore = cookies()
+  const lang = getLanguage(cookieStore.get('satya_lang')?.value)
+  const article = await api.article(idNum, lang).catch(() => null)
   if (!article) return { robots: { index: false } }
 
   const title = `${cleanTitle(article.rephrased_title ?? article.title)} — SatyaDheesh`
@@ -60,7 +65,9 @@ export default async function NewsArticlePage({ params }: PageProps) {
     notFound()
   }
 
-  const article = await api.article(idNum)
+  const cookieStore = cookies()
+  const lang = getLanguage(cookieStore.get('satya_lang')?.value)
+  const article = await api.article(idNum, lang)
   if (!article) {
     notFound()
   }
@@ -78,7 +85,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
       {/* Back to feed */}
       <div className="mb-6">
         <Link href="/" className="text-[11px] font-mono uppercase tracking-wider text-[var(--text3)] hover:text-[var(--accent)] transition-colors">
-          ← Back to Feed
+          {lang === 'hi' ? '← मुख्य पृष्ठ पर वापस जाएं' : '← Back to Feed'}
         </Link>
       </div>
 
