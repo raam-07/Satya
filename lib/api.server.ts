@@ -18,7 +18,29 @@ import type {
 } from './api';
 
 // --- Static Registries Loaders (Self-Healing Paths) ---
-async function loadEntities(): Promise<any> {
+async function loadEntities(lang: string = 'en'): Promise<any> {
+  if (lang === 'hi') {
+    // 1. Try local entities_hi.json
+    const localHi = path.join(process.cwd(), '../satya-entity-library/entities_hi.json');
+    if (fs.existsSync(localHi)) {
+      try {
+        const d = JSON.parse(fs.readFileSync(localHi, 'utf8'));
+        if (d && d.india) return d;
+      } catch {}
+    }
+    // 2. Try remote entities_hi.json from GitHub
+    try {
+      const res = await fetch('https://raw.githubusercontent.com/raam-07/satya-entity-library/main/entities_hi.json', {
+        next: { revalidate: 900 }
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d && d.india) return d;
+      }
+    } catch {}
+    // If entities_hi.json does not exist yet or fails, fallback seamlessly to English entities.json below
+  }
+
   const localPath = path.join(process.cwd(), '../satya-entity-library/entities.json');
   if (fs.existsSync(localPath)) {
     try {
@@ -378,16 +400,17 @@ export const serverApi = {
     }, { revalidate: 259200 });
   },
 
-  async indiaOverview(): Promise<IndiaOverview | null> {
-    return cached('indiaOverview', ['entities', 'promises', 'articles'], async () => {
-      const entities = await loadEntities();
+  async indiaOverview(lang: string = 'en'): Promise<IndiaOverview | null> {
+    return cached(`indiaOverview:${lang}`, ['entities', 'promises', 'articles'], async () => {
+      const entities = await loadEntities(lang);
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
 
-      const pm = entities.india?.central_government?.prime_minister || '';
-      const pres = entities.india?.central_government?.president || '';
-      const ruling_party = entities.india?.central_government?.ruling_party || '';
-      const ruling_coalition = entities.india?.central_government?.ruling_coalition || '';
+      const cg = entities.india?.central_government || {};
+      const pm = (lang === 'hi' && cg.prime_minister_hi) ? cg.prime_minister_hi : (cg.prime_minister || '');
+      const pres = (lang === 'hi' && cg.president_hi) ? cg.president_hi : (cg.president || '');
+      const ruling_party = (lang === 'hi' && cg.ruling_party_hi) ? cg.ruling_party_hi : (cg.ruling_party || '');
+      const ruling_coalition = (lang === 'hi' && cg.ruling_coalition_hi) ? cg.ruling_coalition_hi : (cg.ruling_coalition || '');
 
       const sevenDaysAgo = Math.floor(Date.now() / 1000) - (7 * 24 * 3600);
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);

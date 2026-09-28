@@ -1,6 +1,9 @@
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { HardRefreshButton } from '@/components/HardRefreshButton'
+import { LanguageSwitch } from '@/components/LanguageSwitch'
+import { cookies } from 'next/headers'
+import { getLanguage, t, translateCategory } from '@/lib/i18n'
 import type { Metadata } from 'next'
 import { slugify } from '@/lib/utils'
 
@@ -27,8 +30,11 @@ function Bar({ value, max, color }: { value: number; max: number; color?: string
 }
 
 export default async function DataPage() {
+  const cookieStore = cookies()
+  const lang = getLanguage(cookieStore.get('satya_lang')?.value)
+
   const [overview, promises] = await Promise.all([
-    api.indiaOverview(),
+    api.indiaOverview(false, lang),
     api.promises(),
   ])
 
@@ -54,14 +60,15 @@ export default async function DataPage() {
       {/* Header */}
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" style={{ borderColor: 'var(--border-md)' }}>
         <div>
-          <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">Civic Intelligence</span>
-          <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">Data</h1>
-          <p className="text-[13px] text-[var(--text2)] mt-1">India by the numbers — sourced, structured, transparent.</p>
+          <span className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase">{t('civic_intelligence', lang)}</span>
+          <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] mt-1">{t('data_title', lang)}</h1>
+          <p className="text-[13px] text-[var(--text2)] mt-1">{t('data_subtitle', lang)}</p>
           <p className="text-[11px] font-mono font-bold tracking-wide mt-1.5" style={{ color: 'var(--accent)' }}>
-            ⚙ Generated end-to-end by an AI pipeline; contested promise verdicts are checked by an editor.
+            {t('ai_pipeline_note', lang)}
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center gap-3">
+          <LanguageSwitch currentLang={lang} />
           {/* Self-gates on ?admin=true (client-side) and prompts for the secret,
               so nothing sensitive ships in the page HTML. */}
           <HardRefreshButton />
@@ -71,10 +78,10 @@ export default async function DataPage() {
       {/* Key metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0" style={{ borderColor: 'var(--border-md)', borderBottom: `1px solid var(--border-md)` }}>
         {[
-          { label: 'Articles Tracked',   val: stats.total_articles_classified?.toLocaleString() ?? '—', color: 'var(--accent)' },
-          { label: 'Last 7 Days',         val: stats.articles_last_7_days?.toLocaleString()      ?? '—', color: 'var(--text1)' },
-          { label: 'Last 30 Days',        val: stats.articles_last_30_days?.toLocaleString()     ?? '—', color: 'var(--text1)' },
-          { label: 'Promises Tracked',    val: ps.total_promises?.toLocaleString()               ?? '—', color: 'var(--text1)' },
+          { label: t('articles_tracked', lang),   val: stats.total_articles_classified?.toLocaleString() ?? '—', color: 'var(--accent)' },
+          { label: t('last_7_days', lang),         val: stats.articles_last_7_days?.toLocaleString()      ?? '—', color: 'var(--text1)' },
+          { label: t('last_30_days', lang),        val: stats.articles_last_30_days?.toLocaleString()     ?? '—', color: 'var(--text1)' },
+          { label: t('promises_tracked', lang),    val: ps.total_promises?.toLocaleString()               ?? '—', color: 'var(--text1)' },
         ].map(({ label, val, color }) => (
           <div key={label} className="flex flex-col items-center py-5 px-3 text-center">
             <div className="text-[26px] md:text-[32px] font-black font-mono leading-none" style={{ color }}>{val}</div>
@@ -90,13 +97,13 @@ export default async function DataPage() {
           {/* Current Government */}
           {gov.ruling_party && (
             <div className="px-4 md:px-6 py-5">
-              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">Current Government</h2>
+              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">{t('current_government', lang)}</h2>
               <div className="space-y-3">
                 {[
-                  { label: 'Ruling Party',    val: gov.ruling_party },
-                  { label: 'Coalition',        val: gov.ruling_coalition },
-                  { label: 'Prime Minister',   val: gov.prime_minister },
-                  { label: 'President',        val: gov.president },
+                  { label: t('ruling_party', lang),    val: gov.ruling_party },
+                  { label: t('coalition', lang),       val: gov.ruling_coalition },
+                  { label: t('prime_minister', lang),  val: gov.prime_minister },
+                  { label: t('president', lang),       val: gov.president },
                 ].filter(r => r.val).map(({ label, val }) => (
                   <div key={label} className="flex items-center justify-between gap-4">
                     <span className="text-[11px] font-mono text-[var(--text3)]">{label}</span>
@@ -110,16 +117,16 @@ export default async function DataPage() {
           {/* Promise Scorecard */}
           <div className="px-4 md:px-6 py-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">Promise Scorecard</h2>
+              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">{t('promise_scorecard', lang)}</h2>
               <Link href="/vaade" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
-                Full tracker →
+                {lang === 'hi' ? 'पूरा ट्रैकर →' : 'Full tracker →'}
               </Link>
             </div>
             <div className="space-y-3">
               {([
-                { label: 'Kept',    val: ps.kept    ?? 0, color: '#1B7050' },
-                { label: 'Broken',  val: ps.broken  ?? 0, color: '#B02828' },
-                { label: 'Ongoing', val: ps.ongoing ?? 0, color: '#BF4A07' },
+                { label: t('kept', lang),    val: ps.kept    ?? 0, color: '#1B7050' },
+                { label: t('broken', lang),  val: ps.broken  ?? 0, color: '#B02828' },
+                { label: t('ongoing', lang), val: ps.ongoing ?? 0, color: '#BF4A07' },
               ] as const).map(({ label, val, color }) => (
                 <div key={label}>
                   <div className="flex items-center justify-between mb-1">
@@ -136,7 +143,8 @@ export default async function DataPage() {
               ))}
             </div>
             <div className="mt-3 text-[10px] font-mono text-[var(--text3)]">
-              Promise kept rate: <span className="font-bold text-[var(--text2)]">
+              {lang === 'hi' ? 'वादा पूरा करने की दर: ' : 'Promise kept rate: '}
+              <span className="font-bold text-[var(--text2)]">
                 {Math.round(((ps.kept ?? 0) / promiseTotal) * 100)}%
               </span>
             </div>
@@ -145,7 +153,7 @@ export default async function DataPage() {
           {/* Top parties in news */}
           {Object.keys(topParty).length > 0 && (
             <div className="px-4 md:px-6 py-5">
-              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">Most Covered Parties (30d)</h2>
+              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">{t('top_parties_30d', lang)}</h2>
               <div className="space-y-2.5">
                 {Object.entries(topParty)
                   .sort(([, a], [, b]) => Number(b) - Number(a))
@@ -165,9 +173,9 @@ export default async function DataPage() {
           {civicAlert.top_flag_categories && Object.keys(civicAlert.top_flag_categories).length > 0 && (
             <div className="px-4 md:px-6 py-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">AI Civic Alerts (30d)</h2>
+                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">{t('civic_flags', lang)}</h2>
                 <div className="text-[9px] font-mono text-[var(--accent)] font-semibold">
-                  Today: {stats.civic_flags_today ?? 0} flagged
+                  {lang === 'hi' ? `आज: ${stats.civic_flags_today ?? 0} ध्वजांकित` : `Today: ${stats.civic_flags_today ?? 0} flagged`}
                 </div>
               </div>
               <div className="mb-4 p-3 rounded-sm bg-[var(--bg-alt)] border flex justify-between items-center" style={{ borderColor: 'var(--border)' }}>
@@ -176,12 +184,12 @@ export default async function DataPage() {
                     {stats.civic_flags_last_30_days ?? 0}
                   </div>
                   <div className="text-[8px] font-mono tracking-wider uppercase" style={{ color: 'var(--text3)' }}>
-                    Total Flagged (30d)
+                    {t('flagged_30d', lang)}
                   </div>
                 </div>
                 <div className="text-right">
                   <Link href="/?tab=flagged" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
-                    View Flagged Feed →
+                    {lang === 'hi' ? 'ध्वजांकित फ़ीड देखें →' : 'View Flagged Feed →'}
                   </Link>
                 </div>
               </div>
@@ -191,7 +199,7 @@ export default async function DataPage() {
                   .slice(0, 5)
                   .map(([cat, count]) => (
                     <div key={cat} className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-[var(--text2)] w-24 capitalize truncate">{cat.replace(/_/g, ' ')}</span>
+                      <span className="text-[10px] font-mono text-[var(--text2)] w-28 capitalize truncate">{t(cat, lang)}</span>
                       <Bar value={Number(count)} max={civicMax} color="#B02828" />
                       <span className="text-[10px] font-mono text-[var(--text3)] w-8 text-right">{count}</span>
                     </div>
@@ -207,13 +215,13 @@ export default async function DataPage() {
           {/* Coverage by category */}
           {Object.keys(catBreak).length > 0 && (
             <div className="px-4 md:px-6 py-5">
-              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">Coverage by Category (30d)</h2>
+              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">{t('category_breakdown_30d', lang)}</h2>
               <div className="space-y-2.5">
                 {Object.entries(catBreak)
                   .sort(([, a], [, b]) => b - a)
                   .map(([label, val]) => (
                     <div key={label} className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-[var(--text2)] w-24 capitalize truncate">{label}</span>
+                      <span className="text-[10px] font-mono text-[var(--text2)] w-28 capitalize truncate">{translateCategory(label, lang)}</span>
                       <Bar value={val} max={catMax} />
                       <span className="text-[10px] font-mono text-[var(--text3)] w-8 text-right">{val}</span>
                     </div>
@@ -226,9 +234,9 @@ export default async function DataPage() {
           {Object.keys(topMins).length > 0 && (
             <div className="px-4 md:px-6 py-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">Most Covered Ministers (30d)</h2>
+                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)]">{t('top_ministers_30d', lang)}</h2>
                 <Link href="/netas" className="text-[9px] font-mono text-[var(--accent)] hover:underline">
-                  All netas →
+                  {lang === 'hi' ? 'सभी नेता →' : 'All netas →'}
                 </Link>
               </div>
               <div className="space-y-2.5">
@@ -254,7 +262,7 @@ export default async function DataPage() {
           {/* Top states in news */}
           {Object.keys(topState).length > 0 && (
             <div className="px-4 md:px-6 py-5">
-              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">Coverage by State (30d)</h2>
+              <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-4">{t('top_states_30d', lang)}</h2>
               <div className="space-y-2.5">
                 {Object.entries(topState)
                   .sort(([, a], [, b]) => Number(b) - Number(a))

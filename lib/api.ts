@@ -280,12 +280,12 @@ async function fetchClientJSON<T>(type: string, param: string = '', forceRefresh
 
 // ── Hybrid API Wrapper (Sever direct connection, Client route proxy) ──
 export const api = {
-  async indiaOverview(forceRefresh: boolean = false): Promise<IndiaOverview | null> {
+  async indiaOverview(forceRefresh: boolean = false, lang: string = 'en'): Promise<IndiaOverview | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.indiaOverview();
+      return serverApi.indiaOverview(lang);
     }
-    return fetchClientJSON<IndiaOverview>('indiaOverview', '', forceRefresh);
+    return fetchClientJSON<IndiaOverview>('indiaOverview', '', forceRefresh, { lang });
   },
 
   async manifest(): Promise<Manifest | null> {
