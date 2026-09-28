@@ -98,10 +98,10 @@ const aboutFaqJsonLd = {
 export default async function AboutPage() {
   const stats = await api.publicLedgerStats()
 
-  const articlesCount = stats?.articles_classified ? stats.articles_classified.toLocaleString() : '40,000+'
-  const timelinesCount = stats?.active_timelines ? stats.active_timelines.toLocaleString() : '2,000+'
-  const upscCount = stats?.upsc_notes ? stats.upsc_notes.toLocaleString() : '690+'
-  const hindiCount = stats?.hindi_records ? stats.hindi_records.toLocaleString() : '2,200+'
+  const articlesCount = stats?.articles_classified ? `${stats.articles_classified.toLocaleString()}+` : '40,000+'
+  const timelinesCount = stats?.active_timelines ? `${stats.active_timelines.toLocaleString()}+` : '2,000+'
+  const upscCount = stats?.upsc_notes ? `${stats.upsc_notes.toLocaleString()}+` : '690+'
+  const hindiCount = stats?.hindi_records ? `${stats.hindi_records.toLocaleString()}+` : '2,200+'
   const promisesCount = stats?.promises_tracked ? stats.promises_tracked.toLocaleString() : '123'
 
   return (
@@ -329,7 +329,7 @@ export default async function AboutPage() {
           >
             <div className="text-[11px] font-mono text-[var(--accent)] font-bold mb-1">06 / ARCHIVE SEARCH</div>
             <div className="font-bold text-[14px] text-[var(--text1)] group-hover:text-[var(--accent)] transition-colors">
-              Search 40,000+ Articles →
+              Search {articlesCount} Articles →
             </div>
             <div className="text-[12px] text-[var(--text2)] mt-1">
               Query our comprehensive archive by politician, party, policy, or legal statute.
