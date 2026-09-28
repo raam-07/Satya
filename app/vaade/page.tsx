@@ -11,7 +11,25 @@ export const metadata: Metadata = {
   description: "Explore all tracked promises made by Indian political parties and leaders. Verified verdicts: kept, broken, or ongoing with news source evidence.",
   alternates: {
     canonical: 'https://satyadheesh.in/vaade',
-  }
+    languages: {
+      'en-IN': 'https://satyadheesh.in/vaade',
+      'hi-IN': 'https://satyadheesh.in/vaade?lang=hi',
+      'x-default': 'https://satyadheesh.in/vaade',
+    },
+  },
+  openGraph: {
+    title: "Indian Political Promise Tracker & Scorecard | SatyaDheesh",
+    description: "Track promises made by India's top leaders and parties with verifiable evidence. Sourced verdicts on what was delivered.",
+    url: 'https://satyadheesh.in/vaade',
+    siteName: 'SatyaDheesh',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Indian Political Promise Tracker & Scorecard | SatyaDheesh",
+    description: "Track promises made by India's top leaders and parties with verifiable evidence. Sourced verdicts on what was delivered.",
+  },
 }
 
 export default async function VaadePage() {

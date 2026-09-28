@@ -8,14 +8,21 @@ import type { Metadata } from 'next'
 // not in the layout, because a layout-level canonical would be inherited by
 // every page that does not set its own and point them all at the homepage.
 export const metadata: Metadata = {
-  alternates: { canonical: 'https://satyadheesh.in' },
+  alternates: {
+    canonical: 'https://satyadheesh.in',
+    languages: {
+      'en-IN': 'https://satyadheesh.in',
+      'hi-IN': 'https://satyadheesh.in?lang=hi',
+      'x-default': 'https://satyadheesh.in',
+    },
+  },
 }
 
 export const revalidate = false
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams?: { lang?: string } }) {
   const cookieStore = cookies()
-  const lang = getLanguage(cookieStore.get('satya_lang')?.value)
+  const lang = getLanguage(cookieStore.get('satya_lang')?.value, searchParams?.lang)
 
   // Fast first paint: only 60 articles server-side; the client tops up to the
   // full feed in the background after hydration.

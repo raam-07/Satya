@@ -10,6 +10,24 @@ export const metadata: Metadata = {
     'Every developing Indian political story as a timeline: budget sessions, elections, scams, and policy battles tracked milestone by milestone with sources.',
   alternates: {
     canonical: 'https://satyadheesh.in/timelines',
+    languages: {
+      'en-IN': 'https://satyadheesh.in/timelines',
+      'hi-IN': 'https://satyadheesh.in/timelines?lang=hi',
+      'x-default': 'https://satyadheesh.in/timelines',
+    },
+  },
+  openGraph: {
+    title: 'Political Event Timelines India — Tracked Update by Update | SatyaDheesh',
+    description: 'Every major Indian political event, scam, election, and session documented as an evidence-backed chronological timeline.',
+    url: 'https://satyadheesh.in/timelines',
+    siteName: 'SatyaDheesh',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Political Event Timelines India — Tracked Update by Update | SatyaDheesh',
+    description: 'Every major Indian political event, scam, election, and session documented as an evidence-backed chronological timeline.',
   },
 }
 

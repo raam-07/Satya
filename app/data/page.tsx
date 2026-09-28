@@ -14,7 +14,12 @@ export const metadata: Metadata = {
   description: "Platform metrics and political statistics for India: tracked articles, promise scorecard, most covered parties, and active civic alerts.",
   alternates: {
     canonical: 'https://satyadheesh.in/data',
-  }
+    languages: {
+      'en-IN': 'https://satyadheesh.in/data',
+      'hi-IN': 'https://satyadheesh.in/data?lang=hi',
+      'x-default': 'https://satyadheesh.in/data',
+    },
+  },
 }
 
 function Bar({ value, max, color }: { value: number; max: number; color?: string }) {
@@ -29,9 +34,9 @@ function Bar({ value, max, color }: { value: number; max: number; color?: string
   )
 }
 
-export default async function DataPage() {
+export default async function DataPage({ searchParams }: { searchParams?: { lang?: string; admin?: string } }) {
   const cookieStore = cookies()
-  const lang = getLanguage(cookieStore.get('satya_lang')?.value)
+  const lang = getLanguage(cookieStore.get('satya_lang')?.value, searchParams?.lang)
 
   const [overview, promises] = await Promise.all([
     api.indiaOverview(false, lang),

@@ -42,6 +42,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'weekly' as const,
           priority: 0.7,
         })
+        dynamicRoutes.push({
+          url: `${baseUrl}/vaade/${p.id}?lang=hi`,
+          lastModified,
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        })
       }
     })
 
@@ -53,6 +59,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const lastModStr = m.criminal_last_updated || '2026-06-18'
         dynamicRoutes.push({
           url: `${baseUrl}/minister/${slug}`,
+          lastModified: new Date(lastModStr),
+          changeFrequency: 'weekly' as const,
+          priority: 0.6,
+        })
+        dynamicRoutes.push({
+          url: `${baseUrl}/minister/${slug}?lang=hi`,
           lastModified: new Date(lastModStr),
           changeFrequency: 'weekly' as const,
           priority: 0.6,
@@ -107,9 +119,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     })
 
-    // 5. All timelines (/event/[slug]) — uncapped query so every event is
-    // indexed, not just the UI's 120 most recent. Open events change daily;
-    // closed ones are archival.
+    // 5. All timelines (/event/[slug]) in both English and Hindi
     const { serverApi } = await import('@/lib/api.server')
     const events = (await serverApi.eventSitemapEntries()) ?? []
     events.forEach(ev => {
@@ -117,11 +127,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (lastMod.getTime() > latestTimelineDate.getTime()) {
         latestTimelineDate = lastMod
       }
+      const freq = (ev.state === 'open' ? 'daily' : 'monthly') as 'daily' | 'monthly'
+      const prio = ev.state === 'open' ? 0.8 : 0.6
       dynamicRoutes.push({
         url: `${baseUrl}/event/${ev.slug}`,
         lastModified: lastMod,
-        changeFrequency: (ev.state === 'open' ? 'daily' : 'monthly') as 'daily' | 'monthly',
-        priority: ev.state === 'open' ? 0.8 : 0.6,
+        changeFrequency: freq,
+        priority: prio,
+      })
+      dynamicRoutes.push({
+        url: `${baseUrl}/event/${ev.slug}?lang=hi`,
+        lastModified: lastMod,
+        changeFrequency: freq,
+        priority: prio,
       })
     })
 
@@ -131,13 +149,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticRoutes = [
     { url: `${baseUrl}`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 1.0 },
+    { url: `${baseUrl}?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 1.0 },
     { url: `${baseUrl}/about`, lastModified: new Date('2026-06-18'), changeFrequency: 'monthly' as const, priority: 0.3 },
+    { url: `${baseUrl}/about?lang=hi`, lastModified: new Date('2026-06-18'), changeFrequency: 'monthly' as const, priority: 0.3 },
     { url: `${baseUrl}/data`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/data?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/netas`, lastModified: new Date('2026-06-18'), changeFrequency: 'weekly' as const, priority: 0.7 },
+    { url: `${baseUrl}/netas?lang=hi`, lastModified: new Date('2026-06-18'), changeFrequency: 'weekly' as const, priority: 0.7 },
     { url: `${baseUrl}/vaade`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/vaade?lang=hi`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/promises`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/promises?lang=hi`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/timelines`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
-    { url: `${baseUrl}/upsc`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.8 },
+    { url: `${baseUrl}/timelines?lang=hi`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
+    { url: `${baseUrl}/upsc?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
+    // High-yield UPSC syllabus filter targets
+    { url: `${baseUrl}/upsc?paper=GS1`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc?paper=GS2`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc?paper=GS3`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc?paper=GS4`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc?exam=prelims`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
+    { url: `${baseUrl}/upsc?exam=mains`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
   ]
 
   return [...staticRoutes, ...dynamicRoutes]

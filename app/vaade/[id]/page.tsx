@@ -68,6 +68,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description,
     alternates: {
       canonical: `https://satyadheesh.in/vaade/${canonicalId}`,
+      languages: {
+        'en-IN': `https://satyadheesh.in/vaade/${canonicalId}`,
+        'hi-IN': `https://satyadheesh.in/vaade/${canonicalId}?lang=hi`,
+        'x-default': `https://satyadheesh.in/vaade/${canonicalId}`,
+      },
     },
     openGraph: {
       title,

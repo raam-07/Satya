@@ -49,6 +49,11 @@ export async function generateMetadata({ params }: { params: { name: string } })
     description,
     alternates: {
       canonical: `https://satyadheesh.in/minister/${canonicalSlug}`,
+      languages: {
+        'en-IN': `https://satyadheesh.in/minister/${canonicalSlug}`,
+        'hi-IN': `https://satyadheesh.in/minister/${canonicalSlug}?lang=hi`,
+        'x-default': `https://satyadheesh.in/minister/${canonicalSlug}`,
+      },
     },
     openGraph: {
       title,

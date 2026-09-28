@@ -3,8 +3,9 @@ export type Language = 'en' | 'hi';
 export const LANG_COOKIE = 'satya_lang';
 export const DEFAULT_LANG: Language = 'en';
 
-export function getLanguage(cookieValue?: string | null): Language {
-  if (cookieValue === 'hi') return 'hi';
+export function getLanguage(cookieValue?: string | null, searchParamValue?: string | string[] | null): Language {
+  const p = Array.isArray(searchParamValue) ? searchParamValue[0] : searchParamValue;
+  if (p === 'hi' || cookieValue === 'hi') return 'hi';
   return 'en';
 }
 

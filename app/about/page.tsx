@@ -7,12 +7,79 @@ export const metadata: Metadata = {
   description: "SatyaDheesh is an independent, non-partisan civic intelligence platform tracking political accountability in India with evidence.",
   alternates: {
     canonical: 'https://satyadheesh.in/about',
-  }
+    languages: {
+      'en-IN': 'https://satyadheesh.in/about',
+      'hi-IN': 'https://satyadheesh.in/about?lang=hi',
+      'x-default': 'https://satyadheesh.in/about',
+    },
+  },
+}
+
+const aboutFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      "@id": "https://satyadheesh.in/about#about",
+      "url": "https://satyadheesh.in/about",
+      "name": "About SatyaDheesh — India's Ground Truth Record",
+      "inLanguage": ["en", "hi"],
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://satyadheesh.in/#website",
+        "name": "SatyaDheesh",
+        "url": "https://satyadheesh.in"
+      },
+      "description": "SatyaDheesh is an independent, 100% autonomous civic intelligence platform and promise tracker holding Indian leaders accountable with primary news evidence."
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://satyadheesh.in/about#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SatyaDheesh (also known as Satya, Satya Dheesh, SatyaDheesha, or सत्यधीश)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SatyaDheesh (सत्याधीश — Sanskrit/Hindi for 'lord of truth') is an independent, non-partisan civic intelligence platform tracking Indian political promises, netas, event timelines, and UPSC current affairs with sourced primary evidence."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does SatyaDheesh operate autonomously at zero infrastructure cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SatyaDheesh runs 100% autonomously around the clock using scheduled multi-shard serverless pipelines and high-efficiency local AI models (Gemma) to ingest, classify, analyze, and translate civic data without paid servers or operational overhead."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does SatyaDheesh evaluate political promises?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Promises made by Indian political leaders are cataloged and audited against verifiable outcomes. Verdicts are classified as Kept, Broken, Ongoing, or Void, strictly linked to verified publisher reports, parliamentary data, and government records."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the UPSC Current Affairs section on SatyaDheesh?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The UPSC section extracts high-yield facts for Prelims and structured answer dimensions for Mains mapped directly to the GS1, GS2, GS3, and GS4 syllabus from daily civic news."
+          }
+        }
+      ]
+    }
+  ]
 }
 
 export default function AboutPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutFaqJsonLd).replace(/</g, '\\u003c') }}
+      />
       {/* Masthead */}
       <div className="border-b-2 border-[var(--accent)] pb-6 mb-8 text-center">
         <div className="text-[10px] font-mono tracking-[0.3em] text-[var(--text3)] uppercase mb-4">Est. Nov 2025 · Vol. I</div>

@@ -18,8 +18,28 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://satyadheesh.in'),
-  title: 'SatyaDheesh — Track Every Political Promise in India',
+  title: {
+    default: 'SatyaDheesh — Track Every Political Promise in India',
+    template: '%s | SatyaDheesh',
+  },
   description: "They promised. Did they deliver? SatyaDheesh holds India's leaders to their word — sourced verdicts on every promise. The record they hoped you'd forget.",
+  keywords: [
+    'SatyaDheesh', 'Satya Dheesh', 'Satyadheesha', 'Satyadhish', 'सत्यधीश', 'सत्य धीश',
+    'Indian political promise tracker', 'neta accountability India', 'politician criminal records',
+    'UPSC current affairs notes', 'UPSC prelims pointers', 'UPSC mains questions',
+    'civic intelligence India', 'election promises verification', 'political event timelines'
+  ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       { url: '/favicons/satyadheesh-gavel-angled.svg', type: 'image/svg+xml' },
@@ -63,7 +83,7 @@ export const revalidate = false
 
 const orgJsonLd = {
   "@context": "https://schema.org",
-  "@type": "Organization",
+  "@type": "NewsMediaOrganization",
   "name": "SatyaDheesh",
   // Brand spelling/script variants people actually type — the legitimate,
   // Google-documented way to claim them (never keyword-stuff pages).
@@ -76,8 +96,23 @@ const orgJsonLd = {
     "सत्य धीश"
   ],
   "url": "https://satyadheesh.in",
-  "logo": "https://satyadheesh.in/favicons/gavel-180.png",
-  "description": "Independent tracker of Indian political promises, event timelines and accountability, built from verified news sources."
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://satyadheesh.in/favicons/gavel-180.png",
+    "width": 180,
+    "height": 180
+  },
+  "description": "Independent, 100% autonomous civic intelligence platform and promise tracker holding Indian leaders accountable with primary news evidence.",
+  "slogan": "India's Ground Truth Record",
+  "foundingDate": "2025-11-01",
+  "knowsAbout": [
+    "Indian Politics",
+    "Political Promises",
+    "Elections in India",
+    "UPSC Current Affairs",
+    "Minister Performance Records",
+    "Event Timelines"
+  ]
 }
 
 const websiteJsonLd = {

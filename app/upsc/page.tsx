@@ -13,7 +13,27 @@ export const metadata: Metadata = {
   title: 'UPSC Current Affairs Today — GS-wise Notes, Prelims Pointers & Mains Questions | SatyaDheesh',
   description:
     'Daily UPSC current affairs mapped to the GS syllabus: why in news, facts for Prelims, and Mains questions with answer dimensions. Filter by GS1, GS2, GS3, GS4.',
-  alternates: { canonical: 'https://satyadheesh.in/upsc' },
+  alternates: {
+    canonical: 'https://satyadheesh.in/upsc',
+    languages: {
+      'en-IN': 'https://satyadheesh.in/upsc',
+      'hi-IN': 'https://satyadheesh.in/upsc?lang=hi',
+      'x-default': 'https://satyadheesh.in/upsc',
+    },
+  },
+  openGraph: {
+    title: 'UPSC Current Affairs Today — GS1-4 Notes & Prelims/Mains Questions | SatyaDheesh',
+    description: 'Autonomous daily UPSC current affairs aligned with the official syllabus. High-yield Prelims pointers and Mains answer dimensions.',
+    url: 'https://satyadheesh.in/upsc',
+    siteName: 'SatyaDheesh',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'UPSC Current Affairs Today — GS1-4 Notes & Prelims/Mains Questions | SatyaDheesh',
+    description: 'Autonomous daily UPSC current affairs aligned with the official syllabus. High-yield Prelims pointers and Mains answer dimensions.',
+  },
 }
 
 const PAPER_HINT: Record<string, string> = {

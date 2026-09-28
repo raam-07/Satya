@@ -24,6 +24,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     alternates: {
       canonical: `https://satyadheesh.in/event/${params.slug}`,
+      languages: {
+        'en-IN': `https://satyadheesh.in/event/${params.slug}`,
+        'hi-IN': `https://satyadheesh.in/event/${params.slug}?lang=hi`,
+        'x-default': `https://satyadheesh.in/event/${params.slug}`,
+      },
     },
     openGraph: {
       title: `${title} — Full Timeline | SatyaDheesh`,

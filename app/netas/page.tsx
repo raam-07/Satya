@@ -9,7 +9,25 @@ export const metadata: Metadata = {
   description: "Explore profiles of Indian cabinet ministers, opposition leaders, and chief ministers. Track criminal cases, controversies, and promise records.",
   alternates: {
     canonical: 'https://satyadheesh.in/netas',
-  }
+    languages: {
+      'en-IN': 'https://satyadheesh.in/netas',
+      'hi-IN': 'https://satyadheesh.in/netas?lang=hi',
+      'x-default': 'https://satyadheesh.in/netas',
+    },
+  },
+  openGraph: {
+    title: "Indian Political Leaders & Neta Profiles | SatyaDheesh",
+    description: "Track criminal cases, controversies, and promise records of Indian cabinet ministers, opposition leaders, and chief ministers.",
+    url: 'https://satyadheesh.in/netas',
+    siteName: 'SatyaDheesh',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Indian Political Leaders & Neta Profiles | SatyaDheesh",
+    description: "Track criminal cases, controversies, and promise records of Indian cabinet ministers, opposition leaders, and chief ministers.",
+  },
 }
 
 const PARTY_IDS = ['bjp', 'inc', 'aap', 'tmc', 'dmk', 'sp']
