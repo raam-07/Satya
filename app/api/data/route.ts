@@ -67,6 +67,8 @@ export async function GET(req: NextRequest) {
         const id = parseInt(param, 10);
         if (isNaN(id)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });
         return NextResponse.json(await serverApi.articleContent(id));
+      case 'publicLedgerStats':
+        return NextResponse.json(await serverApi.publicLedgerStats());
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
     }

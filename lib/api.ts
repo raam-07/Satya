@@ -255,6 +255,16 @@ export interface Manifest {
   stats?: Record<string, number>
 }
 
+// ── Public Ledger Vitality Stats ─────────────────────────────────────────────
+export interface PublicLedgerStats {
+  articles_classified: number
+  active_timelines: number
+  upsc_notes: number
+  hindi_records: number
+  promises_tracked: number
+  last_updated: string
+}
+
 // ── Client Fetch Helper ──────────────────────────────────────────────────────
 async function fetchClientJSON<T>(type: string, param: string = '', forceRefresh: boolean = false, extra: Record<string, string> = {}): Promise<T | null> {
   try {
@@ -417,5 +427,13 @@ export const api = {
       return serverApi.articleEvent(articleId);
     }
     return fetchClientJSON<EventTimeline>('articleEvent', String(articleId));
+  },
+
+  async publicLedgerStats(): Promise<PublicLedgerStats | null> {
+    if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
+      const { serverApi } = await import('./api.server');
+      return serverApi.publicLedgerStats();
+    }
+    return fetchClientJSON<PublicLedgerStats>('publicLedgerStats');
   }
 };

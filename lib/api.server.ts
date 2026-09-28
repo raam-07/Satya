@@ -3,6 +3,7 @@ import path from 'path';
 import zlib from 'zlib';
 import { db } from './db';
 import { transDb } from './db.translation';
+import { upscDb } from './db.upsc';
 import { slugify, partySlugify } from './utils';
 import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
 import type {
@@ -15,7 +16,8 @@ import type {
   PromisesSummary,
   Manifest,
   EventSummary,
-  EventTimeline
+  EventTimeline,
+  PublicLedgerStats
 } from './api';
 
 // --- Static Registries Loaders (Self-Healing Paths) ---
@@ -1375,5 +1377,76 @@ export const serverApi = {
 
       return art;
     });
+  },
+
+  async publicLedgerStats(): Promise<PublicLedgerStats> {
+    return cached('publicLedgerStats', ['articles', 'events', 'promises', 'upsc'], async () => {
+      // 1. Articles count (Primary DB)
+      let articles_classified = 40496;
+      try {
+        const res = await db.execute("SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed')");
+        articles_classified = Number(res.rows[0]?.c || articles_classified);
+      } catch (e) {
+        console.error('Error fetching articles count for public ledger:', e);
+      }
+
+      // 2. Events count (Primary DB)
+      let active_timelines = 2009;
+      try {
+        const res = await db.execute("SELECT COUNT(*) as c FROM events WHERE title IS NOT NULL AND slug IS NOT NULL AND slug != ''");
+        active_timelines = Number(res.rows[0]?.c || active_timelines);
+      } catch (e) {
+        console.error('Error fetching events count for public ledger:', e);
+      }
+
+      // 3. UPSC Notes count (UPSC DB)
+      let upsc_notes = 692;
+      try {
+        if (upscDb) {
+          const res = await upscDb.execute("SELECT COUNT(*) as c FROM upsc_articles");
+          upsc_notes = Number(res.rows[0]?.c || upsc_notes);
+        }
+      } catch (e) {
+        console.error('Error fetching upsc count for public ledger:', e);
+      }
+
+      // 4. Hindi records (Translation DB: articles + milestones)
+      let hindi_records = 2209;
+      try {
+        if (transDb) {
+          const [tRes, mRes] = await Promise.all([
+            transDb.execute("SELECT COUNT(*) as c FROM translations"),
+            transDb.execute("SELECT COUNT(*) as c FROM event_milestone_translations")
+          ]);
+          const tCount = Number(tRes.rows[0]?.c || 0);
+          const mCount = Number(mRes.rows[0]?.c || 0);
+          if (tCount + mCount > 0) {
+            hindi_records = tCount + mCount;
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching translation count for public ledger:', e);
+      }
+
+      // 5. Promises count (Static registry / GitHub)
+      let promises_tracked = 123;
+      try {
+        const registry = await loadPromisesRegistry();
+        if (registry?.promises) {
+          promises_tracked = registry.promises.length;
+        }
+      } catch (e) {
+        console.error('Error fetching promises count for public ledger:', e);
+      }
+
+      return {
+        articles_classified,
+        active_timelines,
+        upsc_notes,
+        hindi_records,
+        promises_tracked,
+        last_updated: new Date().toISOString()
+      };
+    }, { revalidate: 43200 });
   }
 };

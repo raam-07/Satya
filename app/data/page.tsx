@@ -72,12 +72,35 @@ export default async function DataPage({ searchParams }: { searchParams?: { lang
             {t('ai_pipeline_note', lang)}
           </p>
         </div>
-        <div className="flex-shrink-0 flex items-center gap-3">
+        <div className="flex-shrink-0 flex items-center gap-2.5 flex-wrap">
+          <Link
+            href={`/about${lang === 'hi' ? '?lang=hi' : ''}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--text1)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface-alt)] shadow-xs"
+            style={{ borderColor: 'var(--border-md)' }}
+            title={lang === 'hi' ? 'सत्याधीश घोषणापत्र और मिशन पढ़ें' : 'Read the SatyaDheesh Charter & Public Ledger'}
+          >
+            <span className="text-[12px]">📜</span>
+            <span>{lang === 'hi' ? 'सत्याधीश के बारे में' : 'About SatyaDheesh'}</span>
+          </Link>
           <LanguageSwitch currentLang={lang} />
           {/* Self-gates on ?admin=true (client-side) and prompts for the secret,
               so nothing sensitive ships in the page HTML. */}
           <HardRefreshButton />
         </div>
+      </div>
+
+      {/* Editorial bridge to Public Ledger & Charter */}
+      <div className="px-4 md:px-6 py-2.5 bg-amber-50/50 dark:bg-amber-950/20 border-b flex items-center justify-between flex-wrap gap-2 text-[12px]" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="flex items-center gap-2 text-[var(--text2)]">
+          <span className="font-mono font-bold text-[var(--accent)] text-[10px] uppercase tracking-wider">Public Charter</span>
+          <span>{lang === 'hi' ? 'सत्याधीश बिना किसी कॉर्पोरेट प्रभाव के भारतीय राजनीति का ऑडिट कैसे करता है?' : 'How does SatyaDheesh audit Indian politics without corporate bias?'}</span>
+        </div>
+        <Link
+          href={`/about${lang === 'hi' ? '?lang=hi' : ''}`}
+          className="font-mono text-[11px] font-bold text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+        >
+          {lang === 'hi' ? 'सत्याधीश का घोषणापत्र पढ़ें →' : 'Read Charter & Public Ledger →'}
+        </Link>
       </div>
 
       {/* Key metrics */}
