@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 
 const DISMISS_KEY = 'satya_install_dismissed';
-const COOLDOWN = 7 * 24 * 60 * 60 * 1000; // 7 days
+const INSTALLED_KEY = 'satya_already_installed';
+const COOLDOWN = 60 * 24 * 60 * 60 * 1000; // 60 days cooldown
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -20,17 +21,31 @@ export function InstallBanner() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // 1. Check if already installed / standalone
+    // 1. Check if already running inside the installed standalone PWA app
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true ||
       document.referrer.includes('android-app://');
 
-    if (isStandalone) return;
+    if (isStandalone) {
+      // User is actively running the standalone app: record this permanently
+      // so even if they open links in regular Safari/Chrome, the prompt never shows.
+      try {
+        localStorage.setItem(INSTALLED_KEY, 'true');
+        localStorage.setItem(DISMISS_KEY, 'installed');
+      } catch {}
+      return;
+    }
 
-    // 2. Check 7-day cooldown
+    // 2. Check if user already installed or permanently dismissed
     try {
+      if (localStorage.getItem(INSTALLED_KEY) === 'true') {
+        return;
+      }
       const dismissed = localStorage.getItem(DISMISS_KEY);
+      if (dismissed === 'installed') {
+        return;
+      }
       if (dismissed) {
         const when = parseInt(dismissed, 10);
         if (Number.isFinite(when) && Date.now() - when < COOLDOWN) {
@@ -54,7 +69,7 @@ export function InstallBanner() {
 
     // 5. Let user read the page before prompting (8 seconds delay)
     const timer = setTimeout(() => {
-      // Don't show if user is actively in another modal/splash
+      // Don't show if user is in splash screen
       if (sessionStorage.getItem('satya_splash_seen') !== 'true') return;
       setVisible(true);
       requestAnimationFrame(() => setEntered(true));
@@ -66,12 +81,17 @@ export function InstallBanner() {
     };
   }, []);
 
-  const handleDismiss = () => {
+  const handleDismiss = (permanent: boolean = false) => {
     try {
-      localStorage.setItem(DISMISS_KEY, Date.now().toString());
+      if (permanent) {
+        localStorage.setItem(INSTALLED_KEY, 'true');
+        localStorage.setItem(DISMISS_KEY, 'installed');
+      } else {
+        localStorage.setItem(DISMISS_KEY, Date.now().toString());
+      }
     } catch {}
     setEntered(false);
-    setTimeout(() => setVisible(false), 220);
+    setTimeout(() => setVisible(false), 240);
   };
 
   const handleInstallClick = async () => {
@@ -80,14 +100,19 @@ export function InstallBanner() {
         await deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
         if (choice.outcome === 'accepted') {
-          handleDismiss();
+          handleDismiss(true);
         }
         setDeferredPrompt(null);
       } catch (err) {
         console.error('Install prompt error:', err);
       }
     } else if (isIos) {
-      setShowIosGuide(true);
+      if (showIosGuide) {
+        // User saw the guide and tapped "Got It" -> close and permanently save
+        handleDismiss(true);
+      } else {
+        setShowIosGuide(true);
+      }
     }
   };
 
@@ -120,9 +145,10 @@ export function InstallBanner() {
             </span>
           </div>
           <button
-            onClick={handleDismiss}
+            onClick={() => handleDismiss(true)}
             aria-label="Dismiss install prompt"
             className="-mr-1 p-1 text-[var(--text3)] hover:text-[var(--text1)] transition-colors"
+            title="Dismiss"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
@@ -195,12 +221,19 @@ export function InstallBanner() {
               className="flex-1 h-8 px-3 text-[11px] font-mono font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 shadow-xs"
               style={{ background: 'var(--accent)' }}
             >
-              <span>📲</span>
+              <span>{showIosGuide ? '✓' : '📲'}</span>
               <span>{isIos ? (showIosGuide ? 'Got It' : 'Add to Home Screen') : 'Install SatyaDheesh'}</span>
             </button>
             <button
-              onClick={handleDismiss}
-              className="h-8 px-3 text-[11px] font-mono uppercase tracking-wider text-[var(--text3)] hover:text-[var(--text1)] transition-colors"
+              onClick={() => handleDismiss(true)}
+              className="h-8 px-2 text-[10px] font-mono uppercase tracking-wider text-[var(--text3)] hover:text-[var(--accent)] transition-colors"
+              title="I already have SatyaDheesh on my home screen"
+            >
+              Already Added
+            </button>
+            <button
+              onClick={() => handleDismiss(false)}
+              className="h-8 px-2 text-[10px] font-mono uppercase tracking-wider text-[var(--text3)] hover:text-[var(--text1)] transition-colors"
             >
               Later
             </button>
