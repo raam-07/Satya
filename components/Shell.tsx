@@ -8,6 +8,7 @@ import { Toast } from './Toast'
 import { SplashScreen } from './SplashScreen'
 import { PullToRefresh } from './PullToRefresh'
 import { NotificationBanner } from './NotificationBanner'
+import { InstallBanner } from './InstallBanner'
 import type { Article } from '@/lib/api'
 
 export function Shell({ children }: { children: React.ReactNode; lastUpdated?: string }) {
@@ -55,6 +56,7 @@ export function Shell({ children }: { children: React.ReactNode; lastUpdated?: s
       )}
       <ArticleModal article={modalArticle} onClose={closeModal} />
       <NotificationBanner />
+      <InstallBanner />
       <Toast />
     </>
   )
