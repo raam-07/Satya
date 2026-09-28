@@ -47,25 +47,22 @@ export function LanguageSwitch({ currentLang, compact = false }: LanguageSwitchP
       localStorage.setItem(LANG_COOKIE, newLang)
     } catch {}
 
-    // 3. Keep URL searchParam synchronized if user navigates with query
+    // 3. Keep URL searchParam synchronized and perform a hard browser reload
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href)
+      const currentUrlStr = window.location.href
       if (newLang === 'hi') {
         url.searchParams.set('lang', 'hi')
       } else {
         url.searchParams.delete('lang')
       }
-      window.history.replaceState({}, '', url.toString())
+      const newUrlStr = url.toString()
+      if (newUrlStr !== currentUrlStr) {
+        window.location.href = newUrlStr
+      } else {
+        window.location.reload()
+      }
     }
-
-    // 4. Show feedback toast
-    const msg = newLang === 'hi' ? t('switched_to_hi', 'hi') : t('switched_to_en', 'en')
-    showToast(msg)
-
-    // 5. Trigger Next.js router refresh to reload Server Component data
-    startTransition(() => {
-      router.refresh()
-    })
   }
 
   if (compact) {
