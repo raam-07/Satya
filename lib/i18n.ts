@@ -5,7 +5,9 @@ export const DEFAULT_LANG: Language = 'en';
 
 export function getLanguage(cookieValue?: string | null, searchParamValue?: string | string[] | null): Language {
   const p = Array.isArray(searchParamValue) ? searchParamValue[0] : searchParamValue;
-  if (p === 'hi' || cookieValue === 'hi') return 'hi';
+  if (p === 'hi') return 'hi';
+  if (p === 'en') return 'en';
+  if (cookieValue === 'hi') return 'hi';
   return 'en';
 }
 

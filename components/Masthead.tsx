@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { BackButton } from './BackButton'
 import { NotificationBell } from './NotificationBell'
+import { LanguageSwitch } from './LanguageSwitch'
 
 const TAB_PATHS = ['/', '/netas', '/vaade', '/data']
 
@@ -61,15 +62,16 @@ export function Masthead() {
       <div className="mx-4 h-px" style={{ background: 'var(--border-md)' }} />
 
       {/* Status bar */}
-      <div className="flex items-center gap-2 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5">
         {isDetailPage ? (
-          <div className="flex-1"><BackButton /></div>
+          <div className="flex-1 min-w-0"><BackButton /></div>
         ) : (
-          <span className="text-[9.5px] font-mono text-[var(--text2)] flex-1 truncate">{today}</span>
+          <span className="text-[9.5px] font-mono text-[var(--text2)] flex-1 min-w-0 truncate">{today}</span>
         )}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <LanguageSwitch compact />
           <NotificationBell />
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 pl-0.5">
             <div className="w-[5px] h-[5px] rounded-full" style={{ background: 'var(--green)', boxShadow: '0 0 4px #1b7050' }} />
             <span className="text-[9px] font-mono font-semibold tracking-widest" style={{ color: 'var(--green)' }}>LIVE</span>
           </div>
