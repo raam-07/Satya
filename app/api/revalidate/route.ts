@@ -6,6 +6,10 @@ export const dynamic = 'force-dynamic';
 
 const COOLDOWN_MS = 120 * 60 * 1000; // 120 minutes
 
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
+
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get('secret');
