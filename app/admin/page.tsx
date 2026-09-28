@@ -12,11 +12,16 @@ async function forceRefresh() {
 }
 
 export default async function AdminPage() {
-  const todayStart = Math.floor(new Date(new Date().setUTCHours(0,0,0,0)).getTime() / 1000)
+  // IST Offset calculation: Use midnight IST
+  const now = new Date();
+  const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const istNow = new Date(utcNow + (330 * 60000));
+  istNow.setHours(0, 0, 0, 0);
+  const todayStart = Math.floor((istNow.getTime() - (330 * 60000)) / 1000);
 
   // 1. Classified Today
   const classifiedTodayRes = await db.execute({
-    sql: "SELECT COUNT(*) as c FROM articles WHERE status = 'classified' AND classified_at >= ?",
+    sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND classified_at >= ?",
     args: [todayStart]
   })
   const classifiedToday = classifiedTodayRes.rows[0]?.c || 0

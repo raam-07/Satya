@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     const trendsRes = await db.execute({
       sql: `
         SELECT 
-          date(scraped_at, 'unixepoch') as day,
+          date(scraped_at, 'unixepoch', '+5 hours', '+30 minutes') as day,
           COUNT(*) as scraped_count,
           SUM(CASE WHEN status IN ('classified', 'entity_processed', 'processed') THEN 1 ELSE 0 END) as classified_count,
           SUM(CASE WHEN civic_flag = 1 THEN 1 ELSE 0 END) as civic_count,
