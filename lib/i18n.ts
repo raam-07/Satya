@@ -24,8 +24,8 @@ export const DICTIONARY: Record<string, Record<Language, string>> = {
     hi: 'आंकड़ों में भारत — प्रामाणिक, व्यवस्थित, पारदर्शी।',
   },
   ai_pipeline_note: {
-    en: '⚙ Generated end-to-end by an AI pipeline; contested promise verdicts are checked by an editor.',
-    hi: '⚙ एआई पाइपलाइन द्वारा संचालित; विवादित वादों के फैसलों की जांच संपादक द्वारा की जाती है।',
+    en: '⚙ Generated end-to-end by an autonomous AI pipeline.',
+    hi: '⚙ स्वायत्त एआई पाइपलाइन द्वारा संचालित।',
   },
   language_label: {
     en: 'Language',
