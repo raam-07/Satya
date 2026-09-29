@@ -12,45 +12,81 @@ import { UpscNavChip } from '@/components/UpscNavChip'
 
 type SP = { paper?: string; subject?: string; exam?: string; page?: string; lang?: string }
 
+export const revalidate = false
+
 export async function generateMetadata({ searchParams }: { searchParams: SP }): Promise<Metadata> {
   const cookieStore = cookies()
   const lang: Language = getLanguage(cookieStore.get(LANG_COOKIE)?.value, searchParams?.lang)
   const isHi = lang === 'hi'
+
+  const paper = searchParams?.paper?.toUpperCase()
+  const exam = searchParams?.exam?.toLowerCase()
+
+  let pageTitle = isHi
+    ? 'यूपीएससी करेंट अफेयर्स — GS Notes, Prelims Pointers & Mains Questions | SatyaDheesh'
+    : 'UPSC Current Affairs Today — GS-wise Notes, Prelims Pointers & Mains Questions | SatyaDheesh'
+  let pageDesc = isHi
+    ? 'GS पाठ्यक्रम से जुड़े दैनिक यूपीएससी करेंट अफेयर्स: चर्चा में क्यों, Prelims के तथ्य और उत्तर आयामों के साथ Mains के प्रश्न।'
+    : 'Daily UPSC current affairs mapped to the GS syllabus: why in news, facts for Prelims, and Mains questions with answer dimensions. Filter by GS1, GS2, GS3, GS4.'
+
+  let queryParam = ''
+  if (paper && ['GS1', 'GS2', 'GS3', 'GS4'].includes(paper)) {
+    queryParam = `paper=${paper}`
+    const hint = PAPER_HINT[paper]
+    pageTitle = isHi
+      ? `UPSC ${paper} करेंट अफेयर्स — ${hint.hi} नोट्स | SatyaDheesh`
+      : `UPSC ${paper} Current Affairs Today — ${hint.en} Notes | SatyaDheesh`
+    pageDesc = isHi
+      ? `UPSC CSE ${paper} (${hint.hi}) पाठ्यक्रम से जुड़े ताज़ा करेंट अफेयर्स, Prelims तथ्य और Mains प्रश्न।`
+      : `Latest UPSC CSE ${paper} (${hint.en}) current affairs notes, high-yield Prelims pointers, and Mains answer dimensions.`
+  } else if (exam === 'prelims') {
+    queryParam = 'exam=prelims'
+    pageTitle = isHi
+      ? 'यूपीएससी प्रीलिम्स करेंट अफेयर्स तथ्य एवं पॉइंट्स | SatyaDheesh'
+      : 'UPSC Prelims Current Affairs Pointers & High-Yield Facts Today | SatyaDheesh'
+    pageDesc = isHi
+      ? 'यूपीएससी प्रीलिम्स परीक्षा के लिए महत्वपूर्ण दैनिक तथ्य, अधिनियम, योजनाएं, और पर्यावरण प्वाइंटर्स।'
+      : 'High-yield UPSC Prelims current affairs pointers: constitutional articles, bills, schemes, institutions, and environmental facts.'
+  } else if (exam === 'mains') {
+    queryParam = 'exam=mains'
+    pageTitle = isHi
+      ? 'यूपीएससी मेन्स प्रश्न एवं उत्तर आयाम विश्लेषण | SatyaDheesh'
+      : 'UPSC Mains Questions & Multi-Dimensional Analysis Today | SatyaDheesh'
+    pageDesc = isHi
+      ? 'दैनिक राष्ट्रीय घटनाक्रम पर आधारित यूपीएससी मेन्स मॉडल प्रश्न और बहुआयामी उत्तर संरचना।'
+      : 'Daily UPSC Mains practice questions with structured multi-dimensional answer frameworks and keywords.'
+  }
+
+  const langParam = isHi ? 'lang=hi' : ''
+  const qs = [queryParam, langParam].filter(Boolean).join('&')
+  const canonicalUrl = qs ? `https://satyadheesh.in/upsc?${qs}` : 'https://satyadheesh.in/upsc'
+
+  const enLangUrl = queryParam ? `https://satyadheesh.in/upsc?${queryParam}` : 'https://satyadheesh.in/upsc'
+  const hiLangUrl = queryParam ? `https://satyadheesh.in/upsc?${queryParam}&lang=hi` : 'https://satyadheesh.in/upsc?lang=hi'
+
   return {
-    title: isHi
-      ? 'यूपीएससी करेंट अफेयर्स — GS Notes, Prelims Pointers & Mains Questions | SatyaDheesh'
-      : 'UPSC Current Affairs Today — GS-wise Notes, Prelims Pointers & Mains Questions | SatyaDheesh',
-    description: isHi
-      ? 'GS पाठ्यक्रम से जुड़े दैनिक यूपीएससी करेंट अफेयर्स: चर्चा में क्यों, Prelims के तथ्य और उत्तर आयामों के साथ Mains के प्रश्न। फ़िल्टर करें GS1, GS2, GS3, GS4।'
-      : 'Daily UPSC current affairs mapped to the GS syllabus: why in news, facts for Prelims, and Mains questions with answer dimensions. Filter by GS1, GS2, GS3, GS4.',
+    title: pageTitle,
+    description: pageDesc,
     alternates: {
-      canonical: 'https://satyadheesh.in/upsc',
+      canonical: canonicalUrl,
       languages: {
-        'en-IN': 'https://satyadheesh.in/upsc',
-        'hi-IN': 'https://satyadheesh.in/upsc?lang=hi',
-        'x-default': 'https://satyadheesh.in/upsc',
+        'en-IN': enLangUrl,
+        'hi-IN': hiLangUrl,
+        'x-default': enLangUrl,
       },
     },
     openGraph: {
-      title: isHi
-        ? 'यूपीएससी करेंट अफेयर्स — GS Notes & Prelims/Mains Questions | SatyaDheesh'
-        : 'UPSC Current Affairs Today — GS1-4 Notes & Prelims/Mains Questions | SatyaDheesh',
-      description: isHi
-        ? 'आधिकारिक पाठ्यक्रम के अनुरूप स्वायत्त दैनिक यूपीएससी करेंट अफेयर्स। High-yield Prelims pointers एवं Mains answer dimensions।'
-        : 'Autonomous daily UPSC current affairs aligned with the official syllabus. High-yield Prelims pointers and Mains answer dimensions.',
-      url: 'https://satyadheesh.in/upsc',
+      title: pageTitle,
+      description: pageDesc,
+      url: canonicalUrl,
       siteName: 'SatyaDheesh',
       locale: isHi ? 'hi_IN' : 'en_IN',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: isHi
-        ? 'यूपीएससी करेंट अफेयर्स — GS Notes & Prelims/Mains Questions | SatyaDheesh'
-        : 'UPSC Current Affairs Today — GS1-4 Notes & Prelims/Mains Questions | SatyaDheesh',
-      description: isHi
-        ? 'आधिकारिक पाठ्यक्रम के अनुरूप स्वायत्त दैनिक यूपीएससी करेंट अफेयर्स। High-yield Prelims pointers एवं Mains answer dimensions।'
-        : 'Autonomous daily UPSC current affairs aligned with the official syllabus. High-yield Prelims pointers and Mains answer dimensions.',
+      title: pageTitle,
+      description: pageDesc,
     },
   }
 }

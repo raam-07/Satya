@@ -7,15 +7,19 @@ import type { Metadata } from 'next'
 // Title and description come from the root layout. The canonical lives here,
 // not in the layout, because a layout-level canonical would be inherited by
 // every page that does not set its own and point them all at the homepage.
-export const metadata: Metadata = {
-  alternates: {
-    canonical: 'https://satyadheesh.in',
-    languages: {
-      'en-IN': 'https://satyadheesh.in',
-      'hi-IN': 'https://satyadheesh.in?lang=hi',
-      'x-default': 'https://satyadheesh.in',
+export async function generateMetadata({ searchParams }: { searchParams?: { lang?: string } }): Promise<Metadata> {
+  const isHi = searchParams?.lang === 'hi'
+  const canonicalUrl = isHi ? 'https://satyadheesh.in?lang=hi' : 'https://satyadheesh.in'
+  return {
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        'en-IN': 'https://satyadheesh.in',
+        'hi-IN': 'https://satyadheesh.in?lang=hi',
+        'x-default': 'https://satyadheesh.in',
+      },
     },
-  },
+  }
 }
 
 export const revalidate = false

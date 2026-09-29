@@ -63,9 +63,10 @@ export const metadata: Metadata = {
     siteName: 'SatyaDheesh',
     images: [
       {
-        url: '/favicons/gavel-180.png',
-        width: 180,
-        height: 180,
+        url: 'https://satyadheesh.in/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'SatyaDheesh — Track Every Political Promise in India',
       }
     ],
     locale: 'en_IN',
@@ -75,7 +76,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'SatyaDheesh — Track Every Political Promise in India',
     description: "They promised. Did they deliver? SatyaDheesh holds India's leaders to their word — sourced verdicts on every promise. The record they hoped you'd forget.",
-    images: ['/favicons/gavel-180.png'],
+    images: ['https://satyadheesh.in/opengraph-image'],
   },
 }
 

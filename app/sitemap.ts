@@ -158,13 +158,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/netas?lang=hi`, lastModified: new Date('2026-06-18'), changeFrequency: 'weekly' as const, priority: 0.7 },
     { url: `${baseUrl}/vaade`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/vaade?lang=hi`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
-    { url: `${baseUrl}/promises`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
-    { url: `${baseUrl}/promises?lang=hi`, lastModified: latestPromiseDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/timelines`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/timelines?lang=hi`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
     { url: `${baseUrl}/upsc?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
-    // High-yield UPSC syllabus filter targets
+    // High-yield UPSC syllabus filter targets (with matching self-referencing canonicals and dynamic titles)
     { url: `${baseUrl}/upsc?paper=GS1`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc?paper=GS2`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc?paper=GS3`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },

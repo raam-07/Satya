@@ -24,10 +24,18 @@ function truncateAtWord(text: string, max: number): string {
   return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:\u2013\u2014-]+$/, '') + '\u2026'
 }
 
+const HINDI_VERDICT_LABEL: Record<string, string> = {
+  kept: 'पूरा हुआ',
+  broken: 'टूटा',
+  ongoing: 'प्रक्रिया में',
+  void: 'शून्य',
+}
+
 export const revalidate = false
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: { id: string }; searchParams?: { lang?: string } }): Promise<Metadata> {
   const promiseId = decodeURIComponent(params.id)
+  const isHi = searchParams?.lang === 'hi'
   const data = await api.promises()
   const allPromises: PoliticalPromise[] = [
     ...(data?.by_status?.broken  ?? []),
@@ -39,7 +47,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   if (!promise) {
     return {
-      title: 'Not Found | SatyaDheesh',
+      title: isHi ? 'वादा नहीं मिला | SatyaDheesh' : 'Not Found | SatyaDheesh',
       robots: {
         index: false,
       }
@@ -47,27 +55,36 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 
   const canonicalId = String(promise.id)
-  const verdict = VERDICT_LABEL[promise.status ?? ''] ?? 'Ongoing'
+  const verdict = isHi
+    ? (HINDI_VERDICT_LABEL[promise.status ?? ''] ?? 'प्रक्रिया में')
+    : (VERDICT_LABEL[promise.status ?? ''] ?? 'Ongoing')
 
   // Results show roughly 60 characters of a title. Spend them on what people
   // actually search for - the promise, who made it, and the verdict - so if
   // anything gets trimmed it is the brand suffix, not the words that matter.
-  // (This used to cut the promise to 22 characters and leave the verdict out.)
   const tail = ` — ${promise.person}: ${verdict}`
   const promiseBudget = Math.max(25, 60 - tail.length - 2)
   const title = `"${truncateAtWord(promise.promise ?? '', promiseBudget)}"${tail} | SatyaDheesh`
 
   // Lead with the verdict so it survives however long the promise is.
-  const descLead = `Verdict: ${verdict}. ${promise.person} promised `
-  const descTail = `. See the sourced evidence behind the verdict on SatyaDheesh.`
+  const descLead = isHi
+    ? `फैसला: ${verdict}। ${promise.person} ने वादा किया था: `
+    : `Verdict: ${verdict}. ${promise.person} promised `
+  const descTail = isHi
+    ? `। सत्याधीश पर इस फैसले के पीछे के साक्ष्य देखें।`
+    : `. See the sourced evidence behind the verdict on SatyaDheesh.`
   const descBudget = Math.max(40, 155 - descLead.length - descTail.length - 2)
   const description = `${descLead}"${truncateAtWord(promise.promise ?? '', descBudget)}"${descTail}`
+
+  const canonicalUrl = isHi
+    ? `https://satyadheesh.in/vaade/${canonicalId}?lang=hi`
+    : `https://satyadheesh.in/vaade/${canonicalId}`
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/vaade/${canonicalId}`,
+      canonical: canonicalUrl,
       languages: {
         'en-IN': `https://satyadheesh.in/vaade/${canonicalId}`,
         'hi-IN': `https://satyadheesh.in/vaade/${canonicalId}?lang=hi`,
@@ -77,7 +94,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/vaade/${canonicalId}`,
+      url: canonicalUrl,
       images: [
         {
           url: `https://satyadheesh.in/vaade/${canonicalId}/opengraph-image`,

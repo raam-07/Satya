@@ -27,11 +27,15 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     (isHi
       ? `${title}: ${epochToDate(event.first_seen)} से ${epochToDate(event.last_seen)} तक ट्रैक किए गए ${event.article_count} अपडेट।`
       : `${title}: ${event.article_count} updates tracked from ${epochToDate(event.first_seen)} to ${epochToDate(event.last_seen)}.`)
+  const canonicalUrl = isHi
+    ? `https://satyadheesh.in/event/${params.slug}?lang=hi`
+    : `https://satyadheesh.in/event/${params.slug}`
+
   return {
     title: `${title} — ${isHi ? 'पूरी टाइमलाइन' : 'Full Timeline'} | SatyaDheesh`,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/event/${params.slug}`,
+      canonical: canonicalUrl,
       languages: {
         'en-IN': `https://satyadheesh.in/event/${params.slug}`,
         'hi-IN': `https://satyadheesh.in/event/${params.slug}?lang=hi`,
@@ -41,7 +45,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     openGraph: {
       title: `${title} — ${isHi ? 'पूरी टाइमलाइन' : 'Full Timeline'} | SatyaDheesh`,
       description,
-      url: `https://satyadheesh.in/event/${params.slug}`,
+      url: canonicalUrl,
       siteName: 'SatyaDheesh',
       type: 'article',
       publishedTime: new Date(event.first_seen * 1000).toISOString(),

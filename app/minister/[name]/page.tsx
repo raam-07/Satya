@@ -9,11 +9,12 @@ import { notFound, permanentRedirect } from 'next/navigation'
 
 export const revalidate = false
 
-export async function generateMetadata({ params }: { params: { name: string } }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: { name: string }; searchParams?: { lang?: string } }): Promise<Metadata> {
+  const isHi = searchParams?.lang === 'hi'
   const minister = await api.minister(params.name).catch(() => null)
   if (!minister) {
     return {
-      title: 'Not Found | SatyaDheesh',
+      title: isHi ? 'नेता प्रोफ़ाइल नहीं मिली | SatyaDheesh' : 'Not Found | SatyaDheesh',
       robots: {
         index: false,
       }
@@ -34,21 +35,34 @@ export async function generateMetadata({ params }: { params: { name: string } })
   // never as accusations.
   const cases = minister.criminal_cases ?? 0
   const hasRecord = cases > 0 || (minister.controversies?.length ?? 0) > 0
-  const title = hasRecord
-    ? `${name} — promises, criminal cases & controversies | SatyaDheesh`
-    : `${name} — promises kept, broken & pending | SatyaDheesh`
-  const descParts = [
-    `Track the full public record of ${name} (${roleParty}) on SatyaDheesh: ${kept} ${kept === 1 ? 'promise' : 'promises'} kept, ${broken} broken, ${ongoing} pending`,
-  ]
-  if (cases > 0) descParts.push(`${cases} criminal case${cases > 1 ? 's' : ''} on record`)
-  if ((minister.controversies?.length ?? 0) > 0) descParts.push(`controversies and gaffes as reported in the news`)
+  const title = isHi
+    ? (hasRecord
+        ? `${name} — वादे, आपराधिक मामले और विवाद | SatyaDheesh`
+        : `${name} — वादे: पूरे, टूटे और लंबित | SatyaDheesh`)
+    : (hasRecord
+        ? `${name} — promises, criminal cases & controversies | SatyaDheesh`
+        : `${name} — promises kept, broken & pending | SatyaDheesh`)
+
+  const descParts = isHi
+    ? [
+        `सत्याधीश पर ${name} (${roleParty}) का सार्वजनिक रिकॉर्ड: ${kept} वादे पूरे, ${broken} टूटे, ${ongoing} लंबित`,
+      ]
+    : [
+        `Track the full public record of ${name} (${roleParty}) on SatyaDheesh: ${kept} ${kept === 1 ? 'promise' : 'promises'} kept, ${broken} broken, ${ongoing} pending`,
+      ]
+  if (cases > 0) descParts.push(isHi ? `${cases} दर्ज आपराधिक मामले` : `${cases} criminal case${cases > 1 ? 's' : ''} on record`)
+  if ((minister.controversies?.length ?? 0) > 0) descParts.push(isHi ? `समाचारों में दर्ज विवाद` : `controversies and gaffes as reported in the news`)
   const description = descParts.join(', ') + '.'
+
+  const canonicalUrl = isHi
+    ? `https://satyadheesh.in/minister/${canonicalSlug}?lang=hi`
+    : `https://satyadheesh.in/minister/${canonicalSlug}`
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://satyadheesh.in/minister/${canonicalSlug}`,
+      canonical: canonicalUrl,
       languages: {
         'en-IN': `https://satyadheesh.in/minister/${canonicalSlug}`,
         'hi-IN': `https://satyadheesh.in/minister/${canonicalSlug}?lang=hi`,
@@ -58,7 +72,7 @@ export async function generateMetadata({ params }: { params: { name: string } })
     openGraph: {
       title,
       description,
-      url: `https://satyadheesh.in/minister/${canonicalSlug}`,
+      url: canonicalUrl,
       type: 'profile',
       images: [
         {
