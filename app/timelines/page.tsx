@@ -63,7 +63,7 @@ export default async function TimelinesPage({ searchParams }: { searchParams?: {
         </p>
       </div>
 
-      <TimelinesClient events={events} currentLang={lang} />
+      <TimelinesClient key={lang} events={events} currentLang={lang} />
     </div>
   )
 }

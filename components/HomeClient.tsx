@@ -237,6 +237,8 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
         <CategoryTabs activeTab={activeTab} onChangeTab={handleTabChange} currentLang={currentLang} />
       </div>
 
+      <UpscStrip currentLang={currentLang} />
+
       {/* ── Single column layout (mobile-first, all screens) ── */}
       <div>
 
@@ -252,8 +254,6 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
             </span>
           )}
         </div>
-
-        {activeTab === 'all' && <UpscStrip />}
 
         {loading && articles.length === 0 ? (
           <div className="p-4 space-y-4">

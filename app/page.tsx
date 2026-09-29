@@ -39,6 +39,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { lang
 
   return (
     <HomeClient
+      key={lang}
       overview={overview}
       initialArticles={initialArticles}
       currentLang={lang}

@@ -4,6 +4,9 @@ import './globals.css'
 import { Shell } from '@/components/Shell'
 import { ManifestProvider } from '@/lib/ManifestContext'
 import { ToastProvider } from '@/lib/ToastContext'
+import { LanguageProvider } from '@/lib/LanguageContext'
+import { cookies } from 'next/headers'
+import { getLanguage, LANG_COOKIE } from '@/lib/i18n'
 
 import { JsonLd } from '@/components/JsonLd'
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister'
@@ -139,8 +142,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const gaIds = gaIdsString ? gaIdsString.split(',').map(id => id.trim()) : []
   const primaryId = gaIds[0]
 
+  const cookieStore = cookies()
+  const lang = getLanguage(cookieStore.get(LANG_COOKIE)?.value)
+
   return (
-    <html lang="en" style={{ backgroundColor: '#FAF8F5' }}>
+    <html lang={lang === 'hi' ? 'hi' : 'en'} style={{ backgroundColor: '#FAF8F5' }}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -180,7 +186,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ServiceWorkerRegister />
         <ManifestProvider>
           <ToastProvider>
-            <Shell>{children}</Shell>
+            <LanguageProvider initialLang={lang}>
+              <Shell initialLang={lang}>{children}</Shell>
+            </LanguageProvider>
           </ToastProvider>
         </ManifestProvider>
       </body>

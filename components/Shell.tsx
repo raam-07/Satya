@@ -6,12 +6,21 @@ import { SearchOverlay } from './SearchOverlay'
 import { ArticleModal } from './ArticleModal'
 import { Toast } from './Toast'
 import { SplashScreen } from './SplashScreen'
+import { LanguageTransitionOverlay } from './LanguageTransitionOverlay'
 import { PullToRefresh } from './PullToRefresh'
 import { NotificationBanner } from './NotificationBanner'
 import { InstallBanner } from './InstallBanner'
 import type { Article } from '@/lib/api'
+import type { Language } from '@/lib/i18n'
 
-export function Shell({ children }: { children: React.ReactNode; lastUpdated?: string }) {
+export function Shell({
+  children,
+  initialLang,
+}: {
+  children: React.ReactNode
+  lastUpdated?: string
+  initialLang?: Language
+}) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [modalArticle, setModalArticle] = useState<Article | null>(null)
 
@@ -31,6 +40,7 @@ export function Shell({ children }: { children: React.ReactNode; lastUpdated?: s
 
   return (
     <>
+      <LanguageTransitionOverlay />
       {showSplash && (
         <SplashScreen onComplete={() => setShowSplash(false)} />
       )}
@@ -38,7 +48,7 @@ export function Shell({ children }: { children: React.ReactNode; lastUpdated?: s
       <PullToRefresh />
 
       <div className="flex flex-col min-h-screen">
-        <Masthead />
+        <Masthead currentLang={initialLang} />
         <main className="flex-1 bg-[var(--bg)] pb-16">
           {children}
         </main>
@@ -61,3 +71,4 @@ export function Shell({ children }: { children: React.ReactNode; lastUpdated?: s
     </>
   )
 }
+
