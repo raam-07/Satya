@@ -405,28 +405,28 @@ export const api = {
     return fetchClientJSON<{ source?: string; articles?: Article[] }>('source', name);
   },
 
-  async eventsList(): Promise<{ events?: EventSummary[] } | null> {
+  async eventsList(lang?: string): Promise<{ events?: EventSummary[] } | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.eventsList();
+      return serverApi.eventsList(lang);
     }
-    return fetchClientJSON<{ events?: EventSummary[] }>('eventsList');
+    return fetchClientJSON<{ events?: EventSummary[] }>('eventsList', '', false, lang ? { lang } : {});
   },
 
-  async eventTimeline(slug: string): Promise<EventTimeline | null> {
+  async eventTimeline(slug: string, lang?: string): Promise<EventTimeline | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.eventTimeline(slug);
+      return serverApi.eventTimeline(slug, lang);
     }
-    return fetchClientJSON<EventTimeline>('eventTimeline', slug);
+    return fetchClientJSON<EventTimeline>('eventTimeline', slug, false, lang ? { lang } : {});
   },
 
-  async articleEvent(articleId: number): Promise<EventTimeline | null> {
+  async articleEvent(articleId: number, lang?: string): Promise<EventTimeline | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.articleEvent(articleId);
+      return serverApi.articleEvent(articleId, lang);
     }
-    return fetchClientJSON<EventTimeline>('articleEvent', String(articleId));
+    return fetchClientJSON<EventTimeline>('articleEvent', String(articleId), false, lang ? { lang } : {});
   },
 
   async publicLedgerStats(): Promise<PublicLedgerStats | null> {

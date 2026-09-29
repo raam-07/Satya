@@ -4,23 +4,31 @@ import { cleanTitle } from '@/lib/utils'
 import { epochToDate, eventDaySpan, entityKeyLabel } from '@/lib/eventUtils'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
+import { getLanguage, LANG_COOKIE, Language } from '@/lib/i18n'
 import type { Metadata } from 'next'
 
 export const revalidate = 259200 // 3 days
 
 interface Props {
   params: { slug: string }
+  searchParams?: { lang?: string }
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const event = await api.eventTimeline(params.slug)
-  if (!event) return { title: 'Timeline not found | SatyaDheesh' }
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const cookieStore = cookies()
+  const lang: Language = getLanguage(cookieStore.get(LANG_COOKIE)?.value, searchParams?.lang)
+  const isHi = lang === 'hi'
+  const event = await api.eventTimeline(params.slug, lang)
+  if (!event) return { title: isHi ? 'टाइमलाइन नहीं मिली | SatyaDheesh' : 'Timeline not found | SatyaDheesh' }
   const title = cleanTitle(event.title)
   const description =
     event.scope ||
-    `${title}: ${event.article_count} updates tracked from ${epochToDate(event.first_seen)} to ${epochToDate(event.last_seen)}.`
+    (isHi
+      ? `${title}: ${epochToDate(event.first_seen)} से ${epochToDate(event.last_seen)} तक ट्रैक किए गए ${event.article_count} अपडेट।`
+      : `${title}: ${event.article_count} updates tracked from ${epochToDate(event.first_seen)} to ${epochToDate(event.last_seen)}.`)
   return {
-    title: `${title} — Full Timeline | SatyaDheesh`,
+    title: `${title} — ${isHi ? 'पूरी टाइमलाइन' : 'Full Timeline'} | SatyaDheesh`,
     description,
     alternates: {
       canonical: `https://satyadheesh.in/event/${params.slug}`,
@@ -31,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: `${title} — Full Timeline | SatyaDheesh`,
+      title: `${title} — ${isHi ? 'पूरी टाइमलाइन' : 'Full Timeline'} | SatyaDheesh`,
       description,
       url: `https://satyadheesh.in/event/${params.slug}`,
       siteName: 'SatyaDheesh',
@@ -41,14 +49,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} — Full Timeline | SatyaDheesh`,
+      title: `${title} — ${isHi ? 'पूरी टाइमलाइन' : 'Full Timeline'} | SatyaDheesh`,
       description,
     },
   }
 }
 
-export default async function EventPage({ params }: Props) {
-  const event = await api.eventTimeline(params.slug)
+export default async function EventPage({ params, searchParams }: Props) {
+  const cookieStore = cookies()
+  const lang: Language = getLanguage(cookieStore.get(LANG_COOKIE)?.value, searchParams?.lang)
+  const isHi = lang === 'hi'
+  const event = await api.eventTimeline(params.slug, lang)
   if (!event) notFound()
 
   const ongoing = event.state === 'open'
@@ -88,17 +99,17 @@ export default async function EventPage({ params }: Props) {
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <div className="flex items-center gap-2 flex-wrap">
           <Link
-            href="/timelines"
+            href={isHi ? "/timelines?lang=hi" : "/timelines"}
             className="text-[10px] font-mono text-[var(--text3)] tracking-widest uppercase hover:text-[var(--accent)] transition-colors"
           >
-            Timelines
+            {isHi ? 'टाइमलाइन्स' : 'Timelines'}
           </Link>
           <span className="text-[10px] font-mono text-[var(--text3)]">/</span>
           <span
             className="text-[10px] font-mono tracking-widest uppercase"
             style={{ color: ongoing ? 'var(--green)' : 'var(--text3)' }}
           >
-            {ongoing ? '● Ongoing' : 'Concluded'}
+            {ongoing ? (isHi ? '● जारी' : '● Ongoing') : (isHi ? 'समाप्त' : 'Concluded')}
           </span>
         </div>
 
@@ -107,7 +118,9 @@ export default async function EventPage({ params }: Props) {
         </h1>
 
         <p className="text-[10px] font-mono text-[var(--text3)] tracking-wider mt-3">
-          <span className="font-bold" style={{ color: 'var(--accent)' }}>{event.article_count} UPDATES</span> · {days} DAY{days > 1 ? 'S' : ''} ·{' '}
+          <span className="font-bold" style={{ color: 'var(--accent)' }}>
+            {event.article_count} {isHi ? 'अपडेट' : 'UPDATES'}
+          </span> · {days} {isHi ? 'दिन' : (days > 1 ? 'DAYS' : 'DAY')} ·{' '}
           {epochToDate(event.first_seen).toUpperCase()} — {epochToDate(event.last_seen).toUpperCase()}
         </p>
 
@@ -136,7 +149,7 @@ export default async function EventPage({ params }: Props) {
             style={{ borderColor: 'var(--border-md)', background: 'rgba(191,74,7,0.03)', borderLeft: '3px solid var(--accent)' }}
           >
             <p className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase" style={{ color: 'var(--accent)' }}>
-              Latest · {epochToDate(latest.event_date)}
+              {isHi ? 'ताज़ा' : 'Latest'} · {epochToDate(latest.event_date)}
             </p>
             <p className="text-[13.5px] font-medium leading-relaxed mt-1 text-[var(--text1)]">
               {cleanTitle(latest.milestone)}
@@ -149,7 +162,7 @@ export default async function EventPage({ params }: Props) {
       {event.scope && (
         <div className="border-b px-4 md:px-6 py-3" style={{ borderColor: 'var(--border-md)' }}>
           <p className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase text-[var(--text3)] mb-1">
-            What this timeline covers
+            {isHi ? 'इस टाइमलाइन का दायरा' : 'What this timeline covers'}
           </p>
           <p className="text-[12px] text-[var(--text2)] leading-relaxed italic">{event.scope}</p>
         </div>
@@ -158,9 +171,9 @@ export default async function EventPage({ params }: Props) {
       {/* Timeline */}
       <div className="px-4 md:px-6 py-6">
         <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-5 text-[var(--text3)]">
-          The full story, from the beginning
+          {isHi ? 'शुरुआत से पूरी कहानी' : 'The full story, from the beginning'}
         </div>
-        <StoryTimeline milestones={event.milestones} storyMode ongoing={ongoing} />
+        <StoryTimeline milestones={event.milestones} storyMode ongoing={ongoing} lang={lang} />
       </div>
     </div>
   )

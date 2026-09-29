@@ -1,7 +1,9 @@
 import { unstable_cache } from 'next/cache'
 import { db } from './db'
 import { upscDb } from './db.upsc'
+import { transDb } from './db.translation'
 import { UPSC_SYLLABUS } from './upscSyllabus'
+import type { Language } from './i18n'
 
 export const UPSC_PAPERS = ['GS1', 'GS2', 'GS3', 'GS4'] as const
 export const PAGE_SIZE = 40
@@ -64,7 +66,7 @@ function where(f: UpscFilters) {
 }
 
 /** Attach titles/sources/events from the main DB and collapse items of the same story. */
-async function hydrate(rows: Record<string, unknown>[]): Promise<UpscItem[]> {
+async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): Promise<UpscItem[]> {
   if (!rows.length) return []
   const ids = rows.map(r => Number(r.article_id))
   const ph = ids.map(() => '?').join(',')
@@ -85,18 +87,83 @@ async function hydrate(rows: Record<string, unknown>[]): Promise<UpscItem[]> {
     ev?.rows.forEach(r => events.set(Number(r.id), { slug: String(r.slug), title: r.title ? String(r.title) : null }))
   }
 
+  // Load Hindi translations when requested
+  const titleHiMap = new Map<number, string>()
+  const upscTransMap = new Map<number, {
+    why_in_news_hi?: string
+    fact_box_hi?: string
+    prelims_pointers_hi?: UpscPointer[]
+    mains_question_hi?: string
+  }>()
+
+  if (lang === 'hi' && transDb) {
+    try {
+      const [tRes, uRes, evTransRes] = await Promise.all([
+        transDb.execute({
+          sql: `SELECT article_id, rephrased_title_hi FROM translations WHERE article_id IN (${ph})`,
+          args: ids,
+        }),
+        transDb.execute({
+          sql: `SELECT article_id, why_in_news_hi, fact_box_hi, prelims_pointers_hi, mains_question_hi FROM upsc_translations WHERE article_id IN (${ph})`,
+          args: ids,
+        }),
+        eventIds.length
+          ? transDb.execute({
+              sql: `SELECT event_id, title_hi FROM event_translations WHERE event_id IN (${eventIds.map(() => '?').join(',')})`,
+              args: eventIds,
+            })
+          : Promise.resolve({ rows: [] })
+      ])
+
+      tRes.rows.forEach(r => {
+        if (r.rephrased_title_hi) titleHiMap.set(Number(r.article_id), String(r.rephrased_title_hi))
+      })
+
+      uRes.rows.forEach(r => {
+        upscTransMap.set(Number(r.article_id), {
+          why_in_news_hi: r.why_in_news_hi ? String(r.why_in_news_hi) : undefined,
+          fact_box_hi: r.fact_box_hi ? String(r.fact_box_hi) : undefined,
+          prelims_pointers_hi: r.prelims_pointers_hi ? arr<UpscPointer>(r.prelims_pointers_hi) : undefined,
+          mains_question_hi: r.mains_question_hi ? String(r.mains_question_hi) : undefined,
+        })
+      })
+
+      evTransRes.rows.forEach(r => {
+        const ev = events.get(Number(r.event_id))
+        if (ev && r.title_hi) {
+          ev.title = String(r.title_hi)
+        }
+      })
+    } catch (e) {
+      console.error('[hydrate UPSC] Hindi translation lookup failed:', e)
+    }
+  }
+
   const out: UpscItem[] = []
   const seen = new Map<string, UpscItem>()
   for (const r of rows) {
-    const m = byId.get(Number(r.article_id))
+    const artId = Number(r.article_id)
+    const m = byId.get(artId)
     if (!m) continue
     // same story + same syllabus node = duplicate coverage; events are broad, so the node must match too
     const story = r.event_id != null ? `e${r.event_id}` : r.cluster_id ? `c${r.cluster_id}` : `a${r.article_id}`
     const key = `${story}:${r.syllabus_node}`
     const prev = seen.get(key)
     if (prev) { prev.related++; continue }
+
+    const uTrans = upscTransMap.get(artId)
+    const title = (lang === 'hi' && titleHiMap.get(artId)) || String(m.title ?? '')
+    const whyInNews = (lang === 'hi' && uTrans?.why_in_news_hi) || String(r.why_in_news ?? '')
+    const factBox = (lang === 'hi' && uTrans?.fact_box_hi) || String(r.fact_box ?? '')
+    const pointers = (lang === 'hi' && uTrans?.prelims_pointers_hi && uTrans.prelims_pointers_hi.length > 0)
+      ? uTrans.prelims_pointers_hi
+      : arr<UpscPointer>(r.prelims_pointers)
+    const mainsQuestion = (lang === 'hi' && uTrans?.mains_question_hi)
+      ? uTrans.mains_question_hi
+      : (r.mains_question ? String(r.mains_question) : null)
+
     const item: UpscItem = {
-      articleId: Number(r.article_id),
+      articleId: artId,
       publishedAt: Number(r.published_at),
       score: Number(r.upsc_score),
       examType: String(r.exam_type) as UpscItem['examType'],
@@ -104,13 +171,13 @@ async function hydrate(rows: Record<string, unknown>[]): Promise<UpscItem[]> {
       subject: String(r.subject),
       node: String(r.syllabus_node),
       secondary: arr(r.secondary),
-      whyInNews: String(r.why_in_news ?? ''),
-      factBox: String(r.fact_box ?? ''),
-      pointers: arr<UpscPointer>(r.prelims_pointers),
-      mainsQuestion: r.mains_question ? String(r.mains_question) : null,
+      whyInNews,
+      factBox,
+      pointers,
+      mainsQuestion,
       mainsDimensions: arr<string>(r.mains_dimensions),
       keywords: arr<string>(r.keywords),
-      title: String(m.title ?? ''),
+      title,
       source: m.source ? String(m.source) : null,
       sourceUrl: m.url ? String(m.url) : null,
       event: r.event_id != null ? events.get(Number(r.event_id)) ?? null : null,
@@ -135,7 +202,7 @@ async function safe<T>(fallback: T, fn: () => Promise<T>): Promise<T> {
 const COLS = `article_id, published_at, event_id, cluster_id, upsc_score, exam_type, gs_paper, subject,
   syllabus_node, secondary, why_in_news, fact_box, prelims_pointers, mains_question, mains_dimensions, keywords`
 
-export const getUpscFeed = (f: UpscFilters) =>
+export const getUpscFeed = (f: UpscFilters, lang: Language = 'en') =>
   unstable_cache(() => safe({ items: [] as UpscItem[], hasNext: false }, async () => {
     if (!upscDb) return { items: [] as UpscItem[], hasNext: false }
     const w = where(f)
@@ -144,11 +211,11 @@ export const getUpscFeed = (f: UpscFilters) =>
       args: [...w.args, PAGE_SIZE + 1, f.page * PAGE_SIZE],
     })
     const rows = res.rows as unknown as Record<string, unknown>[]
-    return { items: await hydrate(rows.slice(0, PAGE_SIZE)), hasNext: rows.length > PAGE_SIZE }
-  }), ['upsc-feed', JSON.stringify(f)], { revalidate: 300, tags: ['upsc'] })()
+    return { items: await hydrate(rows.slice(0, PAGE_SIZE), lang), hasNext: rows.length > PAGE_SIZE }
+  }), ['upsc-feed', JSON.stringify(f), lang], { revalidate: 300, tags: ['upsc'] })()
 
 /** Highest-scoring items of the last ~36h: the "if you read nothing else" list. */
-export const getUpscTopPicks = () =>
+export const getUpscTopPicks = (lang: Language = 'en') =>
   unstable_cache(() => safe([] as UpscItem[], async () => {
     if (!upscDb) return [] as UpscItem[]
     const since = Math.floor(Date.now() / 1000) - 36 * 3600
@@ -157,8 +224,8 @@ export const getUpscTopPicks = () =>
             ORDER BY upsc_score DESC, published_at DESC LIMIT 15`,
       args: [since],
     })
-    return (await hydrate(res.rows as unknown as Record<string, unknown>[])).slice(0, 5)
-  }), ['upsc-top'], { revalidate: 300, tags: ['upsc'] })()
+    return (await hydrate(res.rows as unknown as Record<string, unknown>[], lang)).slice(0, 5)
+  }), ['upsc-top', lang], { revalidate: 300, tags: ['upsc'] })()
 
 export const getUpscStats = () =>
   unstable_cache(() => safe({ today: 0, week: 0, papers: {} as Record<string, number> }, async () => {

@@ -56,13 +56,13 @@ export async function GET(req: NextRequest) {
         if (isNaN(artId)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });
         return NextResponse.json(await serverApi.article(artId, lang));
       case 'eventsList':
-        return NextResponse.json(await serverApi.eventsList());
+        return NextResponse.json(await serverApi.eventsList(lang));
       case 'eventTimeline':
-        return NextResponse.json(await serverApi.eventTimeline(param));
+        return NextResponse.json(await serverApi.eventTimeline(param, lang));
       case 'articleEvent':
         const aeId = parseInt(param, 10);
         if (isNaN(aeId)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });
-        return NextResponse.json(await serverApi.articleEvent(aeId));
+        return NextResponse.json(await serverApi.articleEvent(aeId, lang));
       case 'articleContent':
         const id = parseInt(param, 10);
         if (isNaN(id)) return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 });

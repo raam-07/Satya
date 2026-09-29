@@ -2,17 +2,18 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { EventSummary } from '@/lib/api'
+import type { Language } from '@/lib/i18n'
 import { cleanTitle } from '@/lib/utils'
 import { epochToMonYear, eventDaySpan, entityKeyLabel } from '@/lib/eventUtils'
 
 type Filter = 'all' | 'ongoing' | 'concluded' | 'most_updates' | 'longest'
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'ongoing', label: 'Ongoing' },
-  { id: 'concluded', label: 'Concluded' },
-  { id: 'most_updates', label: 'Most updates' },
-  { id: 'longest', label: 'Longest running' },
+const FILTERS: { id: Filter; label: string; labelHi: string }[] = [
+  { id: 'all', label: 'All', labelHi: 'सभी' },
+  { id: 'ongoing', label: 'Ongoing', labelHi: 'जारी' },
+  { id: 'concluded', label: 'Concluded', labelHi: 'समाप्त' },
+  { id: 'most_updates', label: 'Most updates', labelHi: 'सर्वाधिक अपडेट' },
+  { id: 'longest', label: 'Longest running', labelHi: 'सबसे लंबा' },
 ]
 
 // entity_keys mix parties, people, states and cities — these whitelists pick
@@ -74,7 +75,8 @@ function DotTrack({ ev }: { ev: EventSummary }) {
 
 const PAGE_SIZE = 30
 
-export function TimelinesClient({ events }: { events: EventSummary[] }) {
+export function TimelinesClient({ events, currentLang = 'en' }: { events: EventSummary[]; currentLang?: Language }) {
+  const isHi = currentLang === 'hi'
   const [filter, setFilter] = useState<Filter>('all')
   const [stateKey, setStateKey] = useState<string>('all')
   const [partyKey, setPartyKey] = useState<string>('all')
@@ -145,7 +147,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
       {noFiltersActive && topStories.length > 0 && (
         <div className="mb-6">
           <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)]">
-            Top stories right now
+            {isHi ? 'प्रमुख घटनाक्रम' : 'Top stories right now'}
           </div>
           <div className="space-y-3">
             {topStories.map((ev, i) => (
@@ -163,8 +165,10 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                     {cleanTitle(ev.title)}
                   </h3>
                   <p className="text-[10px] font-mono mt-1 text-[var(--text3)]">
-                    <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} UPDATES</span> · {epochToMonYear(ev.first_seen)}–{epochToMonYear(ev.last_seen)}
-                    {ev.state === 'open' && <span style={{ color: 'var(--green)' }}> · ● ONGOING</span>}
+                    <span className="font-bold" style={{ color: 'var(--accent)' }}>
+                      {ev.article_count} {isHi ? 'अपडेट' : 'UPDATES'}
+                    </span> · {epochToMonYear(ev.first_seen)}–{epochToMonYear(ev.last_seen)}
+                    {ev.state === 'open' && <span style={{ color: 'var(--green)' }}> · {isHi ? '● जारी' : '● ONGOING'}</span>}
                   </p>
                   {ev.latest_milestone && (
                     <p className="text-[12px] leading-relaxed mt-1 line-clamp-2 text-[var(--text2)]">
@@ -181,7 +185,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
       {noFiltersActive && developing.length > 0 && (
         <div className="mb-6">
           <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)]">
-            Developing this week
+            {isHi ? 'इस सप्ताह के घटनाक्रम' : 'Developing this week'}
           </div>
           <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
             {developing.map(ev => (
@@ -191,7 +195,9 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                 className="flex-shrink-0 w-[240px] bg-[var(--surface)] border rounded-sm p-3 transition-colors hover:border-[var(--accent)]"
                 style={{ borderColor: 'var(--border-md)' }}
               >
-                <p className="text-[9px] font-mono text-[var(--accent)]">{ev.article_count} UPDATES</p>
+                <p className="text-[9px] font-mono text-[var(--accent)]">
+                  {ev.article_count} {isHi ? 'अपडेट' : 'UPDATES'}
+                </p>
                 <h4 className="text-[13px] font-bold font-serif leading-snug mt-1 line-clamp-3 text-[var(--text1)]">
                   {cleanTitle(ev.title)}
                 </h4>
@@ -204,7 +210,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
       {noFiltersActive && sagas.length > 0 && (
         <div className="mb-6">
           <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)]">
-            Long-running sagas
+            {isHi ? 'दीर्घकालिक घटनाक्रम' : 'Long-running sagas'}
           </div>
           <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
             {sagas.map(ev => (
@@ -214,7 +220,9 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                 className="flex-shrink-0 w-[240px] bg-[var(--surface)] border rounded-sm p-3 transition-colors hover:border-[var(--accent)]"
                 style={{ borderColor: 'var(--border-md)' }}
               >
-                <p className="text-[9px] font-mono text-[var(--text3)]">{eventDaySpan(ev)} DAYS · <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} UPDATES</span></p>
+                <p className="text-[9px] font-mono text-[var(--text3)]">
+                  {eventDaySpan(ev)} {isHi ? 'दिन' : 'DAYS'} · <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} {isHi ? 'अपडेट' : 'UPDATES'}</span>
+                </p>
                 <h4 className="text-[13px] font-bold font-serif leading-snug mt-1 line-clamp-3 text-[var(--text1)]">
                   {cleanTitle(ev.title)}
                 </h4>
@@ -226,7 +234,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
 
       {/* ===== Browse all ===== */}
       <div className="text-[9px] font-mono font-bold tracking-[0.2em] uppercase mb-3 text-[var(--text3)] border-t pt-5" style={{ borderColor: 'var(--border-md)' }}>
-        Browse all timelines
+        {isHi ? 'सभी टाइमलाइन्स देखें' : 'Browse all timelines'}
       </div>
 
       {/* Filter chips */}
@@ -244,7 +252,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                   : { border: '1px solid var(--border-md)', color: 'var(--text2)' }
               }
             >
-              {f.label}
+              {isHi ? f.labelHi : f.label}
             </button>
           )
         })}
@@ -258,7 +266,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
           className="text-[11px] font-mono px-2 py-1.5 rounded-[3px] bg-[var(--surface)] cursor-pointer"
           style={{ border: '1px solid var(--border-md)', color: stateKey !== 'all' ? 'var(--accent)' : 'var(--text2)' }}
         >
-          <option value="all">All states</option>
+          <option value="all">{isHi ? 'सभी राज्य' : 'All states'}</option>
           {stateOptions.map(o => (
             <option key={o.key} value={o.key}>{o.label} ({o.count})</option>
           ))}
@@ -270,7 +278,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
           className="text-[11px] font-mono px-2 py-1.5 rounded-[3px] bg-[var(--surface)] cursor-pointer"
           style={{ border: '1px solid var(--border-md)', color: partyKey !== 'all' ? 'var(--accent)' : 'var(--text2)' }}
         >
-          <option value="all">All parties</option>
+          <option value="all">{isHi ? 'सभी दल' : 'All parties'}</option>
           {partyOptions.map(o => (
             <option key={o.key} value={o.key}>{o.label} ({o.count})</option>
           ))}
@@ -284,7 +292,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
             className="w-3.5 h-3.5 rounded-sm accent-[var(--accent)] cursor-pointer"
           />
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--text2)]">
-            {DEPTH_MIN}+ updates
+            {DEPTH_MIN}+ {isHi ? 'अपडेट' : 'updates'}
           </span>
         </label>
       </div>
@@ -292,14 +300,16 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
       {/* Event cards */}
       {shown.length === 0 && (
         <div className="py-8 text-center">
-          <p className="text-[13px] text-[var(--text3)] font-mono">No timelines match these filters.</p>
+          <p className="text-[13px] text-[var(--text3)] font-mono">
+            {isHi ? 'इन फ़िल्टरों से कोई टाइमलाइन मेल नहीं खाती।' : 'No timelines match these filters.'}
+          </p>
           {anyAdvanced && (
             <button
               onClick={() => { setStateKey('all'); setPartyKey('all'); setDeepOnly(false) }}
               className="mt-3 text-[11px] font-mono uppercase tracking-widest hover:underline"
               style={{ color: 'var(--accent)' }}
             >
-              Clear filters
+              {isHi ? 'फ़िल्टर हटाएं' : 'Clear filters'}
             </button>
           )}
         </div>
@@ -321,10 +331,14 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
                   className="text-[9px] font-mono tracking-wider"
                   style={{ color: ongoing ? 'var(--green)' : 'var(--text3)' }}
                 >
-                  {ongoing ? `● ONGOING · ${days} DAY${days > 1 ? 'S' : ''}` : `CONCLUDED · ${epochToMonYear(ev.first_seen)}–${epochToMonYear(ev.last_seen)}`}
+                  {ongoing
+                    ? (isHi ? `● जारी · ${days} दिन` : `● ONGOING · ${days} DAY${days > 1 ? 'S' : ''}`)
+                    : (isHi ? `समाप्त · ${epochToMonYear(ev.first_seen)}–${epochToMonYear(ev.last_seen)}` : `CONCLUDED · ${epochToMonYear(ev.first_seen)}–${epochToMonYear(ev.last_seen)}`)}
                 </span>
                 <span className="text-[9px] font-mono text-[var(--text3)] flex-shrink-0">
-                  <span className="font-bold" style={{ color: 'var(--accent)' }}>{ev.article_count} UPDATE{ev.article_count > 1 ? 'S' : ''}</span>
+                  <span className="font-bold" style={{ color: 'var(--accent)' }}>
+                    {ev.article_count} {isHi ? 'अपडेट' : `UPDATE${ev.article_count > 1 ? 'S' : ''}`}
+                  </span>
                 </span>
               </div>
 
@@ -334,7 +348,7 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
 
               {ev.latest_milestone && (
                 <p className="text-[12px] leading-relaxed mt-1 line-clamp-2 text-[var(--text2)]">
-                  <span className="text-[var(--text3)]">Latest:</span> {cleanTitle(ev.latest_milestone)}
+                  <span className="text-[var(--text3)]">{isHi ? 'ताज़ा:' : 'Latest:'}</span> {cleanTitle(ev.latest_milestone)}
                 </p>
               )}
 
@@ -352,7 +366,9 @@ export function TimelinesClient({ events }: { events: EventSummary[] }) {
             className="text-[11px] font-mono uppercase tracking-widest px-5 py-2.5 rounded-[3px] border transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
             style={{ borderColor: 'var(--border-md)', color: 'var(--text2)' }}
           >
-            Show {Math.min(PAGE_SIZE, shown.length - visibleCount)} more · {shown.length - visibleCount} remaining
+            {isHi
+              ? `और ${Math.min(PAGE_SIZE, shown.length - visibleCount)} दिखाएं · ${shown.length - visibleCount} शेष`
+              : `Show ${Math.min(PAGE_SIZE, shown.length - visibleCount)} more · ${shown.length - visibleCount} remaining`}
           </button>
         </div>
       )}

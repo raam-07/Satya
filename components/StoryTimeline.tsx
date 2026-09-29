@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { EventMilestone } from '@/lib/api'
+import type { Language } from '@/lib/i18n'
 import { cleanTitle } from '@/lib/utils'
 import { epochToDate } from '@/lib/eventUtils'
 
@@ -12,14 +13,15 @@ interface StoryTimelineProps {
   storyMode?: boolean
   /** Only meaningful with storyMode: whether the story is still open. */
   ongoing?: boolean
+  lang?: Language
 }
 
-function gapLabel(prevTs?: number, ts?: number): string | null {
+function gapLabel(prevTs?: number, ts?: number, isHi?: boolean): string | null {
   if (!prevTs || !ts) return null
   const days = Math.floor((ts - prevTs) / 86400)
   if (days < 14) return null
-  if (days < 60) return `${Math.round(days / 7)} weeks later`
-  return `${Math.round(days / 30)} months later`
+  if (days < 60) return isHi ? `${Math.round(days / 7)} सप्ताह बाद` : `${Math.round(days / 7)} weeks later`
+  return isHi ? `${Math.round(days / 30)} महीने बाद` : `${Math.round(days / 30)} months later`
 }
 
 function isSameDay(ts1?: number, ts2?: number): boolean {
@@ -31,7 +33,7 @@ function isSameDay(ts1?: number, ts2?: number): boolean {
          d1.getDate() === d2.getDate()
 }
 
-function DateBlock({ ts, accent }: { ts?: number; accent?: boolean }) {
+function DateBlock({ ts, accent, isHi }: { ts?: number; accent?: boolean; isHi?: boolean }) {
   if (!ts) return <div style={{ width: 34 }} />
   const d = new Date(ts * 1000)
   return (
@@ -40,13 +42,14 @@ function DateBlock({ ts, accent }: { ts?: number; accent?: boolean }) {
         {d.getDate()}
       </span>
       <span className="text-[8px] font-mono tracking-widest uppercase" style={{ color: 'var(--text3)' }}>
-        {d.toLocaleDateString('en-IN', { month: 'short' })}
+        {d.toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { month: 'short' })}
       </span>
     </div>
   )
 }
 
-export function StoryTimeline({ milestones, currentArticleId, linkArticles = true, storyMode = false, ongoing = false }: StoryTimelineProps) {
+export function StoryTimeline({ milestones, currentArticleId, linkArticles = true, storyMode = false, ongoing = false, lang = 'en' }: StoryTimelineProps) {
+  const isHi = lang === 'hi'
   if (!milestones.length) return null
 
   // Pre-process milestones with their original global index
@@ -93,14 +96,14 @@ export function StoryTimeline({ milestones, currentArticleId, linkArticles = tru
         const year = group.event_date ? new Date(group.event_date * 1000).getFullYear() : null
         const showYear = storyMode && year !== null && year !== lastYear && lastYear !== null
         if (year !== null) lastYear = year
-        const gap = storyMode && groupIdx > 0 ? gapLabel(groups[groupIdx - 1].event_date, group.event_date) : null
+        const gap = storyMode && groupIdx > 0 ? gapLabel(groups[groupIdx - 1].event_date, group.event_date, isHi) : null
 
         const row = (
           <div
             className={`flex gap-3 ${hasLatest ? 'rounded-md px-3 pt-3 -mx-3' : ''}`}
             style={hasLatest ? { background: 'rgba(191,74,7,0.06)' } : undefined}
           >
-            {storyMode && <DateBlock ts={group.event_date} accent={hasLatest} />}
+            {storyMode && <DateBlock ts={group.event_date} accent={hasLatest} isHi={isHi} />}
 
             {/* Rail */}
             <div className="flex flex-col items-center flex-shrink-0" style={{ width: 12 }}>
@@ -141,9 +144,9 @@ export function StoryTimeline({ milestones, currentArticleId, linkArticles = tru
                         className="text-[10px] font-mono tracking-wider flex items-center gap-1.5"
                         style={{ color: isCurrent || isLatest ? 'var(--accent)' : 'var(--text3)' }}
                       >
-                        {isFirst && storyMode && 'STORY BEGINS'}
-                        {isLatest && !isFirst && 'LATEST UPDATE'}
-                        {isCurrent && ' · THIS STORY'}
+                        {isFirst && storyMode && (isHi ? 'शुरुआत' : 'STORY BEGINS')}
+                        {isLatest && !isFirst && (isHi ? 'ताज़ा अपडेट' : 'LATEST UPDATE')}
+                        {isCurrent && (isHi ? ' · यह ख़बर' : ' · THIS STORY')}
                         {m.source && <span className="normal-case"> {storyMode && !isFirst && !isLatest ? '' : '— '}{m.source}</span>}
                       </p>
                       {linkArticles && !isCurrent ? (
@@ -219,7 +222,9 @@ export function StoryTimeline({ milestones, currentArticleId, linkArticles = tru
             )}
           </div>
           <p className="text-[10px] font-mono tracking-widest uppercase pb-2" style={{ color: ongoing ? 'var(--accent)' : 'var(--text3)' }}>
-            {ongoing ? 'Awaiting next development' : 'Story concluded'}
+            {ongoing
+              ? (isHi ? 'अगले घटनाक्रम की प्रतीक्षा' : 'Awaiting next development')
+              : (isHi ? 'घटनाक्रम समाप्त' : 'Story concluded')}
           </p>
         </div>
       )}

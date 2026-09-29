@@ -348,8 +348,8 @@ function mapEventRow(row: any): EventSummary {
 const EVENT_COLS = `e.id, e.title, e.slug, e.entity_keys, e.saga_id, e.first_seen, e.last_seen, e.article_count, e.state`;
 
 export const serverApi = {
-  async eventsList(): Promise<{ events: EventSummary[] } | null> {
-    return cached('eventsList', ['events'], async () => {
+  async eventsList(lang: string = 'en'): Promise<{ events: EventSummary[] } | null> {
+    return cached(`eventsList:${lang}`, ['events'], async () => {
       const run = (withScope: boolean) => db.execute({
         sql: `SELECT ${EVENT_COLS}${withScope ? ', e.scope' : ''},
                      (SELECT COALESCE(ea.milestone, a.rephrased_title, a.title)
@@ -370,7 +370,42 @@ export const serverApi = {
       } catch {
         res = await run(false);
       }
-      return { events: res.rows.map(mapEventRow) };
+      let events = res.rows.map(mapEventRow);
+
+      if (lang === 'hi' && transDb && events.length) {
+        try {
+          const eventIds = events.map(e => e.id);
+          const ph = eventIds.map(() => '?').join(',');
+          const [evTrans, msTrans] = await Promise.all([
+            transDb.execute({
+              sql: `SELECT event_id, title_hi FROM event_translations WHERE event_id IN (${ph})`,
+              args: eventIds,
+            }),
+            transDb.execute({
+              sql: `SELECT event_id, milestone_hi FROM event_milestone_translations WHERE event_id IN (${ph})`,
+              args: eventIds,
+            })
+          ]);
+          const evTitleMap = new Map<number, string>();
+          evTrans.rows.forEach(r => {
+            if (r.title_hi) evTitleMap.set(Number(r.event_id), String(r.title_hi));
+          });
+          const msMap = new Map<number, string>();
+          msTrans.rows.forEach(r => {
+            if (r.milestone_hi) msMap.set(Number(r.event_id), String(r.milestone_hi));
+          });
+
+          events = events.map(ev => ({
+            ...ev,
+            title: evTitleMap.get(ev.id) || ev.title,
+            latest_milestone: msMap.get(ev.id) || ev.latest_milestone,
+          }));
+        } catch (e) {
+          console.error('[eventsList] Hindi hydration failed:', e);
+        }
+      }
+
+      return { events };
     }, { revalidate: 259200 });
   },
 
@@ -392,11 +427,11 @@ export const serverApi = {
     }, { revalidate: 259200 });
   },
 
-  async eventTimeline(slug: string): Promise<EventTimeline | null> {
+  async eventTimeline(slug: string, lang: string = 'en'): Promise<EventTimeline | null> {
     let param = slug;
     try { param = decodeURIComponent(slug); } catch {}
     param = param.trim();
-    return cached(`eventTimeline:${param.toLowerCase()}`, ['events'], async () => {
+    return cached(`eventTimeline:${param.toLowerCase()}:${lang}`, ['events'], async () => {
       // Resolve by slug; fall back to numeric id (covers events without a slug)
       const isNumeric = /^\d+$/.test(param);
       const run = (withScope: boolean) => db.execute({
@@ -412,7 +447,7 @@ export const serverApi = {
         evRes = await run(false);
       }
       if (!evRes.rows.length) return null;
-      const event = mapEventRow(evRes.rows[0]);
+      let event = mapEventRow(evRes.rows[0]);
 
       const msRes = await db.execute({
         sql: `SELECT ea.article_id, ea.event_date,
@@ -426,21 +461,51 @@ export const serverApi = {
         args: [event.id]
       });
 
+      let milestones = msRes.rows.map(r => ({
+        article_id: Number(r.article_id),
+        event_date: Number(r.event_date || 0),
+        milestone: String(r.milestone || ''),
+        source: r.source_name ? String(r.source_name) : undefined,
+        category: r.category ? String(r.category) : undefined
+      }));
+
+      if (lang === 'hi' && transDb) {
+        try {
+          const [evTrans, msTrans] = await Promise.all([
+            transDb.execute({
+              sql: `SELECT title_hi FROM event_translations WHERE event_id = ?`,
+              args: [event.id],
+            }),
+            transDb.execute({
+              sql: `SELECT article_id, milestone_hi FROM event_milestone_translations WHERE event_id = ?`,
+              args: [event.id],
+            })
+          ]);
+          if (evTrans.rows[0]?.title_hi) {
+            event = { ...event, title: String(evTrans.rows[0].title_hi) };
+          }
+          const msMap = new Map<number, string>();
+          msTrans.rows.forEach(r => {
+            if (r.milestone_hi) msMap.set(Number(r.article_id), String(r.milestone_hi));
+          });
+          milestones = milestones.map(m => ({
+            ...m,
+            milestone: msMap.get(m.article_id) || m.milestone,
+          }));
+        } catch (e) {
+          console.error('[eventTimeline] Hindi hydration failed:', e);
+        }
+      }
+
       return {
         ...event,
-        milestones: msRes.rows.map(r => ({
-          article_id: Number(r.article_id),
-          event_date: Number(r.event_date || 0),
-          milestone: String(r.milestone || ''),
-          source: r.source_name ? String(r.source_name) : undefined,
-          category: r.category ? String(r.category) : undefined
-        }))
+        milestones
       };
     }, { revalidate: 259200 });
   },
 
-  async articleEvent(articleId: number): Promise<EventTimeline | null> {
-    return cached(`articleEvent:${articleId}`, ['events'], async () => {
+  async articleEvent(articleId: number, lang: string = 'en'): Promise<EventTimeline | null> {
+    return cached(`articleEvent:${articleId}:${lang}`, ['events'], async () => {
       const res = await db.execute({
         sql: `SELECT e.id, e.slug FROM event_articles ea
               JOIN events e ON e.id = ea.event_id
@@ -450,7 +515,7 @@ export const serverApi = {
       });
       if (!res.rows.length) return null;
       const ref = res.rows[0].slug ? String(res.rows[0].slug) : String(res.rows[0].id);
-      return serverApi.eventTimeline(ref);
+      return serverApi.eventTimeline(ref, lang);
     }, { revalidate: 259200 });
   },
 
