@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/lib/LanguageContext'
 import { SplashScreen } from './SplashScreen'
 
@@ -21,6 +21,8 @@ export function LanguageTransitionOverlay() {
     }
   }, [isTransitioning, targetLang])
 
+  const finish = useCallback(() => setActive(false), [])
+
   if (!active && !isTransitioning) return null
 
   return (
@@ -29,7 +31,7 @@ export function LanguageTransitionOverlay() {
       subtitle={persistedSubtitle || 'भाषा बदल रहे हैं · Switching language'}
       minDuration={1400}
       readyToExit={!isTransitioning}
-      onComplete={() => setActive(false)}
+      onComplete={finish}
     />
   )
 }

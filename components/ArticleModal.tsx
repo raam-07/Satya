@@ -10,6 +10,7 @@ import { EventStorySoFar } from './EventStorySoFar'
 import { SummaryMark } from './BrandMark'
 import { useToast } from '@/lib/ToastContext'
 import { UpscChip } from '@/components/UpscChip'
+import { lockScroll } from '@/lib/scrollLock'
 
 // Topic display names per spec
 const TOPIC_LABELS: Record<string, string> = {
@@ -59,9 +60,8 @@ export function ArticleModal({ article, onClose }: ArticleModalProps) {
   }
 
   useEffect(() => {
-    if (article) document.body.style.overflow = 'hidden'
-    else         document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
+    if (!article) return
+    return lockScroll()
   }, [article])
 
   // Close on the phone's back gesture / browser Back button: push a history

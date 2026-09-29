@@ -29,6 +29,7 @@ export function PullToRefresh() {
 
   useEffect(() => {
     let rafId: number | null = null
+    let latest = 0
 
     const onStart = (e: TouchEvent) => {
       if (window.scrollY <= 0 && !refreshingRef.current) {
@@ -51,9 +52,10 @@ export function PullToRefresh() {
       // Only initiate pull state if user moves past the drag slop threshold
       if (delta > DRAG_SLOP) {
         const pullDistance = Math.min(MAX_PULL, (delta - DRAG_SLOP) * 0.5)
+        latest = pullDistance            // always render the newest finger position
         if (rafId === null) {
           rafId = requestAnimationFrame(() => {
-            setPull(pullDistance)
+            setPull(latest)
             rafId = null
           })
         }
@@ -70,7 +72,8 @@ export function PullToRefresh() {
       }
       if (!pulling.current) return
       pulling.current = false
-      const currentPull = pullRef.current
+      const currentPull = Math.max(pullRef.current, latest)   // include a frame cancelled above
+      latest = 0
       if (currentPull >= THRESHOLD && !refreshingRef.current) {
         setRefreshing(true)
         setPull(55)

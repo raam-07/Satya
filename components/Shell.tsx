@@ -40,6 +40,7 @@ export function Shell({
     }
   }, [initialLang])
 
+  const hideSplash  = useCallback(() => setShowSplash(false), [])
   const openSearch  = useCallback(() => setSearchOpen(true), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   const openModal   = useCallback((a: Article) => setModalArticle(a), [])
@@ -49,7 +50,7 @@ export function Shell({
     <>
       <LanguageTransitionOverlay />
       {showSplash && (
-        <SplashScreen onComplete={() => setShowSplash(false)} />
+        <SplashScreen onComplete={hideSplash} />
       )}
 
       <PullToRefresh />

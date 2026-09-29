@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { lockScroll } from '@/lib/scrollLock'
 
 interface SplashScreenProps {
   onExitStart?: () => void
@@ -22,58 +23,52 @@ export function SplashScreen({
   const [safetyForceExit, setSafetyForceExit] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
+  // Callbacks via refs: parents pass inline functions, and having them in effect deps
+  // restarted the timers (and re-locked scrolling) on every parent re-render.
+  const onCompleteRef = useRef(onComplete)
+  const onExitStartRef = useRef(onExitStart)
+  onCompleteRef.current = onComplete
+  onExitStartRef.current = onExitStart
+  const unlockRef = useRef<() => void>(() => {})
+
+  // Mount: skip if already seen this session; otherwise lock scroll and start the timers once.
   useEffect(() => {
-    if (!forceShow) {
-      // Check if user has already seen the splash screen in this session
-      const hasSeen = sessionStorage.getItem('satya_splash_seen')
-      if (hasSeen === 'true') {
-        onComplete()
-        return
-      }
+    if (!forceShow && sessionStorage.getItem('satya_splash_seen') === 'true') {
+      onCompleteRef.current()
+      return
     }
-
-    // Disable body scroll when splash screen is active
-    document.body.style.overflow = 'hidden'
-
-    const exitDuration = forceShow ? minDuration : 2800
-
-    // Phase 1: Wait for animation sequence minimum time
-    const exitTimer = setTimeout(() => {
-      setMinTimeElapsed(true)
-    }, exitDuration)
-
-    // Failsafe timeout: force exit after 4000ms if server hangs
-    const failsafeTimer = setTimeout(() => {
-      setSafetyForceExit(true)
-    }, forceShow ? 4000 : 3500)
-
+    const release = lockScroll()
+    const exitTimer = setTimeout(() => setMinTimeElapsed(true), forceShow ? minDuration : 2800)
+    // Failsafe: never keep the splash up longer than this, whatever readyToExit says
+    const failsafeTimer = setTimeout(() => setSafetyForceExit(true), forceShow ? 4000 : 3500)
+    unlockRef.current = release
     return () => {
       clearTimeout(exitTimer)
       clearTimeout(failsafeTimer)
-      document.body.style.overflow = ''
+      release()
     }
-  }, [onComplete, forceShow, minDuration])
+  }, [forceShow, minDuration])
 
-  // Trigger exit when BOTH the minimum duration has elapsed AND readyToExit is true
+
+  // Start the exit once the minimum time has passed AND the page is ready (or the failsafe fired).
   useEffect(() => {
     if (isExiting) return
-    const canExit = safetyForceExit || (minTimeElapsed && readyToExit)
-    if (!canExit) return
-
+    if (!(safetyForceExit || (minTimeElapsed && readyToExit))) return
     setIsExiting(true)
-    document.body.style.overflow = ''
-    if (onExitStart) onExitStart()
+    unlockRef.current()          // let the page scroll while the splash fades out
+    onExitStartRef.current?.()
+  }, [minTimeElapsed, readyToExit, safetyForceExit, isExiting])
 
-    // Phase 2: Wait for CSS fade-out transition to complete (600ms)
+  // Finish after the fade-out. Its own effect, keyed only on isExiting, so the re-render
+  // caused by setIsExiting(true) can't cancel it (that bug left the splash mounted forever).
+  useEffect(() => {
+    if (!isExiting) return
     const completeTimer = setTimeout(() => {
-      if (!forceShow) {
-        sessionStorage.setItem('satya_splash_seen', 'true')
-      }
-      onComplete()
+      if (!forceShow) sessionStorage.setItem('satya_splash_seen', 'true')
+      onCompleteRef.current()
     }, 600)
-
     return () => clearTimeout(completeTimer)
-  }, [minTimeElapsed, readyToExit, safetyForceExit, isExiting, forceShow, onExitStart, onComplete])
+  }, [isExiting, forceShow])
 
   return (
     <div

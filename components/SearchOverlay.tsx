@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { api, type Article } from '@/lib/api'
 import { cleanTitle, formatDate, categoryLabel, hasImage } from '@/lib/utils'
 import { PBadge, SentimentDot } from './SrcTag'
+import { lockScroll } from '@/lib/scrollLock'
 
 interface SearchOverlayProps {
   onClose: () => void
@@ -20,9 +21,9 @@ export function SearchOverlay({ onClose, onArticleClick }: SearchOverlayProps) {
 
   // Lock scroll + focus input
   useEffect(() => {
-    document.body.style.overflow = 'hidden'
+    const release = lockScroll()
     inputRef.current?.focus()
-    return () => { document.body.style.overflow = '' }
+    return release
   }, [])
 
   // Escape closes

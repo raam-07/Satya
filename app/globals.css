@@ -76,8 +76,11 @@ a { color: inherit; text-decoration: none; }
 
 /* --- App-feel touch polish (zero-delay taps, native 120Hz momentum scrolling) --- */
 html {
+  /* The app has its own pull-to-refresh (PullToRefresh.tsx). Without this, the browser's
+     native pull-to-refresh / bounce runs at the same time and the page feels sticky.
+     Momentum scrolling is native on modern iOS; -webkit-overflow-scrolling is a no-op. */
+  overscroll-behavior-y: none;
   touch-action: manipulation;         /* disables double-tap zoom delay entirely */
-  -webkit-overflow-scrolling: touch; /* restores native 120Hz momentum scrolling physics */
 }
 body, a, button, [role="button"], input, select, textarea {
   touch-action: manipulation;
