@@ -54,6 +54,26 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
     }
   }, [])
 
+  // Signal to LanguageContext that HomeClient has mounted with currentLang
+  useEffect(() => {
+    if (currentLang) {
+      window.dispatchEvent(new CustomEvent('satya-lang-mounted', { detail: { lang: currentLang } }))
+    }
+  }, [currentLang])
+
+  // Clear feed cache when currentLang changes so different language tab caches never mix
+  const prevLangRef = useRef(currentLang)
+  useEffect(() => {
+    if (prevLangRef.current !== currentLang) {
+      prevLangRef.current = currentLang
+      feedCache.current.clear()
+      fullLoaded.current.clear()
+      serverHasMoreMap.current.clear()
+      feedCache.current.set(activeTab, initialArticles)
+      setArticles(initialArticles)
+    }
+  }, [currentLang, activeTab, initialArticles])
+
   // Dynamic server-side pagination fetch
   const loadMoreArticles = useCallback(async () => {
     if (loading || loadingMore || !hasMoreOnServer || articles.length >= MAX_FEED_LIMIT) return

@@ -32,6 +32,7 @@ export function LanguageProvider({
 
   const [currentLang, setCurrentLang] = useState<Language>(initialLang)
   const [targetLang, setTargetLang] = useState<Language | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   // On client mount or pathname change, sync with URL searchParams or cookie
@@ -51,19 +52,48 @@ export function LanguageProvider({
     }
   }, [initialLang, pathname])
 
-  // When Next.js transition completes (isPending turns false), clear targetLang
+  // Listen for language mounted event from page components (HomeClient / Shell)
   useEffect(() => {
-    if (!isPending && targetLang) {
+    if (!targetLang && !isTransitioning) return
+
+    const handleMounted = (e: Event) => {
+      const customEvent = e as CustomEvent<{ lang: Language }>
+      const mountedLang = customEvent.detail?.lang
+      if (mountedLang && (mountedLang === targetLang || !targetLang)) {
+        setIsTransitioning(false)
+        setTargetLang(null)
+      }
+    }
+
+    window.addEventListener('satya-lang-mounted', handleMounted)
+
+    // Failsafe timeout: clear transitioning state after 3.8s if no event fired
+    const failsafe = setTimeout(() => {
+      setIsTransitioning(false)
+      setTargetLang(null)
+    }, 3800)
+
+    return () => {
+      window.removeEventListener('satya-lang-mounted', handleMounted)
+      clearTimeout(failsafe)
+    }
+  }, [targetLang, isTransitioning])
+
+  // Also clear transition if initialLang prop catches up with targetLang
+  useEffect(() => {
+    if (targetLang && initialLang === targetLang) {
+      setIsTransitioning(false)
       setTargetLang(null)
     }
-  }, [isPending, targetLang])
+  }, [initialLang, targetLang])
 
   const switchLanguage = useCallback(
     (newLang: Language) => {
-      if (newLang === currentLang || isPending) return
+      if (newLang === currentLang || isTransitioning) return
 
-      // Immediate visual feedback for the button state
+      // Set target language and transition state
       setTargetLang(newLang)
+      setIsTransitioning(true)
       setCurrentLang(newLang)
 
       // 1. Set cookie for SSR
@@ -95,7 +125,7 @@ export function LanguageProvider({
         })
       }
     },
-    [currentLang, isPending, router, showToast]
+    [currentLang, isTransitioning, router, showToast]
   )
 
   return (
@@ -103,7 +133,7 @@ export function LanguageProvider({
       value={{
         currentLang,
         targetLang,
-        isTransitioning: isPending,
+        isTransitioning: isTransitioning || isPending,
         switchLanguage,
       }}
     >

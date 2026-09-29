@@ -7,6 +7,7 @@ interface SplashScreenProps {
   forceShow?: boolean
   subtitle?: string
   minDuration?: number
+  readyToExit?: boolean
 }
 
 export function SplashScreen({
@@ -14,8 +15,11 @@ export function SplashScreen({
   onComplete,
   forceShow = false,
   subtitle,
-  minDuration = 1800,
+  minDuration = 1400,
+  readyToExit = true,
 }: SplashScreenProps) {
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false)
+  const [safetyForceExit, setSafetyForceExit] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
   useEffect(() => {
@@ -32,32 +36,44 @@ export function SplashScreen({
     document.body.style.overflow = 'hidden'
 
     const exitDuration = forceShow ? minDuration : 2800
-    const completeDuration = exitDuration + (forceShow ? 600 : 700)
 
-    // Phase 1: Wait for animation sequence to complete
+    // Phase 1: Wait for animation sequence minimum time
     const exitTimer = setTimeout(() => {
-      setIsExiting(true)
-      if (forceShow) {
-        document.body.style.overflow = ''
-      }
-      if (onExitStart) onExitStart()
+      setMinTimeElapsed(true)
     }, exitDuration)
 
-    // Phase 2: Wait for CSS fade-out transition to complete
+    // Failsafe timeout: force exit after 4000ms if server hangs
+    const failsafeTimer = setTimeout(() => {
+      setSafetyForceExit(true)
+    }, forceShow ? 4000 : 3500)
+
+    return () => {
+      clearTimeout(exitTimer)
+      clearTimeout(failsafeTimer)
+      document.body.style.overflow = ''
+    }
+  }, [onComplete, forceShow, minDuration])
+
+  // Trigger exit when BOTH the minimum duration has elapsed AND readyToExit is true
+  useEffect(() => {
+    if (isExiting) return
+    const canExit = safetyForceExit || (minTimeElapsed && readyToExit)
+    if (!canExit) return
+
+    setIsExiting(true)
+    document.body.style.overflow = ''
+    if (onExitStart) onExitStart()
+
+    // Phase 2: Wait for CSS fade-out transition to complete (600ms)
     const completeTimer = setTimeout(() => {
       if (!forceShow) {
         sessionStorage.setItem('satya_splash_seen', 'true')
       }
-      document.body.style.overflow = ''
       onComplete()
-    }, completeDuration)
+    }, 600)
 
-    return () => {
-      clearTimeout(exitTimer)
-      clearTimeout(completeTimer)
-      document.body.style.overflow = ''
-    }
-  }, [onComplete, onExitStart, forceShow, minDuration])
+    return () => clearTimeout(completeTimer)
+  }, [minTimeElapsed, readyToExit, safetyForceExit, isExiting, forceShow, onExitStart, onComplete])
 
   return (
     <div

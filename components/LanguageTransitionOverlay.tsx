@@ -7,25 +7,28 @@ import { SplashScreen } from './SplashScreen'
 export function LanguageTransitionOverlay() {
   const { isTransitioning, targetLang } = useLanguage()
   const [active, setActive] = useState(false)
+  const [persistedSubtitle, setPersistedSubtitle] = useState<string>('')
 
   useEffect(() => {
     if (isTransitioning) {
       setActive(true)
+      const isSwitchingToHindi = targetLang === 'hi'
+      setPersistedSubtitle(
+        isSwitchingToHindi
+          ? 'भाषा बदल रहे हैं · Switching to Hindi'
+          : 'Switching language · अंग्रेज़ी में बदल रहे हैं'
+      )
     }
-  }, [isTransitioning])
+  }, [isTransitioning, targetLang])
 
   if (!active && !isTransitioning) return null
-
-  const isSwitchingToHindi = targetLang === 'hi'
-  const subtitle = isSwitchingToHindi
-    ? 'भाषा बदल रहे हैं · Switching to Hindi'
-    : 'Switching language · अंग्रेज़ी में बदल रहे हैं'
 
   return (
     <SplashScreen
       forceShow
-      subtitle={subtitle}
+      subtitle={persistedSubtitle || 'भाषा बदल रहे हैं · Switching language'}
       minDuration={1400}
+      readyToExit={!isTransitioning}
       onComplete={() => setActive(false)}
     />
   )

@@ -33,6 +33,13 @@ export function Shell({
     }
   }, [])
 
+  // Signal to LanguageContext that the server-rendered page in initialLang has mounted
+  useEffect(() => {
+    if (initialLang) {
+      window.dispatchEvent(new CustomEvent('satya-lang-mounted', { detail: { lang: initialLang } }))
+    }
+  }, [initialLang])
+
   const openSearch  = useCallback(() => setSearchOpen(true), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   const openModal   = useCallback((a: Article) => setModalArticle(a), [])
