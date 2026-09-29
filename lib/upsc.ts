@@ -4,6 +4,7 @@ import { upscDb } from './db.upsc'
 import { transDb } from './db.translation'
 import { UPSC_SYLLABUS } from './upscSyllabus'
 import type { Language } from './i18n'
+import { cleanHindiText } from './utils'
 
 export const UPSC_PAPERS = ['GS1', 'GS2', 'GS3', 'GS4'] as const
 export const PAGE_SIZE = 40
@@ -116,22 +117,32 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       ])
 
       tRes.rows.forEach(r => {
-        if (r.rephrased_title_hi) titleHiMap.set(Number(r.article_id), String(r.rephrased_title_hi))
+        const val = cleanHindiText(r.rephrased_title_hi ? String(r.rephrased_title_hi) : '')
+        if (val) titleHiMap.set(Number(r.article_id), val)
       })
 
       uRes.rows.forEach(r => {
+        const why = cleanHindiText(r.why_in_news_hi ? String(r.why_in_news_hi) : '')
+        const fact = cleanHindiText(r.fact_box_hi ? String(r.fact_box_hi) : '')
+        const mains = cleanHindiText(r.mains_question_hi ? String(r.mains_question_hi) : '')
+        const rawPointers = r.prelims_pointers_hi ? arr<UpscPointer>(r.prelims_pointers_hi) : undefined
+        const pointers = rawPointers
+          ?.map(p => ({ ...p, text: cleanHindiText(p.text) }))
+          .filter(p => Boolean(p.text))
+
         upscTransMap.set(Number(r.article_id), {
-          why_in_news_hi: r.why_in_news_hi ? String(r.why_in_news_hi) : undefined,
-          fact_box_hi: r.fact_box_hi ? String(r.fact_box_hi) : undefined,
-          prelims_pointers_hi: r.prelims_pointers_hi ? arr<UpscPointer>(r.prelims_pointers_hi) : undefined,
-          mains_question_hi: r.mains_question_hi ? String(r.mains_question_hi) : undefined,
+          why_in_news_hi: why || undefined,
+          fact_box_hi: fact || undefined,
+          prelims_pointers_hi: pointers && pointers.length > 0 ? pointers : undefined,
+          mains_question_hi: mains || undefined,
         })
       })
 
       evTransRes.rows.forEach(r => {
         const ev = events.get(Number(r.event_id))
-        if (ev && r.title_hi) {
-          ev.title = String(r.title_hi)
+        const val = cleanHindiText(r.title_hi ? String(r.title_hi) : '')
+        if (ev && val) {
+          ev.title = val
         }
       })
     } catch (e) {

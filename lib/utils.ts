@@ -120,3 +120,14 @@ export function renderMarkdown(text?: string): React.ReactNode[] | string {
   
   return result
 }
+
+// Strips model thought channels, control tags, and rogue artifacts from Hindi strings
+export function cleanHindiText(text?: string | null): string {
+  if (!text) return ''
+  return text
+    .replace(/<thought>[\s\S]*?<\/thought>|<\|channel>[a-zA-Z0-9_]+[\s\S]*?<channel\|?>/gi, '')
+    .replace(/<\|?(?:start_of_turn|end_of_turn|eos|bos|pad|turn|mask|channel|thought|unused\d*)[^>]*\|?>\s*(?:model|user|assistant)?|<\/?s>/gi, '')
+    .replace(/<\|[a-zA-Z0-9_\-\s|]+>|<channel\|?>/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}

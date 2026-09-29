@@ -4,7 +4,7 @@ import zlib from 'zlib';
 import { db } from './db';
 import { transDb } from './db.translation';
 import { upscDb } from './db.upsc';
-import { slugify, partySlugify } from './utils';
+import { slugify, partySlugify, cleanHindiText } from './utils';
 import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
 import type {
   Article,
@@ -388,11 +388,13 @@ export const serverApi = {
           ]);
           const evTitleMap = new Map<number, string>();
           evTrans.rows.forEach(r => {
-            if (r.title_hi) evTitleMap.set(Number(r.event_id), String(r.title_hi));
+            const val = cleanHindiText(r.title_hi ? String(r.title_hi) : '');
+            if (val) evTitleMap.set(Number(r.event_id), val);
           });
           const msMap = new Map<number, string>();
           msTrans.rows.forEach(r => {
-            if (r.milestone_hi) msMap.set(Number(r.event_id), String(r.milestone_hi));
+            const val = cleanHindiText(r.milestone_hi ? String(r.milestone_hi) : '');
+            if (val) msMap.set(Number(r.event_id), val);
           });
 
           events = events.map(ev => ({
@@ -481,12 +483,14 @@ export const serverApi = {
               args: [event.id],
             })
           ]);
-          if (evTrans.rows[0]?.title_hi) {
-            event = { ...event, title: String(evTrans.rows[0].title_hi) };
+          const evTitle = cleanHindiText(evTrans.rows[0]?.title_hi ? String(evTrans.rows[0].title_hi) : '');
+          if (evTitle) {
+            event = { ...event, title: evTitle };
           }
           const msMap = new Map<number, string>();
           msTrans.rows.forEach(r => {
-            if (r.milestone_hi) msMap.set(Number(r.article_id), String(r.milestone_hi));
+            const val = cleanHindiText(r.milestone_hi ? String(r.milestone_hi) : '');
+            if (val) msMap.set(Number(r.article_id), val);
           });
           milestones = milestones.map(m => ({
             ...m,
