@@ -4,45 +4,63 @@ import { useEffect, useState } from 'react'
 interface SplashScreenProps {
   onExitStart?: () => void
   onComplete: () => void
+  forceShow?: boolean
+  subtitle?: string
+  minDuration?: number
 }
 
-export function SplashScreen({ onExitStart, onComplete }: SplashScreenProps) {
+export function SplashScreen({
+  onExitStart,
+  onComplete,
+  forceShow = false,
+  subtitle,
+  minDuration = 1800,
+}: SplashScreenProps) {
   const [isExiting, setIsExiting] = useState(false)
 
   useEffect(() => {
-    // Check if user has already seen the splash screen in this session
-    const hasSeen = sessionStorage.getItem('satya_splash_seen')
-    if (hasSeen === 'true') {
-      onComplete()
-      return
+    if (!forceShow) {
+      // Check if user has already seen the splash screen in this session
+      const hasSeen = sessionStorage.getItem('satya_splash_seen')
+      if (hasSeen === 'true') {
+        onComplete()
+        return
+      }
     }
 
     // Disable body scroll when splash screen is active
     document.body.style.overflow = 'hidden'
 
-    // Phase 1: Wait for animation sequence to complete (approx 2.7s)
+    const exitDuration = forceShow ? minDuration : 2800
+    const completeDuration = exitDuration + 700
+
+    // Phase 1: Wait for animation sequence to complete
     const exitTimer = setTimeout(() => {
       setIsExiting(true)
       if (onExitStart) onExitStart()
-    }, 2800)
+    }, exitDuration)
 
     // Phase 2: Wait for CSS fade-out transition to complete (700ms)
     const completeTimer = setTimeout(() => {
-      sessionStorage.setItem('satya_splash_seen', 'true')
+      if (!forceShow) {
+        sessionStorage.setItem('satya_splash_seen', 'true')
+      }
       document.body.style.overflow = ''
       onComplete()
-    }, 3500)
+    }, completeDuration)
 
     return () => {
       clearTimeout(exitTimer)
       clearTimeout(completeTimer)
       document.body.style.overflow = ''
     }
-  }, [onComplete, onExitStart])
+  }, [onComplete, onExitStart, forceShow, minDuration])
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out splash-screen-container ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
+        forceShow ? 'splash-screen-forced' : 'splash-screen-container'
+      } ${
         isExiting ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100'
       }`}
       style={{
@@ -432,7 +450,7 @@ export function SplashScreen({ onExitStart, onComplete }: SplashScreenProps) {
           className="font-mono text-[9.5px] sm:text-[10.5px] tracking-[0.25em] text-[var(--text3)] uppercase mt-4 opacity-0 animate-splash-tagline"
           style={{ fontFamily: "'IBM Plex Mono', monospace" }}
         >
-          India's Ground Truth Record
+          {subtitle || "India's Ground Truth Record"}
         </div>
       </div>
     </div>
