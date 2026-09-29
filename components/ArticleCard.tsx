@@ -1,4 +1,5 @@
 'use client'
+import { memo, useMemo } from 'react'
 import type { Article } from '@/lib/api'
 import { SrcTag, PBadge, SentimentDot } from './SrcTag'
 import { cleanTitle, formatDate, categoryLabel, hasImage, renderMarkdown } from '@/lib/utils'
@@ -44,7 +45,7 @@ interface ArticleCardProps {
   clampSummary?: boolean
 }
 
-export function ArticleCard({ article, variant = 'default', onOpen, clampSummary = true }: ArticleCardProps) {
+export const ArticleCard = memo(function ArticleCard({ article, variant = 'default', onOpen, clampSummary = true }: ArticleCardProps) {
   const {
     title, rephrased_title, rephrased_article, source,
     image_url, sentiment, party_mentioned,
@@ -54,10 +55,11 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
 
 
   const firstParty      = party_mentioned?.[0]
-  const displayTitle    = cleanTitle(rephrased_title ?? title ?? '')
-  const displayCategory = categoryLabel(category)
-  const displayDate     = formatDate(scraped_at)
+  const displayTitle    = useMemo(() => cleanTitle(rephrased_title ?? title ?? ''), [rephrased_title, title])
+  const displayCategory = useMemo(() => categoryLabel(category), [category])
+  const displayDate     = useMemo(() => formatDate(scraped_at), [scraped_at])
   const showImage       = hasImage(image_url)
+  const renderedArticle = useMemo(() => (rephrased_article ? renderMarkdown(rephrased_article) : null), [rephrased_article])
 
   const handleClick = (e: React.SyntheticEvent) => {
     e.preventDefault()
@@ -135,7 +137,7 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
               className={`text-[14px] leading-relaxed font-sans mb-4 ${clampSummary ? 'line-clamp-3' : ''}`} 
               style={{ color: 'var(--text2)' }}
             >
-              {renderMarkdown(rephrased_article)}
+              {renderedArticle}
             </p>
           )}
 
@@ -208,7 +210,7 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
             className={`text-[12px] leading-relaxed mb-2 ${clampSummary ? 'line-clamp-2' : ''}`} 
             style={{ color: 'var(--text2)' }}
           >
-            {renderMarkdown(rephrased_article)}
+            {renderedArticle}
           </p>
         )}
 
@@ -231,4 +233,5 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
       </div>
     </div>
   )
-}
+})
+ArticleCard.displayName = 'ArticleCard'

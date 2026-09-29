@@ -151,6 +151,37 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
     return () => { active = false }
   }, [activeTab, currentLang])
 
+  // Lightweight background pre-warming for top 2 tabs during idle time (only 20 items each)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const prewarmTabs = ['governance', 'economy']
+
+    const timer = setTimeout(() => {
+      const runPrewarm = async () => {
+        for (const tab of prewarmTabs) {
+          if (!feedCache.current.has(tab)) {
+            try {
+              const res = await api.feed(tab, false, PAGE_SIZE, 0, currentLang)
+              const list = res?.articles ?? []
+              if (list.length > 0) {
+                feedCache.current.set(tab, list)
+                serverHasMoreMap.current.set(tab, list.length >= PAGE_SIZE)
+              }
+            } catch {}
+          }
+        }
+      }
+
+      if ('requestIdleCallback' in window) {
+        ;(window as any).requestIdleCallback(() => runPrewarm(), { timeout: 4000 })
+      } else {
+        runPrewarm()
+      }
+    }, 2500)
+
+    return () => clearTimeout(timer)
+  }, [currentLang])
+
   const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId)
     const url = new URL(window.location.href)
@@ -243,14 +274,25 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
       <div>
 
         {/* Section label */}
-        <div className="px-4 py-2.5 border-b flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
+        <div className="relative px-4 py-2.5 border-b flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
+          {loading && (
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--border-md)] overflow-hidden">
+              <div
+                className="h-full bg-[var(--accent)]"
+                style={{
+                  width: '40%',
+                  animation: 'satyaShimmerSlide 1s infinite ease-in-out',
+                }}
+              />
+            </div>
+          )}
           <div className="h-[2px] w-3" style={{ background: 'var(--accent)' }} />
           <span className="text-[9.5px] font-mono tracking-widest uppercase" style={{ color: 'var(--text2)' }}>
             {tabLabel}
           </span>
           {loading && (
             <span className="text-[9.5px] font-mono animate-pulse ml-auto" style={{ color: 'var(--text3)' }}>
-              {currentLang === 'hi' ? 'अपडेट हो रहा है...' : 'Updating...'}
+              {currentLang === 'hi' ? 'लोड हो रहा है...' : 'Updating...'}
             </span>
           )}
         </div>
@@ -260,7 +302,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
             {[1,2,3].map(i => <div key={i} className="h-32 rounded animate-pulse" style={{ background: 'var(--bg-alt)' }} />)}
           </div>
         ) : (
-          <div className={`transition-opacity duration-200 ${loading ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+          <div className={`transition-opacity duration-200 ${loading ? 'opacity-70' : 'opacity-100'}`}>
             <div className="flex flex-col">
               {paginatedArticles.map((article: Article, i: number) => (
                 <div key={article.id ?? i} style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 140px' }}>

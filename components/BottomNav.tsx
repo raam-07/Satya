@@ -47,6 +47,7 @@ interface BottomNavProps {
 
 export function BottomNav({ onSearchOpen }: BottomNavProps) {
   const pathname = usePathname()
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null)
 
   const [visited, setVisited] = useState<Record<string, boolean>>({
     '/': true,
@@ -62,10 +63,17 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
     '/timelines': ['/event'],
     '/vaade':     ['/promises'],
   }
+
+  const activeHref = optimisticHref || pathname
   const isActive = (href: string) => {
-    if (href === '/' ? pathname === '/' : pathname.startsWith(href)) return true
-    return (SECTION_ROUTES[href] ?? []).some(p => pathname.startsWith(p))
+    if (href === '/' ? activeHref === '/' : activeHref.startsWith(href)) return true
+    return (SECTION_ROUTES[href] ?? []).some(p => activeHref.startsWith(p))
   }
+
+  // Clear optimistic path once the actual page route has transitioned
+  useEffect(() => {
+    setOptimisticHref(null)
+  }, [pathname])
 
   useEffect(() => {
     const state: Record<string, boolean> = {}
@@ -88,11 +96,26 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
     })
   }, [pathname])
 
+  const isNavigating = optimisticHref !== null && optimisticHref !== pathname
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--surface)] border-t safe-bottom"
       style={{ borderColor: 'var(--border-md)' }}
     >
+      {/* Top accent loading shimmer when user taps a new tab */}
+      {isNavigating && (
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--border-md)] overflow-hidden">
+          <div
+            className="h-full bg-[var(--accent)]"
+            style={{
+              width: '45%',
+              animation: 'satyaShimmerSlide 0.8s infinite ease-in-out',
+            }}
+          />
+        </div>
+      )}
+
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -112,7 +135,11 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
           <Link
             key={tab.href}
             href={tab.href}
-            className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors"
+            prefetch={true}
+            onClick={() => {
+              if (tab.href !== pathname) setOptimisticHref(tab.href)
+            }}
+            className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors active:scale-95"
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
             <div className="relative flex items-center justify-center">
@@ -150,7 +177,11 @@ export function BottomNav({ onSearchOpen }: BottomNavProps) {
           <Link
             key={tab.href}
             href={tab.href}
-            className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors"
+            prefetch={true}
+            onClick={() => {
+              if (tab.href !== pathname) setOptimisticHref(tab.href)
+            }}
+            className="flex-1 flex flex-col items-center justify-center h-14 gap-0.5 transition-colors active:scale-95"
             style={{ color: isActive(tab.href) ? 'var(--accent)' : 'var(--text3)' }}
           >
             <div className="relative flex items-center justify-center">

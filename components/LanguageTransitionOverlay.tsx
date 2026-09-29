@@ -25,7 +25,7 @@ export function LanguageTransitionOverlay() {
     <SplashScreen
       forceShow
       subtitle={subtitle}
-      minDuration={1800}
+      minDuration={1400}
       onComplete={() => setActive(false)}
     />
   )

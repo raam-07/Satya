@@ -28,6 +28,8 @@ export function PullToRefresh() {
   refreshingRef.current = refreshing
 
   useEffect(() => {
+    let rafId: number | null = null
+
     const onStart = (e: TouchEvent) => {
       if (window.scrollY <= 0 && !refreshingRef.current) {
         startY.current = e.touches[0].clientY
@@ -39,11 +41,22 @@ export function PullToRefresh() {
 
     const onMove = (e: TouchEvent) => {
       if (!pulling.current || refreshingRef.current) return
+      // If user has scrolled down into the page, abort pull immediately so native scroll flows
+      if (window.scrollY > 0) {
+        pulling.current = false
+        if (pullRef.current > 0) setPull(0)
+        return
+      }
       const delta = e.touches[0].clientY - startY.current
       // Only initiate pull state if user moves past the drag slop threshold
       if (delta > DRAG_SLOP) {
         const pullDistance = Math.min(MAX_PULL, (delta - DRAG_SLOP) * 0.5)
-        setPull(pullDistance)
+        if (rafId === null) {
+          rafId = requestAnimationFrame(() => {
+            setPull(pullDistance)
+            rafId = null
+          })
+        }
       } else if (delta < 0) {
         pulling.current = false
         if (pullRef.current > 0) setPull(0)
@@ -51,6 +64,10 @@ export function PullToRefresh() {
     }
 
     const onEnd = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+        rafId = null
+      }
       if (!pulling.current) return
       pulling.current = false
       const currentPull = pullRef.current
@@ -70,11 +87,14 @@ export function PullToRefresh() {
 
     window.addEventListener('touchstart', onStart, { passive: true })
     window.addEventListener('touchmove', onMove, { passive: true })
-    window.addEventListener('touchend', onEnd)
+    window.addEventListener('touchend', onEnd, { passive: true })
+    window.addEventListener('touchcancel', onEnd, { passive: true })
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId)
       window.removeEventListener('touchstart', onStart)
       window.removeEventListener('touchmove', onMove)
       window.removeEventListener('touchend', onEnd)
+      window.removeEventListener('touchcancel', onEnd)
     }
   }, [router])
 

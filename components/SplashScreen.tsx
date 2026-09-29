@@ -32,15 +32,18 @@ export function SplashScreen({
     document.body.style.overflow = 'hidden'
 
     const exitDuration = forceShow ? minDuration : 2800
-    const completeDuration = exitDuration + 700
+    const completeDuration = exitDuration + (forceShow ? 600 : 700)
 
     // Phase 1: Wait for animation sequence to complete
     const exitTimer = setTimeout(() => {
       setIsExiting(true)
+      if (forceShow) {
+        document.body.style.overflow = ''
+      }
       if (onExitStart) onExitStart()
     }, exitDuration)
 
-    // Phase 2: Wait for CSS fade-out transition to complete (700ms)
+    // Phase 2: Wait for CSS fade-out transition to complete
     const completeTimer = setTimeout(() => {
       if (!forceShow) {
         sessionStorage.setItem('satya_splash_seen', 'true')

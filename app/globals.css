@@ -74,10 +74,10 @@ a { color: inherit; text-decoration: none; }
   border-radius: 3px;
 }
 
-/* --- App-feel touch polish (zero-delay taps, no double-tap zoom) --- */
+/* --- App-feel touch polish (zero-delay taps, native 120Hz momentum scrolling) --- */
 html {
-  overscroll-behavior-y: none; /* no scroll-chaining/bounce past the page */
-  touch-action: manipulation;   /* disables double-tap zoom delay entirely */
+  touch-action: manipulation;         /* disables double-tap zoom delay entirely */
+  -webkit-overflow-scrolling: touch; /* restores native 120Hz momentum scrolling physics */
 }
 body, a, button, [role="button"], input, select, textarea {
   touch-action: manipulation;
