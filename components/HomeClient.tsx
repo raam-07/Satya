@@ -255,12 +255,12 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
 
         {activeTab === 'all' && <UpscStrip />}
 
-        {loading ? (
+        {loading && articles.length === 0 ? (
           <div className="p-4 space-y-4">
             {[1,2,3].map(i => <div key={i} className="h-32 rounded animate-pulse" style={{ background: 'var(--bg-alt)' }} />)}
           </div>
         ) : (
-          <>
+          <div className={`transition-opacity duration-200 ${loading ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex flex-col">
               {paginatedArticles.map((article: Article, i: number) => (
                 <div key={article.id ?? i} style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 140px' }}>
@@ -268,7 +268,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
                 </div>
               ))}
             </div>
-            {articles.length === 0 && (
+            {articles.length === 0 && !loading && (
               <EmptyState 
                 message={currentLang === 'hi' 
                   ? 'इस श्रेणी में अभी कोई हिन्दी लेख उपलब्ध नहीं हैं — अनुवाद प्रगति पर है' 
@@ -304,7 +304,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
                 )}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 

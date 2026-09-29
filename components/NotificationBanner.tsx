@@ -76,7 +76,7 @@ export function NotificationBanner() {
     <div
       role="region"
       aria-label="Enable civic dispatch alerts"
-      className="fixed z-50 bottom-3 left-3 right-3 sm:left-auto sm:right-5 sm:bottom-5 sm:w-[370px]"
+      className="fixed z-[60] bottom-[68px] sm:bottom-5 left-3 right-3 sm:left-auto sm:right-5 sm:w-[370px] pointer-events-none"
       style={{
         transform: entered ? 'translateY(0)' : 'translateY(14px)',
         opacity: entered ? 1 : 0,
@@ -84,7 +84,7 @@ export function NotificationBanner() {
       }}
     >
       <div
-        className="overflow-hidden border shadow-[0_18px_44px_-12px_rgba(26,26,26,0.35)]"
+        className="overflow-hidden border shadow-[0_18px_44px_-12px_rgba(26,26,26,0.35)] pointer-events-auto"
         style={{ background: 'var(--surface)', borderColor: 'var(--border-md)' }}
       >
         {/* Masthead accent stripe */}

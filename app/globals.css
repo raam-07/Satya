@@ -74,16 +74,18 @@ a { color: inherit; text-decoration: none; }
   border-radius: 3px;
 }
 
-/* --- App-feel touch polish (cosmetic only) --- */
+/* --- App-feel touch polish (zero-delay taps, no double-tap zoom) --- */
 html {
   overscroll-behavior-y: none; /* no scroll-chaining/bounce past the page */
+  touch-action: manipulation;   /* disables double-tap zoom delay entirely */
 }
-a, button {
+body, a, button, [role="button"], input, select, textarea {
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 @media (hover: none) {
   /* touch devices: immediate press feedback instead of the grey flash */
-  a:active, button:active {
+  a:active, button:active, [role="button"]:active {
     opacity: 0.65;
     transition: opacity 60ms ease;
   }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 
 const THRESHOLD = 70   // px the user must pull before it triggers
 const MAX_PULL  = 90
+const DRAG_SLOP = 12   // Ignore micro-movements <= 12px so taps never drop clicks
 
 /**
  * Mobile pull-to-refresh. When the page is scrolled to the top and the user
@@ -20,10 +21,15 @@ export function PullToRefresh() {
   const [refreshing, setRefreshing] = useState(false)
   const startY = useRef(0)
   const pulling = useRef(false)
+  const pullRef = useRef(0)
+  const refreshingRef = useRef(false)
+
+  pullRef.current = pull
+  refreshingRef.current = refreshing
 
   useEffect(() => {
     const onStart = (e: TouchEvent) => {
-      if (window.scrollY <= 0 && !refreshing) {
+      if (window.scrollY <= 0 && !refreshingRef.current) {
         startY.current = e.touches[0].clientY
         pulling.current = true
       } else {
@@ -32,20 +38,23 @@ export function PullToRefresh() {
     }
 
     const onMove = (e: TouchEvent) => {
-      if (!pulling.current || refreshing) return
+      if (!pulling.current || refreshingRef.current) return
       const delta = e.touches[0].clientY - startY.current
-      if (delta > 0) {
-        setPull(Math.min(MAX_PULL, delta * 0.5))
-      } else {
+      // Only initiate pull state if user moves past the drag slop threshold
+      if (delta > DRAG_SLOP) {
+        const pullDistance = Math.min(MAX_PULL, (delta - DRAG_SLOP) * 0.5)
+        setPull(pullDistance)
+      } else if (delta < 0) {
         pulling.current = false
-        setPull(0)
+        if (pullRef.current > 0) setPull(0)
       }
     }
 
     const onEnd = () => {
       if (!pulling.current) return
       pulling.current = false
-      if (pull >= THRESHOLD && !refreshing) {
+      const currentPull = pullRef.current
+      if (currentPull >= THRESHOLD && !refreshingRef.current) {
         setRefreshing(true)
         setPull(55)
         router.refresh()
@@ -54,7 +63,7 @@ export function PullToRefresh() {
           setRefreshing(false)
           setPull(0)
         }, 1000)
-      } else {
+      } else if (currentPull > 0) {
         setPull(0)
       }
     }
@@ -67,7 +76,7 @@ export function PullToRefresh() {
       window.removeEventListener('touchmove', onMove)
       window.removeEventListener('touchend', onEnd)
     }
-  }, [pull, refreshing, router])
+  }, [router])
 
   const visible = pull > 0 || refreshing
 

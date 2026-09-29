@@ -8,6 +8,7 @@ import {
   UPSC_PAPERS, getUpscFeed, getUpscStats, getUpscTopPicks, istDayStart, nodeLabel, subjectLabel,
   type UpscFilters, type UpscItem,
 } from '@/lib/upsc'
+import { UpscNavChip } from '@/components/UpscNavChip'
 
 type SP = { paper?: string; subject?: string; exam?: string; page?: string; lang?: string }
 
@@ -87,21 +88,7 @@ function dayLabel(ts: number, isHi: boolean) {
   })
 }
 
-function Chip({ to, active, children }: { to: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <Link
-      href={to}
-      scroll={false}
-      className={`text-[12px] px-2.5 py-1 rounded-md border transition-colors whitespace-nowrap ${
-        active
-          ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-          : 'bg-[var(--surface)] text-[var(--text2)] border-[var(--border)] hover:border-[var(--border-hi)]'
-      }`}
-    >
-      {children}
-    </Link>
-  )
-}
+const Chip = UpscNavChip
 
 function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
   return (

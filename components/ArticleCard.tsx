@@ -67,9 +67,12 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
   // ── TOP STORY (featured) variant ──────────────────────────────────────────
   if (variant === 'featured') {
     return (
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={handleClick}
-        className="w-full text-left block border rounded-sm overflow-hidden transition-colors group bg-[var(--surface)] hover:border-[var(--accent)]"
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any) }}
+        className="w-full text-left block border rounded-sm overflow-hidden transition-colors group bg-[var(--surface)] hover:border-[var(--accent)] cursor-pointer"
         style={{ 
           borderColor: 'var(--border-md)',
           borderLeft: civic_flag ? '4px solid #B02828' : undefined
@@ -142,7 +145,7 @@ export function ArticleCard({ article, variant = 'default', onOpen, clampSummary
             </div>
           )}
         </div>
-      </button>
+      </div>
     )
   }
 
