@@ -17,10 +17,10 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
   const isHi = lang === 'hi'
   return {
     title: isHi
-      ? 'यूपीएससी करेंट अफेयर्स — सामान्य अध्ययन नोट्स, प्रारंभिक परीक्षा संकेत एवं मुख्य परीक्षा प्रश्न | SatyaDheesh'
+      ? 'यूपीएससी करेंट अफेयर्स — GS Notes, Prelims Pointers & Mains Questions | SatyaDheesh'
       : 'UPSC Current Affairs Today — GS-wise Notes, Prelims Pointers & Mains Questions | SatyaDheesh',
     description: isHi
-      ? 'जीएस पाठ्यक्रम से जुड़े दैनिक यूपीएससी करेंट अफेयर्स: चर्चा में क्यों, प्रारंभिक परीक्षा के तथ्य और उत्तर आयामों के साथ मुख्य परीक्षा के प्रश्न। फ़िल्टर करें GS1, GS2, GS3, GS4।'
+      ? 'GS पाठ्यक्रम से जुड़े दैनिक यूपीएससी करेंट अफेयर्स: चर्चा में क्यों, Prelims के तथ्य और उत्तर आयामों के साथ Mains के प्रश्न। फ़िल्टर करें GS1, GS2, GS3, GS4।'
       : 'Daily UPSC current affairs mapped to the GS syllabus: why in news, facts for Prelims, and Mains questions with answer dimensions. Filter by GS1, GS2, GS3, GS4.',
     alternates: {
       canonical: 'https://satyadheesh.in/upsc',
@@ -32,10 +32,10 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
     },
     openGraph: {
       title: isHi
-        ? 'यूपीएससी करेंट अफेयर्स — सामान्य अध्ययन नोट्स एवं प्रश्न | SatyaDheesh'
+        ? 'यूपीएससी करेंट अफेयर्स — GS Notes & Prelims/Mains Questions | SatyaDheesh'
         : 'UPSC Current Affairs Today — GS1-4 Notes & Prelims/Mains Questions | SatyaDheesh',
       description: isHi
-        ? 'आधिकारिक पाठ्यक्रम के अनुरूप स्वायत्त दैनिक यूपीएससी करेंट अफेयर्स।'
+        ? 'आधिकारिक पाठ्यक्रम के अनुरूप स्वायत्त दैनिक यूपीएससी करेंट अफेयर्स। High-yield Prelims pointers एवं Mains answer dimensions।'
         : 'Autonomous daily UPSC current affairs aligned with the official syllabus. High-yield Prelims pointers and Mains answer dimensions.',
       url: 'https://satyadheesh.in/upsc',
       siteName: 'SatyaDheesh',
@@ -45,10 +45,10 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
     twitter: {
       card: 'summary_large_image',
       title: isHi
-        ? 'यूपीएससी करेंट अफेयर्स — सामान्य अध्ययन नोट्स एवं प्रश्न | SatyaDheesh'
+        ? 'यूपीएससी करेंट अफेयर्स — GS Notes & Prelims/Mains Questions | SatyaDheesh'
         : 'UPSC Current Affairs Today — GS1-4 Notes & Prelims/Mains Questions | SatyaDheesh',
       description: isHi
-        ? 'आधिकारिक पाठ्यक्रम के अनुरूप स्वायत्त दैनिक यूपीएससी करेंट अफेयर्स।'
+        ? 'आधिकारिक पाठ्यक्रम के अनुरूप स्वायत्त दैनिक यूपीएससी करेंट अफेयर्स। High-yield Prelims pointers एवं Mains answer dimensions।'
         : 'Autonomous daily UPSC current affairs aligned with the official syllabus. High-yield Prelims pointers and Mains answer dimensions.',
     },
   }
@@ -61,25 +61,13 @@ const PAPER_HINT: Record<string, { en: string; hi: string }> = {
   GS4: { en: 'Ethics', hi: 'नीतिशास्त्र' },
 }
 
-const POINTER_LABEL: Record<string, { en: string; hi: string }> = {
-  constitution: { en: 'Constitution', hi: 'संविधान' },
-  act_bill: { en: 'Act / Bill', hi: 'अधिनियम / विधेयक' },
-  scheme: { en: 'Scheme', hi: 'योजना' },
-  institution: { en: 'Body', hi: 'संस्था' },
-  report_index: { en: 'Report / Index', hi: 'रिपोर्ट / सूचकांक' },
-  place: { en: 'Place', hi: 'स्थान' },
-  species_environment: { en: 'Environment', hi: 'पर्यावरण' },
-  sci_tech: { en: 'S&T', hi: 'विज्ञान-तकनीक' },
-  international_org: { en: 'Intl. org', hi: 'अंतर्राष्ट्रीय संगठन' },
-  person_post: { en: 'Post', hi: 'पद' },
-  data_fact: { en: 'Fact', hi: 'तथ्य' },
+const POINTER_LABEL: Record<string, string> = {
+  constitution: 'Constitution', act_bill: 'Act / Bill', scheme: 'Scheme', institution: 'Body',
+  report_index: 'Report / Index', place: 'Place', species_environment: 'Environment',
+  sci_tech: 'S&T', international_org: 'Intl. org', person_post: 'Post', data_fact: 'Fact',
 }
 
-const EXAM_LABEL: Record<string, { en: string; hi: string }> = {
-  prelims: { en: 'Prelims', hi: 'प्रारंभिक' },
-  mains: { en: 'Mains', hi: 'मुख्य परीक्षा' },
-  both: { en: 'Prelims + Mains', hi: 'प्रारंभिक + मुख्य' },
-}
+const EXAM_LABEL = { prelims: 'Prelims', mains: 'Mains', both: 'Prelims + Mains' } as const
 
 function href(sp: SP, patch: Partial<SP>) {
   const next: Record<string, string> = {}
@@ -122,7 +110,7 @@ function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
         <span className="font-semibold text-[var(--accent)]">{it.paper}</span>
         <span>{subjectLabel(it.subject)} › {nodeLabel(it.subject, it.node)}</span>
         <span className="ml-auto px-1.5 py-0.5 rounded border" style={{ borderColor: 'var(--border)' }}>
-          {EXAM_LABEL[it.examType] ? (isHi ? EXAM_LABEL[it.examType].hi : EXAM_LABEL[it.examType].en) : (isHi ? 'प्रारंभिक + मुख्य' : 'Prelims + Mains')}
+          {EXAM_LABEL[it.examType] ?? 'Prelims + Mains'}
         </span>
       </div>
 
@@ -140,13 +128,13 @@ function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
       {it.pointers.length > 0 && (
         <details className="mt-3 group">
           <summary className="cursor-pointer text-[12px] font-semibold text-[var(--text1)] select-none">
-            {isHi ? `प्रारंभिक परीक्षा संकेत (${it.pointers.length})` : `Prelims pointers (${it.pointers.length})`}
+            Prelims pointers ({it.pointers.length})
           </summary>
           <ul className="mt-2 space-y-1.5 pl-0 list-none">
             {it.pointers.map((p, i) => (
               <li key={i} className="text-[13px] text-[var(--text2)] leading-snug flex gap-2">
                 <span className="shrink-0 text-[10px] font-mono uppercase tracking-wide text-[var(--text3)] pt-0.5 w-[78px]">
-                  {POINTER_LABEL[p.type] ? (isHi ? POINTER_LABEL[p.type].hi : POINTER_LABEL[p.type].en) : (isHi ? 'तथ्य' : 'Fact')}
+                  {POINTER_LABEL[p.type] ?? 'Fact'}
                 </span>
                 <span>{p.text}</span>
               </li>
@@ -158,10 +146,10 @@ function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
       {(it.mainsQuestion || it.mainsDimensions.length > 0) && (
         <details className="mt-2">
           <summary className="cursor-pointer text-[12px] font-semibold text-[var(--text1)] select-none">
-            {isHi ? 'मुख्य परीक्षा दृष्टिकोण' : 'Mains angle'}
+            Mains angle
           </summary>
           {it.mainsQuestion && (
-            <p className="text-[13px] italic text-[var(--text1)] mt-2 mb-1 leading-snug">{isHi ? 'प्रश्न. ' : 'Q. '}{it.mainsQuestion}</p>
+            <p className="text-[13px] italic text-[var(--text1)] mt-2 mb-1 leading-snug">Q. {it.mainsQuestion}</p>
           )}
           {it.mainsDimensions.length > 0 && (
             <ul className="text-[13px] text-[var(--text2)] mt-1 mb-0 pl-4 list-disc space-y-0.5">
@@ -169,10 +157,11 @@ function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
             </ul>
           )}
           {it.keywords.length > 0 && (
-            <p className="text-[12px] text-[var(--text3)] mt-2 mb-0">{isHi ? 'मुख्य शब्द: ' : 'Keywords: '}{it.keywords.join(' · ')}</p>
+            <p className="text-[12px] text-[var(--text3)] mt-2 mb-0">Keywords: {it.keywords.join(' · ')}</p>
           )}
         </details>
       )}
+
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] text-[var(--text3)]">
         {it.source && it.sourceUrl && (
@@ -296,13 +285,13 @@ export default async function UPSCPage({ searchParams }: { searchParams: SP }) {
           )}
           <div className="flex gap-1.5">
             <Chip to={href(sp, { exam: undefined, page: '0' })} active={!sp.exam}>
-              {isHi ? 'प्रारंभिक + मुख्य' : 'Prelims + Mains'}
+              Prelims + Mains
             </Chip>
             <Chip to={href(sp, { exam: 'prelims', page: '0' })} active={sp.exam === 'prelims'}>
-              {isHi ? 'प्रारंभिक तथ्य' : 'Prelims facts'}
+              Prelims facts
             </Chip>
             <Chip to={href(sp, { exam: 'mains', page: '0' })} active={sp.exam === 'mains'}>
-              {isHi ? 'मुख्य परीक्षा विश्लेषण' : 'Mains analysis'}
+              Mains analysis
             </Chip>
           </div>
         </section>
