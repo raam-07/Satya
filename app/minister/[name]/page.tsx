@@ -35,13 +35,15 @@ export async function generateMetadata({ params, searchParams }: { params: { nam
   // never as accusations.
   const cases = minister.criminal_cases ?? 0
   const hasRecord = cases > 0 || (minister.controversies?.length ?? 0) > 0
-  const title = isHi
-    ? (hasRecord
-        ? `${name} — वादे, आपराधिक मामले और विवाद | SatyaDheesh`
-        : `${name} — वादे: पूरे, टूटे और लंबित | SatyaDheesh`)
-    : (hasRecord
-        ? `${name} — promises, criminal cases & controversies | SatyaDheesh`
-        : `${name} — promises kept, broken & pending | SatyaDheesh`)
+  // People search "<name> promises" / "<name> news" far more than "<name> criminal cases":
+  // lead with promises when we track any, then news; the record stays in the description.
+  const title = promises.length > 0
+    ? (isHi
+        ? `${name} के वादे: ${kept} पूरे, ${broken} टूटे, ${ongoing} लंबित — ताज़ा खबरें | SatyaDheesh`
+        : `${name} promises: ${kept} kept, ${broken} broken, ${ongoing} pending — latest news | SatyaDheesh`)
+    : (isHi
+        ? `${name} की ताज़ा खबरें${hasRecord ? ', आपराधिक मामले और विवाद' : ' और सार्वजनिक रिकॉर्ड'} | SatyaDheesh`
+        : `${name}: latest news${hasRecord ? ', criminal cases & controversies' : ' & public record'} | SatyaDheesh`)
 
   const descParts = isHi
     ? [
@@ -193,6 +195,34 @@ export default async function MinisterPage({ params }: { params: { name: string 
         </p>
       </div>
 
+      {/* Promises Section */}
+      {minister && minister.promises && minister.promises.length > 0 && (
+        <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
+          <h2 className="text-[15px] font-bold text-[var(--text1)] m-0">Has {name} kept their promises?</h2>
+          <p className="text-[12px] font-mono text-[var(--text2)] mt-1 mb-3">
+            {minister.promises.filter(p => p.status === 'kept').length} kept · {minister.promises.filter(p => p.status === 'broken').length} broken · {minister.promises.filter(p => p.status === 'ongoing').length} pending · {minister.promises.length} tracked
+          </p>
+          <div className="divide-y divide-[var(--border)]">
+            {minister.promises.map((p) => (
+              <Link key={p.id} href={`/vaade/${p.id}`} className="block py-3 hover:bg-[var(--bg-alt)] transition-colors group">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5"><StatusBadge status={p.status} /></span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-[var(--text1)] group-hover:text-[var(--accent)] transition-colors leading-snug">
+                      {p.promise}
+                    </p>
+                    {p.made_on && (
+                      <span className="text-[10px] font-mono text-[var(--text3)] block mt-1">Made {p.made_on}</span>
+                    )}
+                  </div>
+                  <span className="text-[12px] text-[var(--text3)] self-center ml-2">→</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Neta Information Dashboard */}
       {minister && (
         <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface-alt)] md:grid md:grid-cols-2 md:gap-6 divide-y md:divide-y-0" style={{ borderColor: 'var(--border-md)' }}>
@@ -321,31 +351,6 @@ export default async function MinisterPage({ params }: { params: { name: string 
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Promises Section */}
-      {minister && minister.promises && minister.promises.length > 0 && (
-        <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
-          <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text3)] mb-3">Tracked Promises</h2>
-          <div className="divide-y divide-[var(--border)]">
-            {minister.promises.map((p) => (
-              <Link key={p.id} href={`/vaade/${p.id}`} className="block py-3 hover:bg-[var(--bg-alt)] transition-colors group">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5"><StatusBadge status={p.status} /></span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--text1)] group-hover:text-[var(--accent)] transition-colors leading-snug">
-                      {p.promise}
-                    </p>
-                    {p.made_on && (
-                      <span className="text-[10px] font-mono text-[var(--text3)] block mt-1">Made {p.made_on}</span>
-                    )}
-                  </div>
-                  <span className="text-[12px] text-[var(--text3)] self-center ml-2">→</span>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       )}

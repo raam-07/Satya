@@ -23,8 +23,12 @@ export async function generateMetadata({ params }: { params: { name: string } })
   const stateName = state.state || params.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
   const canonicalSlug = slugify(stateName)
 
-  const title = `${stateName} — local issues, CM & accountability | SatyaDheesh`
-  const description = `Track governance, local issues, and political news for ${stateName}. Chief Minister: ${state.cm || 'N/A'}. Capital: ${state.capital || 'N/A'}.`
+  // Match how people search: "<state> news today", "<state> politics", "<state> CM".
+  const topics = Object.entries(state.top_topics_30d ?? {}).sort(([, a], [, b]) => Number(b) - Number(a))
+    .slice(0, 3).map(([t]) => t.replace(/_/g, ' '))
+  const title = `${stateName} news today: politics${state.cm ? `, CM ${state.cm}` : ''} & key issues | SatyaDheesh`
+  const description = `Latest ${stateName} news and politics${state.cm ? ` under Chief Minister ${state.cm}` : ''}`
+    + `${topics.length ? `: ${topics.join(', ')} and more` : ''}. Independent summaries of stories about ${stateName}, with links to the original reports.`
 
   return {
     title,
@@ -58,6 +62,14 @@ export default async function StatePage({ params }: { params: { name: string } }
   }
 
   const topTopics = Object.entries(state.top_topics_30d ?? {}).sort(([, a], [, b]) => b - a)
+  // A short, factual opening line built from the page's own data (what the page is about).
+  const topicWords = topTopics.slice(0, 3).map(([t]) => t.replace(/_/g, ' '))
+  const intro = [
+    `The latest news from ${state.state}`,
+    state.cm ? `, where ${state.cm}${state.ruling_party ? ` (${state.ruling_party})` : ''} is Chief Minister` : '',
+    '.',
+    topicWords.length ? ` Most covered in the last 30 days: ${topicWords.join(', ')}.` : '',
+  ].join('')
   const topCities = Object.entries(state.top_cities_30d ?? {}).sort(([, a], [, b]) => b - a)
 
   const breadcrumbData = makeBreadcrumbJsonLd([
@@ -74,7 +86,8 @@ export default async function StatePage({ params }: { params: { name: string } }
           {state.ruling_party && <PBadge party={state.ruling_party} />}
           {state.region && <span className="text-[10px] font-mono text-[var(--text3)]">{state.region} India</span>}
         </div>
-        <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] capitalize">{state.state ?? params.name}</h1>
+        <h1 className="text-[24px] md:text-[28px] font-black font-serif text-[var(--text1)] capitalize">{state.state ?? params.name} news &amp; politics</h1>
+        {intro && <p className="text-[13px] text-[var(--text2)] mt-1.5 mb-0 leading-relaxed max-w-2xl">{intro}</p>}
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[12px] text-[var(--text2)]">
           {state.cm && (
             <span>
@@ -85,8 +98,8 @@ export default async function StatePage({ params }: { params: { name: string } }
             </span>
           )}
           {state.capital && <span>Capital: <strong className="text-[var(--text1)]">{state.capital}</strong></span>}
-          {state.stats?.total_articles ? (
-            <span className="font-mono text-[var(--text3)]">{state.stats.total_articles} articles</span>
+          {(state.recent_articles?.length ?? 0) > 0 ? (
+            <span className="font-mono text-[var(--text3)]">{state.recent_articles!.length} recent stories</span>
           ) : null}
         </div>
       </div>

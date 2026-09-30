@@ -25,9 +25,7 @@ export async function generateMetadata({ params }: { params: { name: string } })
   // Include the criminal-record angle when the data supports it — factual
   // counts (as declared/reported), never characterization.
   const leadersWithCases = (party.ministers ?? []).filter(m => (m.criminal_cases ?? 0) > 0).length
-  const title = leadersWithCases > 0
-    ? `${partyName} — promises, performance & leaders' criminal records | SatyaDheesh`
-    : `${partyName} — promises & performance | SatyaDheesh`
+  const title = `${partyName} news today: promise tracker, leaders & performance | SatyaDheesh`
 
   let description = `${partyName} (${party.coalition || ''}) promise tracker and political performance on SatyaDheesh.`
   if (party.promises) {
@@ -69,6 +67,7 @@ export default async function PartyPage({ params }: { params: { name: string } }
     permanentRedirect(`/party/${canonicalSlug}`)
   }
 
+  const partyName = party.full_name || party.party || params.name.toUpperCase()
   const promises = party.promises ?? []
   const kept    = promises.filter(p => p.status === 'kept').length
   const broken  = promises.filter(p => p.status === 'broken').length
@@ -172,19 +171,39 @@ export default async function PartyPage({ params }: { params: { name: string } }
           {promises.length > 0 && (
             <div className="border-b border-[var(--border-md)]">
               <div className="px-4 py-3 border-b border-[var(--border)]">
-                <span className="text-[10px] font-mono tracking-widest uppercase text-[var(--text2)]">Key Promises</span>
+                <h2 className="text-[10px] font-mono tracking-widest uppercase text-[var(--text2)] m-0">
+                  {partyName} promises — status tracker ({promises.length})
+                </h2>
               </div>
               <div className="divide-y divide-[var(--border)]">
-                {promises.slice(0, 6).map((p, i) => (
-                  <div key={p.id ?? i} className="px-4 py-3 flex items-start gap-3">
+                {promises.slice(0, 8).map((p, i) => (
+                  <Link key={p.id ?? i} href={`/vaade/${p.id}`} className="px-4 py-3 flex items-start gap-3 hover:bg-[var(--bg-alt)] transition-colors group">
                     <StatusBadge status={p.status} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] text-[var(--text1)] leading-snug">{p.promise}</p>
+                      <p className="text-[12px] text-[var(--text1)] leading-snug group-hover:text-[var(--accent)]">{p.promise}</p>
                       {p.person && <p className="text-[10px] font-mono text-[var(--text3)] mt-0.5">{p.person}</p>}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
+              {promises.length > 8 && (
+                <details className="border-t border-[var(--border)]">
+                  <summary className="px-4 py-2.5 cursor-pointer text-[11px] font-mono text-[var(--accent)]">
+                    All {promises.length} promises
+                  </summary>
+                  <div className="divide-y divide-[var(--border)]">
+                    {promises.slice(8).map((p, i) => (
+                      <Link key={p.id ?? `r${i}`} href={`/vaade/${p.id}`} className="px-4 py-3 flex items-start gap-3 hover:bg-[var(--bg-alt)] transition-colors group">
+                        <StatusBadge status={p.status} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] text-[var(--text1)] leading-snug group-hover:text-[var(--accent)]">{p.promise}</p>
+                          {p.person && <p className="text-[10px] font-mono text-[var(--text3)] mt-0.5">{p.person}</p>}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           )}
 
