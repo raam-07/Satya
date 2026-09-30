@@ -6,6 +6,8 @@ import { cookies } from 'next/headers'
 import { getLanguage, t, translateCategory } from '@/lib/i18n'
 import type { Metadata } from 'next'
 import { slugify } from '@/lib/utils'
+import { JsonLd } from '@/components/JsonLd'
+import { DATASET_LICENSE, DATASET_CITATION } from '@/lib/promiseDataset'
 
 export const revalidate = false
 
@@ -310,6 +312,45 @@ export default async function DataPage({ searchParams }: { searchParams?: { lang
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Open data: downloadable promise dataset (citations of it link back here) */}
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Dataset',
+        name: 'SatyaDheesh promise tracker — Indian political promises and their status',
+        description: 'Public promises made by Indian political leaders and parties, each with its status (kept, broken, ongoing, void), the date it was made, deadline, original source and the evidence used to judge it. Updated continuously.',
+        url: 'https://satyadheesh.in/data',
+        license: DATASET_LICENSE,
+        isAccessibleForFree: true,
+        creator: { '@type': 'Organization', name: 'SatyaDheesh', url: 'https://satyadheesh.in' },
+        keywords: ['India', 'political promises', 'manifesto', 'election promises', 'accountability', 'promise tracker'],
+        spatialCoverage: 'India',
+        distribution: [
+          { '@type': 'DataDownload', encodingFormat: 'text/csv', contentUrl: 'https://satyadheesh.in/data/promises.csv' },
+          { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: 'https://satyadheesh.in/data/promises.json' },
+        ],
+      }} />
+      <div className="border-t" style={{ borderColor: 'var(--border-md)' }}>
+        <div className="px-4 md:px-6 py-6">
+          <h2 className="text-[10px] font-mono tracking-widest uppercase mb-3" style={{ color: 'var(--text3)' }}>
+            Open data · download the promise tracker
+          </h2>
+          <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'var(--text2)' }}>
+            Every tracked promise with its status, dates, original source and a link to its evidence page.
+            Free to use in research, reporting and apps under{' '}
+            <a href={DATASET_LICENSE} target="_blank" rel="noreferrer" className="underline">CC BY 4.0</a>: please credit
+            {' '}<span className="font-mono text-[11px]">{DATASET_CITATION}</span>.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <a href="/data/promises.csv" className="inline-flex items-center px-3 py-1.5 rounded-md border text-[12px] font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]" style={{ borderColor: 'var(--border)' }}>
+              ⬇ promises.csv
+            </a>
+            <a href="/data/promises.json" className="inline-flex items-center px-3 py-1.5 rounded-md border text-[12px] font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]" style={{ borderColor: 'var(--border)' }}>
+              ⬇ promises.json
+            </a>
+          </div>
         </div>
       </div>
 

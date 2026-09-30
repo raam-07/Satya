@@ -493,6 +493,21 @@ export default async function PromisePage({ params }: { params: { id: string } }
         <div className="mt-7">
           <PromiseShare url={pageUrl} text={shareText} />
         </div>
+
+        {/* Embed: the snippet's plain link is what gives the site a backlink */}
+        <details className="mt-4">
+          <summary className="cursor-pointer text-[12px] font-mono text-[var(--text3)] hover:text-[var(--accent)]">
+            Embed this promise on your site
+          </summary>
+          <p className="text-[11.5px] text-[var(--text2)] mt-2 mb-1.5">Copy this code into your article or blog:</p>
+          <textarea
+            readOnly
+            rows={4}
+            className="w-full text-[11px] font-mono p-2 rounded border bg-[var(--bg-alt)] text-[var(--text1)]"
+            style={{ borderColor: 'var(--border)' }}
+            value={`<iframe src="https://satyadheesh.in/embed/vaade/${canonicalId}" width="100%" height="170" style="border:0;max-width:560px" loading="lazy" title="Promise tracked by SatyaDheesh"></iframe>\n<p style="font-size:12px"><a href="${pageUrl}">${promise.person}'s promise: status tracked by SatyaDheesh</a></p>`}
+          />
+        </details>
       </header>
 
       {/* ═══ The detail, on the reader's terms ═══ */}
