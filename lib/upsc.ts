@@ -66,13 +66,69 @@ function where(f: UpscFilters) {
   return { sql: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', args }
 }
 
+const DANGLING_HEADLINE_ENDINGS = new Set([
+  'a', 'an', 'the', 'of', 'to', 'in', 'on', 'at', 'for', 'with', 'and', 'or',
+  'but', 'as', 'by', 'when', 'while', 'after', 'before', 'that', 'which',
+  'who', 'whose', 'its', 'his', 'her', 'their', 'over', 'under', 'against',
+  'amid', 'despite', 'during', 'is', 'are', 'was', 'were', 'has', 'have',
+  'had', 'will', 'would', 'could', 'should', 'may', 'might', 'been', 'being',
+  'from', 'into', 'about', 'than', 'because', 'if', 'so', 'not', 'no',
+  'minister', 'chief', 'deputy', 'baby', 'infant', 'pk', 'p.k', 'dr', 'mr', 'ms',
+])
+
+function cleanUpscTitle(rephrased?: string | null, original?: string | null, whyInNews?: string | null): string {
+  const check = (t?: string | null) => {
+    if (!t) return null
+    const trimmed = t.trim().replace(/\s[-|]\s[^-|]+$/, '').trim()
+    const words = trimmed.split(/\s+/)
+    if (words.length < 3) return null
+    const last = words[words.length - 1].toLowerCase().replace(/[^a-z0-9.]/g, '')
+    if (DANGLING_HEADLINE_ENDINGS.has(last) || (last.length <= 1 && !/^\d+$/.test(last))) return null
+    return trimmed
+  }
+
+  const goodRephrased = check(rephrased)
+  if (goodRephrased) return goodRephrased
+
+  const goodOriginal = check(original)
+  if (goodOriginal) return goodOriginal
+
+  if (whyInNews && whyInNews.trim().length >= 15) {
+    return whyInNews.trim()
+  }
+
+  return (rephrased || original || '').trim()
+}
+
+const STOPWORDS = new Set([
+  'about', 'above', 'after', 'again', 'against', 'also', 'amid', 'among', 'before', 'being',
+  'below', 'between', 'both', 'could', 'during', 'each', 'first', 'from', 'further', 'have',
+  'having', 'here', 'into', 'just', 'more', 'most', 'other', 'over', 'same', 'should', 'some',
+  'such', 'than', 'that', 'their', 'theirs', 'them', 'then', 'there', 'these', 'they', 'this',
+  'those', 'through', 'under', 'until', 'very', 'were', 'what', 'when', 'where', 'which',
+  'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'india', 'indian', 'government',
+  'state', 'centre', 'order', 'rules', 'issued', 'court', 'high', 'said', 'today', 'news',
+  'minister', 'ministry', 'affairs', 'external', 'official', 'officials', 'department', 'secretary'
+])
+
+function extractSignificantTokens(text: string): Set<string> {
+  const tokens = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+  const set = new Set<string>()
+  for (const t of tokens) {
+    if (t.length >= 4 && !STOPWORDS.has(t)) {
+      set.add(t)
+    }
+  }
+  return set
+}
+
 /** Attach titles/sources/events from the main DB and collapse items of the same story. */
 async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): Promise<UpscItem[]> {
   if (!rows.length) return []
   const ids = rows.map(r => Number(r.article_id))
   const ph = ids.map(() => '?').join(',')
   const main = await db.execute({
-    sql: `SELECT a.id, COALESCE(NULLIF(a.rephrased_title, ''), a.title) AS title, a.url, s.name AS source
+    sql: `SELECT a.id, a.rephrased_title, a.title AS original_title, a.url, s.name AS source
           FROM articles a LEFT JOIN sources s ON s.id = a.source_id WHERE a.id IN (${ph})`,
     args: ids,
   })
@@ -151,19 +207,31 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
   }
 
   const out: UpscItem[] = []
-  const seen = new Map<string, UpscItem>()
+  const seenEvents = new Map<number, UpscItem>()
+  const processedItems: { item: UpscItem; tokens: Set<string> }[] = []
+
   for (const r of rows) {
     const artId = Number(r.article_id)
     const m = byId.get(artId)
     if (!m) continue
-    // same story + same syllabus node = duplicate coverage; events are broad, so the node must match too
-    const story = r.event_id != null ? `e${r.event_id}` : r.cluster_id ? `c${r.cluster_id}` : `a${r.article_id}`
-    const key = `${story}:${r.syllabus_node}`
-    const prev = seen.get(key)
-    if (prev) { prev.related++; continue }
+
+    const evId = r.event_id != null ? Number(r.event_id) : null
+    // 1. Same event dedup: collapse multiple reports under the same event
+    if (evId != null) {
+      const existing = seenEvents.get(evId)
+      if (existing) {
+        existing.related++
+        continue
+      }
+    }
 
     const uTrans = upscTransMap.get(artId)
-    const title = (lang === 'hi' && titleHiMap.get(artId)) || String(m.title ?? '')
+    const enTitle = cleanUpscTitle(
+      m.rephrased_title ? String(m.rephrased_title) : null,
+      m.original_title ? String(m.original_title) : null,
+      String(r.why_in_news ?? '')
+    )
+    const title = (lang === 'hi' && titleHiMap.get(artId)) || enTitle
     const whyInNews = (lang === 'hi' && uTrans?.why_in_news_hi) || String(r.why_in_news ?? '')
     const factBox = (lang === 'hi' && uTrans?.fact_box_hi) || String(r.fact_box ?? '')
     const pointers = (lang === 'hi' && uTrans?.prelims_pointers_hi && uTrans.prelims_pointers_hi.length > 0)
@@ -173,12 +241,36 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       ? uTrans.mains_question_hi
       : (r.mains_question ? String(r.mains_question) : null)
 
+    const itemTokens = extractSignificantTokens(`${title} ${whyInNews}`)
+    const pubAt = Number(r.published_at)
+    const paper = String(r.gs_paper)
+    const subject = String(r.subject)
+
+    // 2. Near-duplicate content dedup: check recent items within 48h for matching core entities/keywords
+    let isDuplicate = false
+    for (const p of processedItems) {
+      if (Math.abs(p.item.publishedAt - pubAt) <= 172800 && p.item.paper === paper && p.item.subject === subject) {
+        let shared = 0
+        itemTokens.forEach(t => {
+          if (p.tokens.has(t)) shared++
+        })
+        const unionSize = itemTokens.size + p.tokens.size - shared
+        const jaccard = unionSize > 0 ? shared / unionSize : 0
+        if (shared >= 5 || (shared >= 4 && jaccard >= 0.20) || (shared >= 3 && jaccard >= 0.35)) {
+          p.item.related++
+          isDuplicate = true
+          break
+        }
+      }
+    }
+    if (isDuplicate) continue
+
     const item: UpscItem = {
       articleId: artId,
-      publishedAt: Number(r.published_at),
+      publishedAt: pubAt,
       score: Number(r.upsc_score),
       examType: String(r.exam_type) as UpscItem['examType'],
-      paper: String(r.gs_paper),
+      paper,
       subject: String(r.subject),
       node: String(r.syllabus_node),
       secondary: arr(r.secondary),
@@ -191,10 +283,14 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       title,
       source: m.source ? String(m.source) : null,
       sourceUrl: m.url ? String(m.url) : null,
-      event: r.event_id != null ? events.get(Number(r.event_id)) ?? null : null,
+      event: evId != null ? events.get(evId) ?? null : null,
       related: 0,
     }
-    seen.set(key, item)
+
+    if (evId != null) {
+      seenEvents.set(evId, item)
+    }
+    processedItems.push({ item, tokens: itemTokens })
     out.push(item)
   }
   return out

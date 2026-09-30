@@ -5,7 +5,7 @@ import { getLanguage, LANG_COOKIE, Language } from '@/lib/i18n'
 import { cleanTitle } from '@/lib/utils'
 import { UPSC_SYLLABUS } from '@/lib/upscSyllabus'
 import {
-  UPSC_PAPERS, getUpscFeed, getUpscStats, getUpscTopPicks, istDayStart, nodeLabel, subjectLabel,
+  PAGE_SIZE, UPSC_PAPERS, getUpscFeed, getUpscStats, getUpscTopPicks, istDayStart, nodeLabel, subjectLabel,
   type UpscFilters, type UpscItem,
 } from '@/lib/upsc'
 import { UpscNavChip } from '@/components/UpscNavChip'
@@ -127,14 +127,39 @@ function dayLabel(ts: number, isHi: boolean) {
 const Chip = UpscNavChip
 
 function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
+  const paperLink = `/upsc?paper=${it.paper}${isHi ? '&lang=hi' : ''}`
+  const subjectLink = `/upsc?paper=${it.paper}&subject=${it.subject}${isHi ? '&lang=hi' : ''}`
+  const examLink = `/upsc?${it.examType !== 'both' ? `exam=${it.examType}&` : ''}paper=${it.paper}${isHi ? '&lang=hi' : ''}`
+
   return (
     <article id={`a${it.articleId}`} className="scroll-mt-24 border rounded-xl px-4 md:px-5 py-4 bg-[var(--surface)]" style={{ borderColor: 'var(--border)' }}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono text-[var(--text3)] mb-1.5">
-        <span className="font-semibold text-[var(--accent)]">{it.paper}</span>
-        <span>{subjectLabel(it.subject)} › {nodeLabel(it.subject, it.node)}</span>
-        <span className="ml-auto px-1.5 py-0.5 rounded border" style={{ borderColor: 'var(--border)' }}>
-          {EXAM_LABEL[it.examType] ?? 'Prelims + Mains'}
+        <Link
+          href={paperLink}
+          className="font-semibold text-[var(--accent)] hover:underline"
+          title={`Filter by ${it.paper}`}
+        >
+          {it.paper}
+        </Link>
+        <span>
+          <Link
+            href={subjectLink}
+            className="hover:underline hover:text-[var(--text1)] transition-colors"
+            title={`Filter by ${subjectLabel(it.subject)}`}
+          >
+            {subjectLabel(it.subject)}
+          </Link>
+          <span className="opacity-60"> › </span>
+          <span>{nodeLabel(it.subject, it.node)}</span>
         </span>
+        <Link
+          href={examLink}
+          className="ml-auto px-1.5 py-0.5 rounded border hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          style={{ borderColor: 'var(--border)' }}
+          title={`Filter by ${EXAM_LABEL[it.examType]}`}
+        >
+          {EXAM_LABEL[it.examType] ?? 'Prelims + Mains'}
+        </Link>
       </div>
 
       <h3 className="text-[16px] leading-snug font-semibold text-[var(--text1)] m-0">
@@ -201,7 +226,13 @@ function Card({ it, isHi }: { it: UpscItem; isHi: boolean }) {
           <span>{isHi ? `+${it.related} और खबरें इस विषय पर` : `+${it.related} more on this story`}</span>
         )}
         {it.secondary.map(s => (
-          <span key={s.node}>{isHi ? 'यह भी ' : 'Also '}{UPSC_SYLLABUS[s.subject]?.paper} · {nodeLabel(s.subject, s.node)}</span>
+          <Link
+            key={s.node}
+            href={`/upsc?paper=${UPSC_SYLLABUS[s.subject]?.paper}&subject=${s.subject}${isHi ? '&lang=hi' : ''}`}
+            className="hover:underline hover:text-[var(--accent)] transition-colors"
+          >
+            {isHi ? 'यह भी ' : 'Also '}{UPSC_SYLLABUS[s.subject]?.paper} · {nodeLabel(s.subject, s.node)}
+          </Link>
         ))}
       </div>
     </article>
@@ -337,17 +368,60 @@ export default async function UPSCPage({ searchParams }: { searchParams: SP }) {
         )}
 
         {(filters.page > 0 || feed.hasNext) && (
-          <nav className="flex justify-between text-[13px] pt-2">
-            {filters.page > 0 ? (
-              <Link href={href(sp, { page: String(filters.page - 1) })} className="text-[var(--accent)]">
-                {isHi ? '← नए' : '← Newer'}
-              </Link>
-            ) : <span />}
-            {feed.hasNext && (
-              <Link href={href(sp, { page: String(filters.page + 1) })} className="text-[var(--accent)]">
-                {isHi ? 'पुराने →' : 'Older →'}
-              </Link>
-            )}
+          <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 text-[13px] pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div>
+              {filters.page > 0 ? (
+                <Link
+                  href={href(sp, { page: String(filters.page - 1) })}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border font-medium text-[var(--accent)] hover:bg-[var(--surface-hover)] transition-colors"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  {isHi ? '← नए नोट्स' : '← Newer notes'}
+                </Link>
+              ) : (
+                <span className="text-[12px] font-mono text-[var(--text3)]">
+                  {isHi ? 'नवीनतम पृष्ठ' : 'Latest page'}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[12px] font-mono text-[var(--text2)]">
+              {filters.page > 1 && (
+                <Link
+                  href={href(sp, { page: '0' })}
+                  className="px-2 py-1 rounded border hover:border-[var(--accent)] text-[var(--text3)] hover:text-[var(--accent)] transition-colors"
+                  style={{ borderColor: 'var(--border)' }}
+                  title="First Page"
+                >
+                  1
+                </Link>
+              )}
+              {filters.page > 2 && <span className="text-[var(--text3)]">…</span>}
+              <span className="px-2.5 py-1 rounded font-semibold bg-[var(--surface)] border text-[var(--text1)]" style={{ borderColor: 'var(--border-hi)' }}>
+                {isHi ? `पृष्ठ ${filters.page + 1}` : `Page ${filters.page + 1}`}
+              </span>
+              {feed.hasNext && (
+                <span className="text-[11px] text-[var(--text3)] pl-1">
+                  ({PAGE_SIZE} {isHi ? 'प्रति पृष्ठ' : '/ page'})
+                </span>
+              )}
+            </div>
+
+            <div>
+              {feed.hasNext ? (
+                <Link
+                  href={href(sp, { page: String(filters.page + 1) })}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border font-medium text-[var(--accent)] hover:bg-[var(--surface-hover)] transition-colors"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  {isHi ? 'पुराने नोट्स →' : 'Older notes →'}
+                </Link>
+              ) : (
+                <span className="text-[12px] font-mono text-[var(--text3)]">
+                  {isHi ? 'संग्रह का अंत' : 'End of feed'}
+                </span>
+              )}
+            </div>
           </nav>
         )}
 
