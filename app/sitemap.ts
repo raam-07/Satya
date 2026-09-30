@@ -42,12 +42,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'weekly' as const,
           priority: 0.7,
         })
-        dynamicRoutes.push({
-          url: `${baseUrl}/vaade/${p.id}?lang=hi`,
-          lastModified,
-          changeFrequency: 'weekly' as const,
-          priority: 0.7,
-        })
       }
     })
 
@@ -59,12 +53,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const lastModStr = m.criminal_last_updated || '2026-06-18'
         dynamicRoutes.push({
           url: `${baseUrl}/minister/${slug}`,
-          lastModified: new Date(lastModStr),
-          changeFrequency: 'weekly' as const,
-          priority: 0.6,
-        })
-        dynamicRoutes.push({
-          url: `${baseUrl}/minister/${slug}?lang=hi`,
           lastModified: new Date(lastModStr),
           changeFrequency: 'weekly' as const,
           priority: 0.6,
@@ -119,6 +107,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     })
 
+    // 4b. Daily UPSC pages (only days with enough notes to be indexed; see MIN_ITEMS_TO_INDEX)
+    const { getUpscDays } = await import('@/lib/upsc')
+    for (const d of await getUpscDays()) {
+      if (d.n < 3) continue
+      dynamicRoutes.push({
+        url: `${baseUrl}/upsc/current-affairs/${d.day}`,
+        lastModified: new Date(d.last * 1000),
+        changeFrequency: 'daily' as const,
+        priority: 0.8,
+      })
+    }
+
     // 5. All timelines (/event/[slug]) in both English and Hindi
     const { serverApi } = await import('@/lib/api.server')
     const events = (await serverApi.eventSitemapEntries()) ?? []
@@ -135,12 +135,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: freq,
         priority: prio,
       })
-      dynamicRoutes.push({
-        url: `${baseUrl}/event/${ev.slug}?lang=hi`,
-        lastModified: lastMod,
-        changeFrequency: freq,
-        priority: prio,
-      })
+      if (ev.hi) {   // only timelines whose Hindi version is actually translated
+        dynamicRoutes.push({
+          url: `${baseUrl}/event/${ev.slug}?lang=hi`,
+          lastModified: lastMod,
+          changeFrequency: freq,
+          priority: prio,
+        })
+      }
     })
 
   } catch (err) {
@@ -161,6 +163,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/timelines`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/timelines?lang=hi`, lastModified: latestTimelineDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
+    { url: `${baseUrl}/upsc/current-affairs`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.85 },
+    { url: `${baseUrl}/upsc/current-affairs?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
     // High-yield UPSC syllabus filter targets (with matching self-referencing canonicals and dynamic titles)
     { url: `${baseUrl}/upsc?paper=GS1`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },

@@ -413,19 +413,41 @@ export const serverApi = {
 
   /** Uncapped, lightweight list for the sitemap: every titled+slugged event.
    *  eventsList() LIMIT 120 is for the UI; the sitemap must cover them all. */
-  async eventSitemapEntries(): Promise<{ slug: string; last_seen: number; state: string }[] | null> {
+  async eventSitemapEntries(): Promise<{ slug: string; last_seen: number; state: string; hi: boolean }[] | null> {
     return cached('eventSitemapEntries', ['events'], async () => {
       const res = await db.execute({
-        sql: `SELECT e.slug, e.last_seen, e.state FROM events e
+        sql: `SELECT e.id, e.slug, e.last_seen, e.state,
+                     (SELECT COUNT(*) FROM event_articles ea WHERE ea.event_id = e.id) AS n
+              FROM events e
               WHERE e.title IS NOT NULL AND e.slug IS NOT NULL AND e.slug != ''
               ORDER BY e.last_seen DESC`,
         args: []
       });
-      return res.rows.map(r => ({
-        slug: String(r.slug),
-        last_seen: Number(r.last_seen ?? 0),
-        state: String(r.state ?? 'closed'),
-      }));
+      // Same rule as eventTimeline().hi_translated: Hindi title + >= 80% of milestones translated
+      const hiTitle = new Set<number>();
+      const hiMs = new Map<number, number>();
+      if (transDb) {
+        try {
+          const [t, m] = await Promise.all([
+            transDb.execute(`SELECT event_id, title_hi FROM event_translations`),
+            transDb.execute(`SELECT event_id, COUNT(*) AS c FROM event_milestone_translations
+                             WHERE milestone_hi IS NOT NULL AND milestone_hi != '' GROUP BY event_id`),
+          ]);
+          t.rows.forEach(r => { if (cleanHindiText(String(r.title_hi || ''))) hiTitle.add(Number(r.event_id)); });
+          m.rows.forEach(r => hiMs.set(Number(r.event_id), Number(r.c)));
+        } catch (e) {
+          console.error('[sitemap] Hindi event lookup failed:', e);
+        }
+      }
+      return res.rows.map(r => {
+        const id = Number(r.id), n = Number(r.n ?? 0);
+        return {
+          slug: String(r.slug),
+          last_seen: Number(r.last_seen ?? 0),
+          state: String(r.state ?? 'closed'),
+          hi: hiTitle.has(id) && (n === 0 || (hiMs.get(id) ?? 0) / n >= 0.8),
+        };
+      });
     }, { revalidate: 259200 });
   },
 
@@ -471,6 +493,7 @@ export const serverApi = {
         category: r.category ? String(r.category) : undefined
       }));
 
+      let hiTranslated = false;
       if (lang === 'hi' && transDb) {
         try {
           const [evTrans, msTrans] = await Promise.all([
@@ -492,6 +515,8 @@ export const serverApi = {
             const val = cleanHindiText(r.milestone_hi ? String(r.milestone_hi) : '');
             if (val) msMap.set(Number(r.article_id), val);
           });
+          const translatedCount = milestones.filter(m => msMap.has(m.article_id)).length;
+          hiTranslated = !!evTitle && (milestones.length === 0 || translatedCount / milestones.length >= 0.8);
           milestones = milestones.map(m => ({
             ...m,
             milestone: msMap.get(m.article_id) || m.milestone,
@@ -503,7 +528,8 @@ export const serverApi = {
 
       return {
         ...event,
-        milestones
+        milestones,
+        ...(lang === 'hi' ? { hi_translated: hiTranslated } : {}),
       };
     }, { revalidate: 259200 });
   },

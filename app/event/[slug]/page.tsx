@@ -31,14 +31,20 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     ? `https://satyadheesh.in/event/${params.slug}?lang=hi`
     : `https://satyadheesh.in/event/${params.slug}`
 
+  // Only offer / index the Hindi version once the timeline is actually translated.
+  const hiReady = isHi
+    ? !!event.hi_translated
+    : !!(await api.eventTimeline(params.slug, 'hi').catch(() => null))?.hi_translated
+
   return {
     title: `${title} — ${isHi ? 'पूरी टाइमलाइन' : 'Full Timeline'} | SatyaDheesh`,
     description,
+    ...(isHi && !hiReady ? { robots: { index: false, follow: true } } : {}),
     alternates: {
       canonical: canonicalUrl,
       languages: {
         'en-IN': `https://satyadheesh.in/event/${params.slug}`,
-        'hi-IN': `https://satyadheesh.in/event/${params.slug}?lang=hi`,
+        ...(hiReady ? { 'hi-IN': `https://satyadheesh.in/event/${params.slug}?lang=hi` } : {}),
         'x-default': `https://satyadheesh.in/event/${params.slug}`,
       },
     },

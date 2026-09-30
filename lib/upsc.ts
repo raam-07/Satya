@@ -31,6 +31,7 @@ export type UpscItem = {
   sourceUrl: string | null
   event: { slug: string; title: string | null } | null
   related: number // other items from the same story collapsed into this one
+  hi?: boolean     // lang='hi': the note itself (why in news) has a Hindi translation
 }
 
 export type UpscFilters = { paper?: string; subject?: string; exam?: string; page: number }
@@ -285,6 +286,7 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       sourceUrl: m.url ? String(m.url) : null,
       event: evId != null ? events.get(evId) ?? null : null,
       related: 0,
+      ...(lang === 'hi' ? { hi: !!uTrans?.why_in_news_hi } : {}),
     }
 
     if (evId != null) {
@@ -375,3 +377,50 @@ export const getUpscTag = (articleId: number) =>
       hasMains: !!row.mains_question,
     }
   }), ['upsc-tag', String(articleId)], { revalidate: 600, tags: ['upsc'] })()
+
+
+// ── Daily pages: /upsc/current-affairs/YYYY-MM-DD ───────────────────────────────
+
+/** 'YYYY-MM-DD' -> IST day start (unix s), or null if malformed. */
+export function parseIstDay(d: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || '')
+  if (!m) return null
+  const utc = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) / 1000
+  if (isNaN(utc)) return null
+  const back = new Date(utc * 1000).toISOString().slice(0, 10)
+  return back === d ? utc - IST : null      // rejects 2026-02-31
+}
+
+/** IST day start -> 'YYYY-MM-DD' */
+export function istDayKey(dayStart: number): string {
+  return new Date((dayStart + IST) * 1000).toISOString().slice(0, 10)
+}
+
+/** Every note of one IST day, best first (deduped like the feed). */
+export const getUpscDay = (dayStart: number, lang: Language = 'en') =>
+  unstable_cache(() => safe([] as UpscItem[], async () => {
+    if (!upscDb) return [] as UpscItem[]
+    const res = await upscDb.execute({
+      sql: `SELECT ${COLS} FROM upsc_articles WHERE published_at >= ? AND published_at < ?
+            ORDER BY upsc_score DESC, published_at DESC LIMIT 200`,
+      args: [dayStart, dayStart + 86400],
+    })
+    return hydrate(res.rows as unknown as Record<string, unknown>[], lang)
+  }), ['upsc-day', String(dayStart), lang],
+  // today changes through the day; past days are settled
+  { revalidate: dayStart >= istDayStart() - 86400 ? 300 : 86400, tags: ['upsc'] })()
+
+/** Days that have notes (newest first) with counts: archive + sitemap. */
+export const getUpscDays = (limit = 400) =>
+  unstable_cache(() => safe([] as { day: string; start: number; n: number; last: number }[], async () => {
+    if (!upscDb) return []
+    const res = await upscDb.execute({
+      sql: `SELECT ((published_at + ${IST}) / 86400) AS d, COUNT(*) AS n, MAX(published_at) AS last
+            FROM upsc_articles GROUP BY d ORDER BY d DESC LIMIT ?`,
+      args: [limit],
+    })
+    return res.rows.map(r => {
+      const start = Number(r.d) * 86400 - IST
+      return { day: istDayKey(start), start, n: Number(r.n), last: Number(r.last) }
+    })
+  }), ['upsc-days', String(limit)], { revalidate: 900, tags: ['upsc'] })()

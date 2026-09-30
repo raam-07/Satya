@@ -33,6 +33,18 @@ const HINDI_VERDICT_LABEL: Record<string, string> = {
 
 export const revalidate = false
 
+/** Dates of THIS PAGE (our review), as opposed to promise.made_on (when the leader made
+ *  the promise). Without them Google took made_on as the page date ("published 7 years ago"). */
+function reviewDates(promise: any): { published?: string; modified?: string } {
+  const hist = (promise.status_history || []).map((h: any) => h.changed_at).filter(Boolean)
+  const ev = (promise.evidence_articles || []).map((e: any) => e.scraped_at).filter(Boolean)
+  const reviewed = [promise.status_last_reviewed, promise.editorial?.verified_on].filter(Boolean)
+  const iso = (d: string) => { const t = new Date(d); return isNaN(t.getTime()) ? null : t.toISOString() }
+  const all = [...hist, ...ev, ...reviewed].map(iso).filter(Boolean).sort() as string[]
+  const firstReview = [...hist, ...ev].map(iso).filter(Boolean).sort()[0] as string | undefined
+  return { published: firstReview || all[0], modified: all[all.length - 1] }
+}
+
 export async function generateMetadata({ params, searchParams }: { params: { id: string }; searchParams?: { lang?: string } }): Promise<Metadata> {
   const promiseId = decodeURIComponent(params.id)
   const isHi = searchParams?.lang === 'hi'
@@ -83,11 +95,13 @@ export async function generateMetadata({ params, searchParams }: { params: { id:
   return {
     title,
     description,
+    // The body of this page isn't translated yet, so the ?lang=hi version is English content
+    // under a Hindi title: keep it out of Google (and out of hreflang) until it is.
+    ...(isHi ? { robots: { index: false, follow: true } } : {}),
     alternates: {
       canonical: canonicalUrl,
       languages: {
         'en-IN': `https://satyadheesh.in/vaade/${canonicalId}`,
-        'hi-IN': `https://satyadheesh.in/vaade/${canonicalId}?lang=hi`,
         'x-default': `https://satyadheesh.in/vaade/${canonicalId}`,
       },
     },
@@ -95,6 +109,9 @@ export async function generateMetadata({ params, searchParams }: { params: { id:
       title,
       description,
       url: canonicalUrl,
+      type: 'article',
+      ...(reviewDates(promise).published ? { publishedTime: reviewDates(promise).published } : {}),
+      ...(reviewDates(promise).modified ? { modifiedTime: reviewDates(promise).modified } : {}),
       images: [
         {
           url: `https://satyadheesh.in/vaade/${canonicalId}/opengraph-image`,
@@ -369,10 +386,14 @@ export default async function PromisePage({ params }: { params: { id: string } }
     { name: `Promise #${canonicalId}`, item: pageUrl },
   ])
   const RATING_MAP: Record<string, number> = { kept: 5, ongoing: 3, void: 2, broken: 1 }
+  const pageDates = reviewDates(promise)
   const claimReviewData = {
     '@context': 'https://schema.org',
     '@type': 'ClaimReview',
     url: pageUrl,
+    // Our review's dates; the claim's own date stays on itemReviewed below.
+    ...(pageDates.published ? { datePublished: pageDates.published } : {}),
+    ...(pageDates.modified ? { dateModified: pageDates.modified } : {}),
     author: { '@type': 'Organization', name: 'SatyaDheesh', url: 'https://satyadheesh.in' },
     claimReviewed: promise.promise,
     itemReviewed: {

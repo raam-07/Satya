@@ -61,11 +61,13 @@ export async function generateMetadata({ params, searchParams }: { params: { nam
   return {
     title,
     description,
+    // The body of this page isn't translated yet, so the ?lang=hi version is English content
+    // under a Hindi title: keep it out of Google (and out of hreflang) until it is.
+    ...(isHi ? { robots: { index: false, follow: true } } : {}),
     alternates: {
       canonical: canonicalUrl,
       languages: {
         'en-IN': `https://satyadheesh.in/minister/${canonicalSlug}`,
-        'hi-IN': `https://satyadheesh.in/minister/${canonicalSlug}?lang=hi`,
         'x-default': `https://satyadheesh.in/minister/${canonicalSlug}`,
       },
     },

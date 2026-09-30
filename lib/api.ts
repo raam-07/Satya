@@ -246,6 +246,8 @@ export interface EventMilestone {
 
 export interface EventTimeline extends EventSummary {
   milestones: EventMilestone[]
+  /** lang='hi' only: title and >= 80% of milestones have a Hindi translation */
+  hi_translated?: boolean
 }
 
 // ── manifest.json ────────────────────────────────────────────────────────────
