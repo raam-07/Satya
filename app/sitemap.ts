@@ -107,6 +107,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     })
 
+    // 4a. Source pages (/source/[slug]); Hindi version only with enough translated stories
+    const { serverApi: srcApi } = await import('@/lib/api.server')
+    for (const src of await srcApi.sourceSitemapEntries()) {
+      if (src.n30 < 10) continue
+      const slug = slugify(src.name)
+      const lastModified = new Date((src.last || 0) * 1000)
+      dynamicRoutes.push({ url: `${baseUrl}/source/${slug}`, lastModified, changeFrequency: 'daily' as const, priority: 0.6 })
+      if (src.hi30 >= 10) {
+        dynamicRoutes.push({ url: `${baseUrl}/source/${slug}?lang=hi`, lastModified, changeFrequency: 'daily' as const, priority: 0.6 })
+      }
+    }
+
     // 4b. Daily UPSC pages (only days with enough notes to be indexed; see MIN_ITEMS_TO_INDEX)
     const { getUpscDays } = await import('@/lib/upsc')
     for (const d of await getUpscDays()) {

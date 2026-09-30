@@ -131,3 +131,29 @@ export function cleanHindiText(text?: string | null): string {
     .replace(/\s+/g, ' ')
     .trim()
 }
+
+
+/** How Hindi readers write the outlets we aggregate (used on /source pages in Hindi). */
+const SOURCE_NAME_HI: Record<string, string> = {
+  'times of india': 'टाइम्स ऑफ इंडिया',
+  'the times of india': 'टाइम्स ऑफ इंडिया',
+  'ndtv': 'एनडीटीवी',
+  'the hindu': 'द हिंदू',
+  'al jazeera': 'अल जज़ीरा',
+  'bbc': 'बीबीसी',
+  'bbc news': 'बीबीसी न्यूज़',
+  'economic times': 'इकोनॉमिक टाइम्स',
+  'the economic times': 'इकोनॉमिक टाइम्स',
+  'wired': 'वायर्ड',
+  'techcrunch': 'टेकक्रंच',
+  'indian express': 'इंडियन एक्सप्रेस',
+  'the indian express': 'इंडियन एक्सप्रेस',
+  'hindustan times': 'हिंदुस्तान टाइम्स',
+  'india today': 'इंडिया टुडे',
+  'deccan herald': 'डेक्कन हेराल्ड',
+  'livemint': 'लाइवमिंट',
+  'reuters': 'रॉयटर्स',
+}
+export function sourceNameHi(name: string): string {
+  return SOURCE_NAME_HI[(name || '').trim().toLowerCase()] || name
+}

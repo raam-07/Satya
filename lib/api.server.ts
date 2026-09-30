@@ -1393,8 +1393,8 @@ export const serverApi = {
     });
   },
 
-  async source(name: string): Promise<{ source?: string; articles?: Article[] } | null> {
-    return cached(`source:${name.toLowerCase()}`, [], async () => {
+  async source(name: string, lang: string = 'en'): Promise<{ source?: string; articles?: Article[] } | null> {
+    return cached(`source:${name.toLowerCase()}:${lang}`, [], async () => {
       // 1. Fetch all sources and match by slugified name in JS
       const sourcesCheck = await db.execute("SELECT id, name FROM sources");
       const matchedSource = sourcesCheck.rows.find(
@@ -1416,8 +1416,24 @@ export const serverApi = {
         args: [Number(matchedSource.id)]
       });
       const articles = res.rows.map(row => mapRowToArticle(row));
-      return { source: canonicalName, articles };
+      // Hindi: only articles that have a Hindi translation (strict, like the Hindi feed)
+      return { source: canonicalName, articles: lang === 'hi' ? await hydrateHindiArticles(articles) : articles };
     }, { revalidate: 900 });
+  },
+
+  /** Sources with enough recent coverage to deserve an indexed page (sitemap). */
+  async sourceSitemapEntries(): Promise<{ name: string; n30: number; hi30: number; last: number }[]> {
+    return cached('sourceSitemapEntries', [], async () => {
+      const res = await db.execute(`
+        SELECT s.name AS name, COUNT(*) AS n30, SUM(a.translated_hi = 1) AS hi30, MAX(a.scraped_at) AS last
+        FROM articles a JOIN sources s ON s.id = a.source_id
+        WHERE a.status IN ('classified', 'entity_processed', 'processed')
+          AND a.scraped_at >= strftime('%s', 'now', '-30 days')
+        GROUP BY s.name`);
+      return res.rows.map(r => ({
+        name: String(r.name), n30: Number(r.n30 || 0), hi30: Number(r.hi30 || 0), last: Number(r.last || 0),
+      }));
+    }, { revalidate: 21600 });
   },
 
   async politicians(): Promise<any[] | null> {

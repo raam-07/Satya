@@ -399,10 +399,10 @@ export const api = {
     return fetchClientJSON<{ articles?: Article[] }>('search', query);
   },
 
-  async source(name: string): Promise<{ source?: string; articles?: Article[] } | null> {
+  async source(name: string, lang: string = 'en'): Promise<{ source?: string; articles?: Article[] } | null> {
     if (typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
       const { serverApi } = await import('./api.server');
-      return serverApi.source(name);
+      return serverApi.source(name, lang);
     }
     return fetchClientJSON<{ source?: string; articles?: Article[] }>('source', name);
   },
