@@ -959,7 +959,7 @@ export const serverApi = {
                 JOIN articles a ON a.id = ae.article_id
                 LEFT JOIN sources s ON a.source_id = s.id
                 WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed')
-                ORDER BY ae.article_id DESC LIMIT 100`,
+                ORDER BY ae.article_id DESC LIMIT 300`,
           args: [...stateSlugs]
         },
         {
@@ -994,7 +994,18 @@ export const serverApi = {
         }
       ]);
 
-      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
+      // Older state tags came from keyword matching: a UPSC quiz or national round-up that names
+      // this state once was tagged with it. Until those tags are rebuilt (classifier entity_rules.py),
+      // only list articles that are about the state: named in the headline, or the article mentions
+      // at most 2 states and isn't an international story.
+      const termRes = uniqueSearchTerms.map(t => new RegExp(`(^|[^\\p{L}])${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\p{L}]|$)`, 'iu'));
+      const aboutState = (a: Article) => {
+        const headline = `${a.rephrased_title ?? ''} ${a.title ?? ''}`;
+        if (termRes.some(re => re.test(headline))) return true;
+        const n = Array.isArray(a.states_mentioned) ? a.states_mentioned.length : 0;
+        return n > 0 && n <= 2 && a.category !== 'international';
+      };
+      const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row)).filter(aboutState).slice(0, 100);
       const total_articles = Number(totalRes.rows[0]?.c || 0);
       const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
 
