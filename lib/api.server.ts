@@ -240,7 +240,15 @@ async function cached<T>(
         return fn();
       },
       [key],
-      { tags: PERSIST_KEYS.test(key) ? [...tags, 'persist'] : tags, revalidate: options?.revalidate }
+      {
+        tags: [
+          ...tags,
+          ...(PERSIST_KEYS.test(key) ? ['persist'] : []),
+          // Hindi data: refreshed on its own by the Hindi service (tag 'hi') when translations land
+          ...(/(^|:)hi(:|$)/.test(key) ? ['hi'] : []),
+        ],
+        revalidate: options?.revalidate,
+      }
     )();
   })();
 

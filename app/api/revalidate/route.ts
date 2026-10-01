@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 const COOLDOWN_MS = 240 * 60 * 1000; // 4 hours: each revalidation makes every page re-query the DB
 // Timelines change once a day (timeline service run), so their caches are refreshed at most twice a day.
 const EVENTS_EVERY_MS = 12 * 60 * 60 * 1000;
+const HI_COOLDOWN_MS = 120 * 60 * 1000; // Hindi caches: at most every 2 hours
 const g = global as any;
 
 export async function GET(req: NextRequest) {
@@ -25,6 +26,19 @@ export async function POST(req: NextRequest) {
   }
 
   const now = Date.now();
+
+  // Hindi service: refreshes only the Hindi caches, on its own clock, without using up the
+  // main 4-hour slot (which belongs to the classifier's site-wide refresh).
+  if (tag === 'hi') {
+    const last = g.lastHiRevalidatedAt || 0;
+    if (!force && now - last < HI_COOLDOWN_MS) {
+      return NextResponse.json({ revalidated: false, reason: 'Hindi cooldown active', remaining_seconds: Math.ceil((HI_COOLDOWN_MS - (now - last)) / 1000) });
+    }
+    revalidateTag('hi');
+    g.lastHiRevalidatedAt = now;
+    return NextResponse.json({ revalidated: true, tag: 'hi', now });
+  }
+
   const lastRevalidatedAt = getLastRevalidatedAt();
   if (!force && (now - lastRevalidatedAt < COOLDOWN_MS)) {
     const remainingSeconds = Math.ceil((COOLDOWN_MS - (now - lastRevalidatedAt)) / 1000);
