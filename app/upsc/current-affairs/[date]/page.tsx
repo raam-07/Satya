@@ -7,6 +7,8 @@ import { cleanTitle } from '@/lib/utils'
 import { UPSC_PAPERS, getUpscDay, getUpscDays, parseIstDay, type UpscItem } from '@/lib/upsc'
 import { UpscCard, PAPER_HINT } from '@/components/UpscCard'
 import { JsonLd } from '@/components/JsonLd'
+import { UpscPdfButton } from '@/components/UpscPdfButton'
+import { getReportFiles } from '@/lib/upscReports'
 
 export const revalidate = false
 
@@ -74,7 +76,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 export default async function UpscDayPage({ params, searchParams }: Props) {
   const lang: Language = getLanguage(cookies().get(LANG_COOKIE)?.value, searchParams?.lang)
   const isHi = lang === 'hi'
-  const [data, days] = await Promise.all([load(params.date, lang), getUpscDays()])
+  const [data, days, files] = await Promise.all([load(params.date, lang), getUpscDays(), getReportFiles()])
   if (!data) notFound()
   const { start, items } = data
   const q = isHi ? '?lang=hi' : ''
@@ -126,6 +128,12 @@ export default async function UpscDayPage({ params, searchParams }: Props) {
           <span className="font-mono text-[11px] text-[var(--text3)]">
             {' · '}{byPaper.map(g => `${g.paper} ${g.items.length}`).join(' · ')}
           </span>
+        </p>
+        <UpscPdfButton kind="daily" period={params.date} isHi={isHi} files={files} />
+        <p className="text-[12px] mt-2 mb-0">
+          <Link href={`/upsc/reports${q}`} className="text-[var(--accent)] hover:underline">
+            {isHi ? 'साप्ताहिक और मासिक पीडीएफ →' : 'Weekly & monthly PDFs →'}
+          </Link>
         </p>
       </div>
 

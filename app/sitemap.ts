@@ -131,6 +131,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     }
 
+    // 4c. Weekly/monthly UPSC reports: listed once their PDF exists (Hindi: once the Hindi PDF exists,
+    // which the builder only makes when >= 80% of the notes are translated)
+    {
+      const { availablePeriods, getReportFiles, reportFileKey, reportPagePath } = await import('@/lib/upscReports')
+      const [avail, files] = await Promise.all([availablePeriods(), getReportFiles()])
+      for (const kind of ['weekly', 'monthly'] as const) {
+        for (const p of avail[kind]) {
+          for (const lang of ['en', 'hi'] as const) {
+            const f = files[reportFileKey(kind, p.key, lang)]
+            if (!f || f.items < 5) continue
+            dynamicRoutes.push({
+              url: `${baseUrl}${reportPagePath(kind, p.key, lang === 'hi')}`,
+              lastModified: new Date(f.updatedAt * 1000),
+              changeFrequency: (Date.now() / 1000 < p.end ? 'daily' : 'monthly') as 'daily' | 'monthly',
+              priority: kind === 'monthly' ? 0.85 : 0.8,
+            })
+          }
+        }
+      }
+    }
+
     // 5. All timelines (/event/[slug]) in both English and Hindi
     const { serverApi } = await import('@/lib/api.server')
     const events = (await serverApi.eventSitemapEntries()) ?? []
@@ -178,6 +199,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/upsc/current-affairs`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.85 },
     { url: `${baseUrl}/upsc/current-affairs?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'hourly' as const, priority: 0.9 },
+    { url: `${baseUrl}/upsc/reports`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.9 },
+    { url: `${baseUrl}/upsc/reports?lang=hi`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.9 },
     // High-yield UPSC syllabus filter targets (with matching self-referencing canonicals and dynamic titles)
     { url: `${baseUrl}/upsc?paper=GS1`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/upsc?paper=GS2`, lastModified: latestArticleDate, changeFrequency: 'daily' as const, priority: 0.8 },

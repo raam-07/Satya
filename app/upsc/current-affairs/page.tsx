@@ -54,6 +54,11 @@ export default async function UpscArchivePage({ searchParams }: Props) {
         <p className="text-[13px] text-[var(--text2)] mt-1 mb-0">
           {isHi ? 'हर दिन का एक पेज, जीएस पेपर के अनुसार।' : 'One page per day, organised by GS paper.'}
         </p>
+        <p className="text-[12.5px] mt-2 mb-0">
+          <Link href={`/upsc/reports${q}`} className="font-semibold text-[var(--accent)] hover:underline">
+            {isHi ? '⬇ दैनिक, साप्ताहिक और मासिक पीडीएफ →' : '⬇ Daily, weekly & monthly PDFs →'}
+          </Link>
+        </p>
       </div>
       <div className="px-4 md:px-6 space-y-5 mt-4">
         {months.length === 0 && (

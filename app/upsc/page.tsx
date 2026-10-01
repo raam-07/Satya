@@ -174,6 +174,9 @@ export default async function UPSCPage({ searchParams }: { searchParams: SP }) {
           <Link href={`/upsc/current-affairs${isHi ? '?lang=hi' : ''}`} className="text-[var(--text2)] hover:text-[var(--accent)] hover:underline">
             {isHi ? 'दैनिक संग्रह' : 'Daily archive'}
           </Link>
+          <Link href={`/upsc/reports${isHi ? '?lang=hi' : ''}`} className="font-semibold text-[var(--accent)] hover:underline">
+            {isHi ? '⬇ पीडीएफ: दैनिक · साप्ताहिक · मासिक' : '⬇ PDFs: daily · weekly · monthly'}
+          </Link>
         </p>
       </div>
 
