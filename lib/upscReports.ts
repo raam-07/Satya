@@ -185,17 +185,23 @@ const STOP = new Set(['about', 'after', 'again', 'against', 'along', 'amid', 'am
   'could', 'during', 'from', 'have', 'into', 'more', 'over', 'said', 'says', 'such', 'than', 'that', 'their', 'there',
   'these', 'they', 'this', 'those', 'under', 'were', 'what', 'when', 'where', 'which', 'while', 'with', 'will', 'would',
   'india', 'indian', 'government', 'centre', 'state', 'states', 'news', 'today', 'live', 'updates', 'update', 'year'])
-const words = (t: string) => new Set((t.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter(w => !STOP.has(w)))
+// crude stemming so 'review' / 'reviewing' / 'reviews' count as the same word
+const stem = (w: string) => w.length > 5 ? w.replace(/(ing|ed|es|s)$/, '') : w
+const words = (t: string) => new Set((t.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter(w => !STOP.has(w)).map(stem))
 const kws = (it: UpscItem) => new Set(it.keywords.map(k => k.toLowerCase().trim()).filter(Boolean))
 const shared = (a: Set<string>, b: Set<string>) => { let n = 0; a.forEach(x => { if (b.has(x)) n++ }); return n }
 
 function sameStory(a: UpscItem, b: UpscItem): boolean {
   if (a.paper !== b.paper) return false
   if (a.node === b.node && shared(kws(a), kws(b)) >= 2) return true
-  const wa = words(a.title), wb = words(b.title)
-  const s = shared(wa, wb)
-  const union = wa.size + wb.size - s
-  return s >= 3 && union > 0 && s / union >= 0.3
+  const jac = (x: Set<string>, y: Set<string>) => { const s = shared(x, y), u = x.size + y.size - s; return { s, j: u ? s / u : 0 } }
+  const t = jac(words(a.title), words(b.title))
+  if (t.s >= 3 && t.j >= 0.3) return true
+  // Same event told differently (e.g. two reports of one phone call): compare headline + 'why in news',
+  // only for notes a few days apart.
+  if (Math.abs(a.publishedAt - b.publishedAt) > 4 * DAY) return false
+  const w = jac(words(`${a.title} ${a.whyInNews}`), words(`${b.title} ${b.whyInNews}`))
+  return w.s >= 5 && w.j >= 0.22
 }
 
 function mergeStories(items: UpscItem[]): UpscItem[] {
