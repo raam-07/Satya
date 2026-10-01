@@ -321,7 +321,7 @@ export const getUpscFeed = (f: UpscFilters, lang: Language = 'en') =>
     })
     const rows = res.rows as unknown as Record<string, unknown>[]
     return { items: await hydrate(rows.slice(0, PAGE_SIZE), lang), hasNext: rows.length > PAGE_SIZE }
-  }), ['upsc-feed', JSON.stringify(f), lang], { revalidate: 300, tags: ['upsc'] })()
+  }), ['upsc-feed', JSON.stringify(f), lang], { revalidate: 1800, tags: ['upsc', 'persist'] })()
 
 /** Highest-scoring items of the last ~36h: the "if you read nothing else" list. */
 export const getUpscTopPicks = (lang: Language = 'en') =>
@@ -334,7 +334,7 @@ export const getUpscTopPicks = (lang: Language = 'en') =>
       args: [since],
     })
     return (await hydrate(res.rows as unknown as Record<string, unknown>[], lang)).slice(0, 5)
-  }), ['upsc-top', lang], { revalidate: 300, tags: ['upsc'] })()
+  }), ['upsc-top', lang], { revalidate: 1800, tags: ['upsc', 'persist'] })()
 
 export const getUpscStats = () =>
   unstable_cache(() => safe({ today: 0, week: 0, papers: {} as Record<string, number> }, async () => {
@@ -343,18 +343,19 @@ export const getUpscStats = () =>
     const week = today - 6 * 86400
     const [c, p] = await Promise.all([
       upscDb.execute({
-        sql: `SELECT SUM(published_at >= ?) AS today, SUM(published_at >= ?) AS week FROM upsc_articles`,
+        // range on idx_upsc_pub: reads one week of notes, not the whole table
+        sql: `SELECT COUNT(*) AS week, SUM(published_at >= ?) AS today FROM upsc_articles WHERE published_at >= ?`,
         args: [today, week],
       }),
       upscDb.execute({
-        sql: `SELECT gs_paper, COUNT(*) AS n FROM upsc_articles WHERE published_at >= ? GROUP BY gs_paper`,
+        sql: `SELECT gs_paper, COUNT(*) AS n FROM upsc_articles INDEXED BY idx_upsc_pub WHERE published_at >= ? GROUP BY gs_paper`,
         args: [week],
       }),
     ])
     const papers: Record<string, number> = {}
     p.rows.forEach(r => { papers[String(r.gs_paper)] = Number(r.n) })
     return { today: Number(c.rows[0]?.today ?? 0), week: Number(c.rows[0]?.week ?? 0), papers }
-  }), ['upsc-stats'], { revalidate: 300, tags: ['upsc'] })()
+  }), ['upsc-stats'], { revalidate: 1800, tags: ['upsc', 'persist'] })()
 
 export type UpscTag = { paper: string; subject: string; node: string; pointers: number; hasMains: boolean }
 
@@ -376,7 +377,7 @@ export const getUpscTag = (articleId: number) =>
       pointers: arr(row.prelims_pointers).length,
       hasMains: !!row.mains_question,
     }
-  }), ['upsc-tag', String(articleId)], { revalidate: 600, tags: ['upsc'] })()
+  }), ['upsc-tag', String(articleId)], { revalidate: 21600, tags: ['upsc'] })()
 
 
 // ── Daily pages: /upsc/current-affairs/YYYY-MM-DD ───────────────────────────────
@@ -408,7 +409,7 @@ export const getUpscDay = (dayStart: number, lang: Language = 'en') =>
     return hydrate(res.rows as unknown as Record<string, unknown>[], lang)
   }), ['upsc-day', String(dayStart), lang],
   // today changes through the day; past days are settled
-  { revalidate: dayStart >= istDayStart() - 86400 ? 300 : 86400, tags: ['upsc'] })()
+  { revalidate: dayStart >= istDayStart() - 86400 ? 1800 : 86400, tags: ['upsc', 'persist'] })()
 
 /** Days that have notes (newest first) with counts: archive + sitemap. */
 export const getUpscDays = (limit = 400) =>
@@ -416,11 +417,12 @@ export const getUpscDays = (limit = 400) =>
     if (!upscDb) return []
     const res = await upscDb.execute({
       sql: `SELECT ((published_at + ${IST}) / 86400) AS d, COUNT(*) AS n, MAX(published_at) AS last
-            FROM upsc_articles GROUP BY d ORDER BY d DESC LIMIT ?`,
-      args: [limit],
+            FROM upsc_articles WHERE published_at >= ? GROUP BY d ORDER BY d DESC LIMIT ?`,
+      // a day has notes only if published that day, so `limit` days back covers `limit` days
+      args: [istDayStart() - (limit + 1) * 86400, limit],
     })
     return res.rows.map(r => {
       const start = Number(r.d) * 86400 - IST
       return { day: istDayKey(start), start, n: Number(r.n), last: Number(r.last) }
     })
-  }), ['upsc-days', String(limit)], { revalidate: 900, tags: ['upsc'] })()
+  }), ['upsc-days', String(limit)], { revalidate: 3600, tags: ['upsc', 'persist'] })()

@@ -6,6 +6,7 @@ import { transDb } from './db.translation';
 import { upscDb } from './db.upsc';
 import { slugify, partySlugify, cleanHindiText } from './utils';
 import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
+import { readSiteStats, entityStats, type SiteStats } from './siteStats';
 import type {
   Article,
   IndiaOverview,
@@ -219,6 +220,11 @@ function mapRowToArticle(row: any): Article {
 // --- Next.js unstable_cache & In-Memory Request Deduplication ---
 const inflight = new Map<string, Promise<any>>();
 
+// Entries that cost real DB reads to rebuild are also kept in Turso by cache-handler.js
+// (tag 'persist'), so they survive deploys. Cheap per-article lookups and registry-only
+// data (GitHub JSON) stay in the local cache only.
+const PERSIST_KEYS = /^(indiaOverview|heavyOverviewStats|eventsList|eventSitemapEntries|eventTimeline|party|minister|state|topic|category|feed|source|sourceSitemapEntries|publicLedgerStats)(:|$)/;
+
 async function cached<T>(
   key: string,
   tags: string[],
@@ -234,7 +240,7 @@ async function cached<T>(
         return fn();
       },
       [key],
-      { tags, revalidate: options?.revalidate }
+      { tags: PERSIST_KEYS.test(key) ? [...tags, 'persist'] : tags, revalidate: options?.revalidate }
     )();
   })();
 
@@ -316,6 +322,69 @@ async function getHeavyOverviewStats() {
 
     return { top_ministers_30d, top_parties_30d, top_states_30d };
   });
+}
+
+
+// --- Precomputed daily stats (site_stats table, see lib/siteStats.ts) ---
+// Null when the table is missing/stale: callers then count live, as before.
+async function getSiteStats(): Promise<SiteStats | null> {
+  try {
+    return await cached('siteStats', ['stats'], async () => {
+      const s = await readSiteStats();
+      if (!s) throw new Error('site_stats unavailable'); // not cached: retried next time
+      return s;
+    }, { revalidate: 86400 });
+  } catch {
+    return null;
+  }
+}
+
+/** First article id scraped at/after ts (ids follow scraped_at): lets 30-day counts
+ *  walk an id range instead of every article an entity was ever tagged in. */
+async function firstIdSince(ts: number): Promise<number> {
+  const r = await db.execute({ sql: `SELECT id FROM articles WHERE scraped_at >= ? ORDER BY scraped_at LIMIT 1`, args: [ts] });
+  return r.rows.length ? Number(r.rows[0].id) : Number.MAX_SAFE_INTEGER;
+}
+
+/** Total / 30-day counts (and, for states, top cities and topics) for an entity page. */
+async function entityCounts(kind: string, slugs: string[], withAggs = false): Promise<{
+  total: number; n30: number; cities: Record<string, number>; topics: Record<string, number>;
+}> {
+  const stats = await getSiteStats();
+  if (stats) return entityStats(stats, kind, slugs);
+
+  const ph = slugs.map(() => '?').join(', ');
+  const floor = await firstIdSince(Math.floor(Date.now() / 1000) - 30 * 24 * 3600);
+  const base = `FROM article_entities ae JOIN articles a ON a.id = ae.article_id
+                WHERE ae.kind = ? AND ae.slug IN (${ph}) AND a.status IN ('classified', 'entity_processed', 'processed')`;
+  const stmts: { sql: string; args: any[] }[] = [
+    { sql: `SELECT COUNT(*) AS c ${base}`, args: [kind, ...slugs] },
+    { sql: `SELECT COUNT(*) AS c ${base} AND ae.article_id >= ?`, args: [kind, ...slugs, floor] },
+  ];
+  if (withAggs) {
+    for (const col of ['cities_mentioned', 'topic_tags']) {
+      stmts.push({
+        sql: `SELECT j.value AS val, COUNT(*) AS c
+              FROM article_entities ae JOIN articles a ON a.id = ae.article_id, json_each(a.${col}) j
+              WHERE ae.kind = ? AND ae.slug IN (${ph}) AND ae.article_id >= ?
+                AND a.status IN ('classified', 'entity_processed', 'processed')
+              GROUP BY j.value ORDER BY c DESC LIMIT 10`,
+        args: [kind, ...slugs, floor],
+      });
+    }
+  }
+  const res = await db.batch(stmts);
+  const agg = (i: number) => {
+    const m: Record<string, number> = {};
+    (res[i]?.rows || []).forEach(r => { m[String(r.val)] = Number(r.c); });
+    return m;
+  };
+  return {
+    total: Number(res[0].rows[0]?.c || 0),
+    n30: Number(res[1].rows[0]?.c || 0),
+    cities: withAggs ? agg(2) : {},
+    topics: withAggs ? agg(3) : {},
+  };
 }
 
 // --- Timeline (events) helpers ---
@@ -417,7 +486,7 @@ export const serverApi = {
     return cached('eventSitemapEntries', ['events'], async () => {
       const res = await db.execute({
         sql: `SELECT e.id, e.slug, e.last_seen, e.state,
-                     (SELECT COUNT(*) FROM event_articles ea WHERE ea.event_id = e.id) AS n
+                     e.article_count AS n
               FROM events e
               WHERE e.title IS NOT NULL AND e.slug IS NOT NULL AND e.slug != ''
               ORDER BY e.last_seen DESC`,
@@ -550,7 +619,7 @@ export const serverApi = {
   },
 
   async indiaOverview(lang: string = 'en'): Promise<IndiaOverview | null> {
-    return cached(`indiaOverview:${lang}`, ['entities', 'promises', 'articles'], async () => {
+    return cached(`indiaOverview:${lang}`, ['entities', 'promises', 'articles', 'stats'], async () => {
       const entities = await loadEntities(lang);
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -565,86 +634,79 @@ export const serverApi = {
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
       const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
 
-      const [
-        totalRes,
-        last7dRes,
-        last30dRes,
-        flagged30dRes,
-        flaggedTodayRes,
-        storiesRes,
-        catBreakdownRes,
-        flagCatsRes
-      ] = await db.batch([
-        "SELECT (SELECT COUNT(*) FROM articles) - (SELECT COUNT(*) FROM articles WHERE status IN ('scraped', 'rephrased')) as c",
-        {
-          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
-          args: [sevenDaysAgo]
-        },
-        {
-          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?",
-          args: [thirtyDaysAgo]
-        },
-        {
-          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND (civic_flag = 1 OR civic_flag = '1' OR civic_flag IS TRUE) AND scraped_at >= ?",
-          args: [thirtyDaysAgo]
-        },
-        {
-          sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND (civic_flag = 1 OR civic_flag = '1' OR civic_flag IS TRUE) AND scraped_at >= ?",
-          args: [todayStart]
-        },
-        {
-          sql: `SELECT * FROM (
-                  SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
-                         a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                  FROM articles a INDEXED BY idx_articles_scraped
-                  LEFT JOIN sources s ON a.source_id = s.id
-                  WHERE a.status IN ('classified', 'entity_processed', 'processed')
-                  ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''}
-                  ORDER BY a.scraped_at DESC
-                  LIMIT 200
-                ) a
-                WHERE a.category IN ('politics', 'economy', 'crime', 'international')
+      const stories = {
+        sql: `SELECT * FROM (
+                SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target,
+                       a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
+                FROM articles a INDEXED BY idx_articles_scraped
+                LEFT JOIN sources s ON a.source_id = s.id
+                WHERE a.status IN ('classified', 'entity_processed', 'processed')
+                ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''}
                 ORDER BY a.scraped_at DESC
-                LIMIT 10`,
-          args: []
-        },
-        {
-          sql: `SELECT category, COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?
-                GROUP BY category`,
-          args: [thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT civic_flag_category, COUNT(*) as c FROM articles 
-                WHERE status IN ('classified', 'entity_processed', 'processed') AND (civic_flag = 1 OR civic_flag = '1' OR civic_flag IS TRUE) AND scraped_at >= ?
-                GROUP BY civic_flag_category`,
-          args: [thirtyDaysAgo]
-        }
-      ]);
+                LIMIT 200
+              ) a
+              WHERE a.category IN ('politics', 'economy', 'crime', 'international')
+              ORDER BY a.scraped_at DESC
+              LIMIT 10`,
+        args: []
+      };
+      // civic_flag is always stored as integer 0/1, so "= 1" keeps this on
+      // idx_articles_status_civic_scraped (only today's flagged rows are read).
+      const flaggedSince = (ts: number) => ({
+        sql: `SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?`,
+        args: [ts]
+      });
 
-      const total = Number(totalRes.rows[0]?.c || 0);
-      const last7d = Number(last7dRes.rows[0]?.c || 0);
-      const last30d = Number(last30dRes.rows[0]?.c || 0);
-      const flagged30d = Number(flagged30dRes.rows[0]?.c || 0);
+      let total = 0, last7d = 0, last30d = 0, flagged30d = 0;
+      let category_breakdown_30d: Record<string, number> = {};
+      let top_flag_categories: Record<string, number> = {};
+      let top_ministers_30d: Record<string, number> = {};
+      let top_parties_30d: Record<string, number> = {};
+      let top_states_30d: Record<string, number> = {};
+
+      const stats = await getSiteStats();
+      const [storiesRes, flaggedTodayRes] = await db.batch([stories, flaggedSince(todayStart)]);
+      if (stats) {
+        ({ total, last7d, last30d, flagged30d, category_breakdown_30d, top_flag_categories,
+           top_ministers_30d, top_parties_30d, top_states_30d } = stats.overview);
+      } else {
+        // No precomputed stats yet: count live (the pre-site_stats path).
+        const [totalRes, last7dRes, last30dRes, flagged30dRes, catBreakdownRes, flagCatsRes] = await db.batch([
+          "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed')",
+          { sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?", args: [sevenDaysAgo] },
+          { sql: "SELECT COUNT(*) as c FROM articles WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?", args: [thirtyDaysAgo] },
+          flaggedSince(thirtyDaysAgo),
+          {
+            sql: `SELECT category, COUNT(*) as c FROM articles
+                  WHERE status IN ('classified', 'entity_processed', 'processed') AND scraped_at >= ?
+                  GROUP BY category`,
+            args: [thirtyDaysAgo]
+          },
+          {
+            sql: `SELECT civic_flag_category, COUNT(*) as c FROM articles
+                  WHERE status IN ('classified', 'entity_processed', 'processed') AND civic_flag = 1 AND scraped_at >= ?
+                  GROUP BY civic_flag_category`,
+            args: [thirtyDaysAgo]
+          }
+        ]);
+        total = Number(totalRes.rows[0]?.c || 0);
+        last7d = Number(last7dRes.rows[0]?.c || 0);
+        last30d = Number(last30dRes.rows[0]?.c || 0);
+        flagged30d = Number(flagged30dRes.rows[0]?.c || 0);
+        catBreakdownRes.rows.forEach(r => {
+          if (r.category) category_breakdown_30d[String(r.category)] = Number(r.c);
+        });
+        flagCatsRes.rows.forEach(r => {
+          if (r.civic_flag_category) top_flag_categories[String(r.civic_flag_category)] = Number(r.c);
+        });
+        ({ top_ministers_30d, top_parties_30d, top_states_30d } = await getHeavyOverviewStats());
+      }
       const flaggedToday = Number(flaggedTodayRes.rows[0]?.c || 0);
 
       let topStories = storiesRes.rows.map(row => mapRowToArticle(row));
       if (lang === 'hi') {
         topStories = await hydrateHindiArticles(topStories);
       }
-
-      const category_breakdown_30d: Record<string, number> = {};
-      catBreakdownRes.rows.forEach(r => {
-        if (r.category) category_breakdown_30d[String(r.category)] = Number(r.c);
-      });
-
-      const top_flag_categories: Record<string, number> = {};
-      flagCatsRes.rows.forEach(r => {
-        if (r.civic_flag_category) top_flag_categories[String(r.civic_flag_category)] = Number(r.c);
-      });
-
-      const heavyStats = await getHeavyOverviewStats();
-      const { top_ministers_30d, top_parties_30d, top_states_30d } = heavyStats;
 
       return {
         generated_at: new Date().toISOString(),
@@ -730,7 +792,7 @@ export const serverApi = {
   },
 
   async party(name: string): Promise<PartyData | null> {
-    return cached(`party:${name.toLowerCase()}`, [], async () => {
+    return cached(`party:${name.toLowerCase()}`, ['articles', 'stats'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -756,10 +818,9 @@ export const serverApi = {
       const partyName = partyInfo.name;
 
       // Fetch articles and stats in a single batch
-      const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
 
       const partySlug = partySlugify(partyName);
-      const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
+      const [articlesRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -769,39 +830,13 @@ export const serverApi = {
                 WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
                 ORDER BY ae.article_id DESC LIMIT 100`,
           args: [partySlug]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
-          args: [partySlug]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
-          args: [partySlug, thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT a.sentiment, COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'party' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY a.sentiment`,
-          args: [partySlug, thirtyDaysAgo]
         }
       ]);
+      const counts = await entityCounts('party', [partySlug]);
 
       const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
-      const total_articles = Number(totalRes.rows[0]?.c || 0);
-      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
-
-      const sentimentStats: Record<string, number> = {};
-      sentimentRes.rows.forEach(r => {
-        if (r.sentiment) sentimentStats[String(r.sentiment)] = Number(r.c);
-      });
+      const total_articles = counts.total;
+      const articles_last_30d = counts.n30;
 
       // Filter ministers
       const ministers = getAllPoliticians(entities)
@@ -842,11 +877,11 @@ export const serverApi = {
         promises: partyPromises,
         recent_articles
       };
-    }, { revalidate: 900 });
+    }, { revalidate: 86400 });
   },
 
   async minister(name: string): Promise<Minister | null> {
-    return cached(`minister:${name.toLowerCase()}`, [], async () => {
+    return cached(`minister:${name.toLowerCase()}`, ['articles', 'stats'], async () => {
       const entities = await loadEntities();
       const promises = await loadPromisesRegistry();
       if (!entities) return null;
@@ -865,10 +900,9 @@ export const serverApi = {
       const canonicalName = ministerInfo.name;
 
       // Fetch articles and stats in a single batch
-      const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
 
       const ministerSlug = slugify(canonicalName);
-      const [articlesRes, totalRes, last30dRes, sentimentRes] = await db.batch([
+      const [articlesRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -878,39 +912,13 @@ export const serverApi = {
                 WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
                 ORDER BY ae.article_id DESC LIMIT 100`,
           args: [ministerSlug]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
-          args: [ministerSlug]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
-          args: [ministerSlug, thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT a.sentiment, COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'minister' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY a.sentiment`,
-          args: [ministerSlug, thirtyDaysAgo]
         }
       ]);
+      const counts = await entityCounts('minister', [ministerSlug]);
 
       const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
-      const total_articles = Number(totalRes.rows[0]?.c || 0);
-      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
-
-      const sentimentStats: Record<string, number> = {};
-      sentimentRes.rows.forEach(r => {
-        if (r.sentiment) sentimentStats[String(r.sentiment)] = Number(r.c);
-      });
+      const total_articles = counts.total;
+      const articles_last_30d = counts.n30;
 
       // Filter promises
       const ministerPromises = (promises?.promises || [])
@@ -945,11 +953,11 @@ export const serverApi = {
         promises: ministerPromises,
         recent_articles
       };
-    }, { revalidate: 900 });
+    }, { revalidate: 86400 });
   },
 
   async state(name: string): Promise<StateData | null> {
-    return cached(`state:${name.toLowerCase()}`, [], async () => {
+    return cached(`state:${name.toLowerCase()}`, ['articles', 'stats'], async () => {
       const entities = await loadEntities();
       if (!entities) return null;
 
@@ -972,53 +980,24 @@ export const serverApi = {
       const uniqueSearchTerms = Array.from(new Set(searchTerms));
 
       const stateSlugs = Array.from(new Set(uniqueSearchTerms.map(term => slugify(term))));
-      const placeholders = stateSlugs.map(() => "?").join(", ");
-
-      // Fetch articles, counts, and aggregations in a single batch
-      const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
-
-      const [articlesRes, totalRes, last30dRes, cityRes, topicRes] = await db.batch([
+      
+      // Newest tagged ids per slug (each walks its index backwards), then the articles.
+      // An IN (...) over several slugs sorted the state's whole tag history instead.
+      const perSlug = stateSlugs
+        .map(() => `SELECT article_id FROM (SELECT article_id FROM article_entities WHERE kind = 'state' AND slug = ? ORDER BY article_id DESC LIMIT 400)`)
+        .join(' UNION ');
+      const [articlesRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
+                FROM articles a
                 LEFT JOIN sources s ON a.source_id = s.id
-                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed')
-                ORDER BY ae.article_id DESC LIMIT 300`,
+                WHERE a.id IN (${perSlug}) AND a.status IN ('classified', 'entity_processed', 'processed')
+                ORDER BY a.id DESC LIMIT 300`,
           args: [...stateSlugs]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed')`,
-          args: [...stateSlugs]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
-          args: [...stateSlugs, thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT j.value as val, COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id, json_each(a.cities_mentioned) j
-                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [...stateSlugs, thirtyDaysAgo]
-        },
-        {
-          sql: `SELECT j.value as val, COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id, json_each(a.topic_tags) j
-                WHERE ae.kind = 'state' AND ae.slug IN (${placeholders}) AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?
-                GROUP BY j.value ORDER BY c DESC LIMIT 10`,
-          args: [...stateSlugs, thirtyDaysAgo]
         }
       ]);
+      const counts = await entityCounts('state', stateSlugs, true);
 
       // Older state tags came from keyword matching: a UPSC quiz or national round-up that names
       // this state once was tagged with it. Until those tags are rebuilt (classifier entity_rules.py),
@@ -1032,14 +1011,10 @@ export const serverApi = {
         return n > 0 && n <= 2 && a.category !== 'international';
       };
       const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row)).filter(aboutState).slice(0, 100);
-      const total_articles = Number(totalRes.rows[0]?.c || 0);
-      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
-
-      const top_cities_30d: Record<string, number> = {};
-      cityRes.rows.forEach(r => { top_cities_30d[String(r.val)] = Number(r.c); });
-
-      const top_topics_30d: Record<string, number> = {};
-      topicRes.rows.forEach(r => { top_topics_30d[String(r.val)] = Number(r.c); });
+      const total_articles = counts.total;
+      const articles_last_30d = counts.n30;
+      const top_cities_30d = counts.cities;
+      const top_topics_30d = counts.topics;
 
       return {
         generated_at: new Date().toISOString(),
@@ -1056,12 +1031,11 @@ export const serverApi = {
         top_topics_30d,
         recent_articles
       };
-    }, { revalidate: 900 });
+    }, { revalidate: 86400 });
   },
 
   async topic(name: string): Promise<TopicData | null> {
-    return cached(`topic:${name.toLowerCase()}`, [], async () => {
-      const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 3600);
+    return cached(`topic:${name.toLowerCase()}`, ['articles', 'stats'], async () => {
       const canonicalTags = [
         'corruption_scam', 'crime_violence', 'economy', 'education', 'farmer_agriculture', 
         'foreign_policy', 'health', 'infrastructure', 'political_gaffe', 'protest_opposition', 'rape_sexual_crime'
@@ -1080,7 +1054,7 @@ export const serverApi = {
       if (!canonical) return null;
 
       const topicSlug = slugify(canonical);
-      const [articlesRes, totalRes, last30dRes] = await db.batch([
+      const [articlesRes] = await db.batch([
         {
           sql: `SELECT a.id, a.title, a.rephrased_title, a.url, s.name AS source_name, a.image_url, a.scraped_at, a.category, a.sentiment, a.sentiment_target, a.rephrased_article,
                        a.party_mentioned, a.ministers_mentioned, a.states_mentioned, a.cities_mentioned, a.topic_tags, a.civic_flag, a.civic_flag_score, a.civic_flag_category, a.civic_flag_reason
@@ -1090,26 +1064,13 @@ export const serverApi = {
                 WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')
                 ORDER BY ae.article_id DESC LIMIT 100`,
           args: [topicSlug]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed')`,
-          args: [topicSlug]
-        },
-        {
-          sql: `SELECT COUNT(*) as c 
-                FROM article_entities ae
-                JOIN articles a ON a.id = ae.article_id
-                WHERE ae.kind = 'topic' AND ae.slug = ? AND a.status IN ('classified', 'entity_processed', 'processed') AND a.scraped_at >= ?`,
-          args: [topicSlug, thirtyDaysAgo]
         }
       ]);
+      const counts = await entityCounts('topic', [topicSlug]);
 
       const recent_articles = articlesRes.rows.map(row => mapRowToArticle(row));
-      const total_articles = Number(totalRes.rows[0]?.c || 0);
-      const articles_last_30d = Number(last30dRes.rows[0]?.c || 0);
+      const total_articles = counts.total;
+      const articles_last_30d = counts.n30;
 
       return {
         generated_at: new Date().toISOString(),
@@ -1120,7 +1081,7 @@ export const serverApi = {
         },
         recent_articles
       };
-    }, { revalidate: 900 });
+    }, { revalidate: 86400 });
   },
 
   async category(name: string): Promise<{ articles?: Article[] } | null> {
@@ -1284,16 +1245,25 @@ export const serverApi = {
 
       if (type === 'flagged') {
         // Civic Alerts is an India accountability feed; keep foreign-only stories out of it too.
-        query += INDIA_FILTER + ` AND (a.civic_flag = 1 OR a.civic_flag = '1' OR a.civic_flag IS TRUE) ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
+        // civic_flag is stored as integer 0/1 (the old OR form read every article, then sorted).
+        // Short pages walk the newest articles and stop once enough flagged ones are found
+        // (~3% are flagged); deep pages sort just the flagged rows instead.
+        if (lim + off <= 200) query = query.replace('FROM articles a', 'FROM articles a INDEXED BY idx_articles_scraped');
+        query += INDIA_FILTER + ` AND a.civic_flag = 1 ${lang === 'hi' ? 'AND +a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC, COALESCE(a.civic_flag_score, 0) DESC LIMIT ${lim} OFFSET ${off}`;
       } else if (category_map[type]) {
         if (category_map[type] !== 'international') {
           query += INDIA_FILTER;
         }
-        query += ` AND a.category = ? ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
+        // "+" keeps the planner on the category index (newest first, stops at the limit)
+        // instead of reading every translated article and sorting them.
+        query += ` AND a.category = ? ${lang === 'hi' ? 'AND +a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
         args.push(category_map[type]);
       } else if (topic_map[type]) {
-        query += INDIA_FILTER + ` AND a.topic_tags LIKE ? ${lang === 'hi' ? 'AND a.translated_hi = 1' : ''} ORDER BY a.scraped_at DESC LIMIT ${lim} OFFSET ${off}`;
-        args.push(`%${topic_map[type]}%`);
+        // Topic tags are indexed in article_entities: walk that topic's newest ids
+        // (topic_tags LIKE '%..%' read every article, then sorted them).
+        query = query.replace('FROM articles a', 'FROM article_entities ae JOIN articles a ON a.id = ae.article_id')
+          + INDIA_FILTER + ` AND ae.kind = 'topic' AND ae.slug = ? ${lang === 'hi' ? 'AND +a.translated_hi = 1' : ''} ORDER BY ae.article_id DESC LIMIT ${lim} OFFSET ${off}`;
+        args.push(slugify(topic_map[type]));
       } else {
         // 'all' feed
         query = `
@@ -1394,7 +1364,7 @@ export const serverApi = {
   },
 
   async source(name: string, lang: string = 'en'): Promise<{ source?: string; articles?: Article[] } | null> {
-    return cached(`source:${name.toLowerCase()}:${lang}`, [], async () => {
+    return cached(`source:${name.toLowerCase()}:${lang}`, ['articles', 'stats'], async () => {
       // 1. Fetch all sources and match by slugified name in JS
       const sourcesCheck = await db.execute("SELECT id, name FROM sources");
       const matchedSource = sourcesCheck.rows.find(
@@ -1418,12 +1388,14 @@ export const serverApi = {
       const articles = res.rows.map(row => mapRowToArticle(row));
       // Hindi: only articles that have a Hindi translation (strict, like the Hindi feed)
       return { source: canonicalName, articles: lang === 'hi' ? await hydrateHindiArticles(articles) : articles };
-    }, { revalidate: 900 });
+    }, { revalidate: 86400 });
   },
 
   /** Sources with enough recent coverage to deserve an indexed page (sitemap). */
   async sourceSitemapEntries(): Promise<{ name: string; n30: number; hi30: number; last: number }[]> {
-    return cached('sourceSitemapEntries', [], async () => {
+    return cached('sourceSitemapEntries', ['stats'], async () => {
+      const stats = await getSiteStats();
+      if (stats) return stats.sources;
       const res = await db.execute(`
         SELECT s.name AS name, COUNT(*) AS n30, SUM(a.translated_hi = 1) AS hi30, MAX(a.scraped_at) AS last
         FROM articles a JOIN sources s ON s.id = a.source_id
@@ -1502,7 +1474,24 @@ export const serverApi = {
   },
 
   async publicLedgerStats(): Promise<PublicLedgerStats> {
-    return cached('publicLedgerStats', ['articles', 'events', 'promises', 'upsc'], async () => {
+    return cached('publicLedgerStats', ['stats', 'promises'], async () => {
+      const stats = await getSiteStats();
+      if (stats) {
+        let promises_tracked = 123;
+        try {
+          const registry = await loadPromisesRegistry();
+          if (registry?.promises) promises_tracked = registry.promises.length;
+        } catch {}
+        return {
+          articles_classified: stats.ledger.articles_classified,
+          active_timelines: stats.ledger.active_timelines,
+          upsc_notes: stats.ledger.upsc_notes ?? 692,
+          hindi_records: stats.ledger.hindi_records ?? 2209,
+          promises_tracked,
+          last_updated: new Date(stats.computed_at * 1000).toISOString()
+        };
+      }
+
       // 1. Articles count (Primary DB)
       let articles_classified = 40496;
       try {

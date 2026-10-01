@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag, revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { getLastRevalidatedAt, setLastRevalidatedAt } from '@/lib/api.server';
 
 export const dynamic = 'force-dynamic';
 
 const COOLDOWN_MS = 240 * 60 * 1000; // 4 hours: each revalidation makes every page re-query the DB
+// Timelines change once a day (timeline service run), so their caches are refreshed at most twice a day.
+const EVENTS_EVERY_MS = 12 * 60 * 60 * 1000;
+const g = global as any;
 
 export async function GET(req: NextRequest) {
   return POST(req);
@@ -33,18 +36,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Only tagged caches are refreshed. revalidatePath('/', 'layout') used to be called here too,
+    // which also dropped every untouched cache (timelines, UPSC, daily stats) on each run.
     if (tag) {
       revalidateTag(tag);
-      revalidatePath('/', 'layout');
       setLastRevalidatedAt(now);
       return NextResponse.json({ revalidated: true, tag, now });
     } else {
-      revalidateTag('articles');
-      revalidateTag('promises');
-      revalidateTag('entities');
-      revalidatePath('/', 'layout');
+      const tags = ['articles', 'promises', 'entities', 'upsc'];
+      if (now - (g.lastEventsRevalidatedAt || 0) >= EVENTS_EVERY_MS) {
+        tags.push('events');
+        g.lastEventsRevalidatedAt = now;
+      }
+      tags.forEach(t => revalidateTag(t));
       setLastRevalidatedAt(now);
-      return NextResponse.json({ revalidated: true, tags: ['articles', 'promises', 'entities'], now });
+      return NextResponse.json({ revalidated: true, tags, now });
     }
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Revalidation failed' }, { status: 500 });
