@@ -12,6 +12,16 @@ export async function GET(req: NextRequest, { params }: { params: { kind: string
   const lang = new URL(req.url).searchParams.get('lang') === 'hi' ? 'hi' : 'en'
   const report = await buildReport(period, lang)
   if (!report) return new NextResponse('No notes for this period', { status: 404 })
+  // ?format=json: what the digest selected (for checking selection quality)
+  if (new URL(req.url).searchParams.get('format') === 'json') {
+    return NextResponse.json({
+      title: report.title, total: report.totalNotes, selected: report.selected, hi_share: report.hiShare, hash: report.hash,
+      top: report.top.map(i => i.title),
+      notes: report.groups.flatMap(g => g.subjects.flatMap(s => s.items.map(i => ({
+        id: i.articleId, paper: i.paper, subject: i.subject, node: i.node, score: i.score, related: i.related, title: i.title, keywords: i.keywords,
+      })))),
+    }, { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store' } })
+  }
   return new NextResponse(renderReportHtml(report), {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',

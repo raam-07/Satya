@@ -24,9 +24,11 @@ export const REPORT_KINDS: ReportKind[] = ['daily', 'weekly', 'monthly']
 
 const CAPS: Record<ReportKind, { notes: number; top: number; mains: number; revision: number }> = {
   daily: { notes: 200, top: 5, mains: 8, revision: 40 },
-  weekly: { notes: 60, top: 10, mains: 15, revision: 90 },
-  monthly: { notes: 150, top: 15, mains: 30, revision: 160 },
+  weekly: { notes: 50, top: 10, mains: 15, revision: 80 },
+  monthly: { notes: 120, top: 15, mains: 30, revision: 140 },
 }
+/** Weekly/monthly: no subject takes more than this share of the digest (first pass). */
+const SUBJECT_SHARE = 0.3
 
 export const SUBJECT_HI: Record<string, string> = {
   history_culture: 'इतिहास एवं संस्कृति', society: 'भारतीय समाज', geography: 'भूगोल',
@@ -177,6 +179,52 @@ function dedupeAcrossDays(items: UpscItem[]): UpscItem[] {
   return Array.from(byKey.values())
 }
 
+// Same story reported on several days (different articles, often no shared timeline event):
+// merge notes of the same GS paper that share syllabus node + 2 keywords, or most headline words.
+const STOP = new Set(['about', 'after', 'again', 'against', 'along', 'amid', 'among', 'before', 'being', 'between',
+  'could', 'during', 'from', 'have', 'into', 'more', 'over', 'said', 'says', 'such', 'than', 'that', 'their', 'there',
+  'these', 'they', 'this', 'those', 'under', 'were', 'what', 'when', 'where', 'which', 'while', 'with', 'will', 'would',
+  'india', 'indian', 'government', 'centre', 'state', 'states', 'news', 'today', 'live', 'updates', 'update', 'year'])
+const words = (t: string) => new Set((t.toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter(w => !STOP.has(w)))
+const kws = (it: UpscItem) => new Set(it.keywords.map(k => k.toLowerCase().trim()).filter(Boolean))
+const shared = (a: Set<string>, b: Set<string>) => { let n = 0; a.forEach(x => { if (b.has(x)) n++ }); return n }
+
+function sameStory(a: UpscItem, b: UpscItem): boolean {
+  if (a.paper !== b.paper) return false
+  if (a.node === b.node && shared(kws(a), kws(b)) >= 2) return true
+  const wa = words(a.title), wb = words(b.title)
+  const s = shared(wa, wb)
+  const union = wa.size + wb.size - s
+  return s >= 3 && union > 0 && s / union >= 0.3
+}
+
+function mergeStories(items: UpscItem[]): UpscItem[] {
+  const kept: UpscItem[] = []
+  for (const it of [...items].sort(byImportance)) {
+    const twin = kept.find(k => sameStory(k, it))
+    if (twin) twin.related += it.related + 1
+    else kept.push({ ...it })
+  }
+  return kept
+}
+
+/** Best notes first, but no single subject crowds out the rest of the syllabus. */
+function pickBalanced(items: UpscItem[], cap: number): UpscItem[] {
+  const sorted = [...items].sort(byImportance)
+  const perSubject = Math.max(3, Math.ceil(cap * SUBJECT_SHARE))
+  const count = new Map<string, number>()
+  const picked: UpscItem[] = [], rest: UpscItem[] = []
+  for (const it of sorted) {
+    const n = count.get(it.subject) || 0
+    if (picked.length < cap && n < perSubject) { picked.push(it); count.set(it.subject, n + 1) }
+    else rest.push(it)
+  }
+  for (const it of rest) { if (picked.length >= cap) break; picked.push(it) }
+  return picked
+}
+
+const LIVE_BLOG = /\blive(\s+updates?|\s+blog)?\b\s*[:|-]|\blive updates\b/i
+
 const subjectOrder = Object.keys(UPSC_SYLLABUS)
 const byImportance = (a: UpscItem, b: UpscItem) =>
   b.score - a.score || b.related - a.related || b.publishedAt - a.publishedAt
@@ -186,21 +234,29 @@ export async function buildReport(period: Period, lang: Language): Promise<Repor
   const today = istDayStart()
   const days: number[] = []
   for (let d = period.start; d < period.end && d <= today; d += DAY) days.push(d)
-  const perDay = await Promise.all(days.map(d => getUpscDay(d, lang)))
-  let all = period.kind === 'daily' ? perDay.flat() : dedupeAcrossDays(perDay.flat())
-  const totalNotes = all.length
+  // Selection is always made on the English notes, so both languages carry the same digest;
+  // the Hindi report then uses the Hindi text of the chosen notes that are translated.
+  const perDay = await Promise.all(days.map(d => getUpscDay(d, 'en')))
+  const caps = CAPS[period.kind]
+  let pool = perDay.flat()
+  if (period.kind !== 'daily') {
+    pool = mergeStories(dedupeAcrossDays(pool).filter(i => !LIVE_BLOG.test(i.title)))
+  }
+  const totalNotes = pool.length
   if (!totalNotes) return null
+  let chosen = period.kind === 'daily' ? [...pool].sort(byImportance) : pickBalanced(pool, caps.notes)
 
   let hiShare = 1
   if (isHi) {
-    const translated = all.filter(i => i.hi)
-    hiShare = translated.length / totalNotes
-    all = translated
-    if (!all.length) return null
+    const perDayHi = await Promise.all(days.map(d => getUpscDay(d, 'hi')))
+    const hiById = new Map(perDayHi.flat().map(i => [i.articleId, i]))
+    const translated = chosen
+      .map(en => { const h = hiById.get(en.articleId); return h?.hi ? { ...h, related: en.related } : null })
+      .filter((x): x is UpscItem => !!x)
+    hiShare = translated.length / chosen.length
+    chosen = translated
+    if (!chosen.length) return null
   }
-
-  const caps = CAPS[period.kind]
-  const chosen = [...all].sort(byImportance).slice(0, caps.notes)
   const within = period.kind === 'daily' ? byImportance : (a: UpscItem, b: UpscItem) => a.publishedAt - b.publishedAt
 
   const groups: ReportGroup[] = []

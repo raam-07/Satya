@@ -112,8 +112,8 @@ export function renderReportHtml(r: Report): string {
   @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
   * { box-sizing: border-box; }
   html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { margin: 0; color: #1c1917; font: 10.5pt/1.5 'Noto Sans', 'Noto Sans Devanagari', sans-serif; }
-  :lang(hi) body, body:lang(hi) { font-family: 'Noto Sans Devanagari', 'Noto Sans', sans-serif; line-height: 1.6; }
+  body { margin: 0; color: #1c1917; font: 10pt/1.42 'Noto Sans', 'Noto Sans Devanagari', sans-serif; orphans: 2; widows: 2; }
+  :lang(hi) body, body:lang(hi) { font-family: 'Noto Sans Devanagari', 'Noto Sans', sans-serif; line-height: 1.55; }
   h1, h2, h3 { font-family: 'Noto Serif', 'Noto Serif Devanagari', serif; margin: 0; }
   :lang(hi) h1, :lang(hi) h2, :lang(hi) h3 { font-family: 'Noto Serif Devanagari', 'Noto Serif', serif; }
   a { color: #9a3412; text-decoration: none; }
@@ -131,8 +131,10 @@ export function renderReportHtml(r: Report): string {
   .paper { margin-top: 10px; }
   .paper h2 { font-size: 15pt; border-bottom: 1px solid #d6d3d1; padding-bottom: 3px; margin: 14px 0 6px; break-after: avoid; }
   h3.subj { font-size: 11.5pt; color: #9a3412; margin: 10px 0 4px; break-after: avoid; }
-  .note { border-left: 3px solid #e7e5e4; padding: 2px 0 2px 10px; margin: 0 0 10px; break-inside: avoid; }
-  .note h4 { font-size: 11pt; margin: 1px 0 3px; line-height: 1.35; }
+  .note { border-left: 3px solid #e7e5e4; padding: 1px 0 1px 9px; margin: 0 0 8px; }
+  .note .meta, .note h4 { break-after: avoid; }
+  .note li { break-inside: avoid; }
+  .note h4 { font-size: 10.5pt; margin: 1px 0 2px; line-height: 1.3; }
   .note p { margin: 2px 0; }
   .meta { font-size: 8pt; color: #78716c; }
   .lbl { font-weight: 700; color: #44403c; }
