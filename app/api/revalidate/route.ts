@@ -4,7 +4,7 @@ import { getLastRevalidatedAt, setLastRevalidatedAt } from '@/lib/api.server';
 
 export const dynamic = 'force-dynamic';
 
-const COOLDOWN_MS = 120 * 60 * 1000; // 120 minutes
+const COOLDOWN_MS = 240 * 60 * 1000; // 4 hours: each revalidation makes every page re-query the DB
 
 export async function GET(req: NextRequest) {
   return POST(req);
