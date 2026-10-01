@@ -231,6 +231,19 @@ function pickBalanced(items: UpscItem[], cap: number): UpscItem[] {
 
 const LIVE_BLOG = /\blive(\s+updates?|\s+blog)?\b\s*[:|-]|\blive updates\b/i
 
+const DEVANAGARI = /[\u0900-\u097F]/
+/** Hindi report: a note whose headline has no Hindi translation gets the opening of its Hindi
+ *  'why in news' as its heading, instead of an English headline in a Hindi document. */
+function hindiTitle(it: UpscItem): string {
+  if (DEVANAGARI.test(it.title) || !DEVANAGARI.test(it.whyInNews)) return it.title
+  const w = it.whyInNews.trim()
+  const end = w.search(/[।.!?]/)
+  if (end > 20 && end <= 120) return w.slice(0, end)
+  if (w.length <= 110) return w
+  const cut = w.lastIndexOf(' ', 100)
+  return `${w.slice(0, cut > 40 ? cut : 100)}…`
+}
+
 const subjectOrder = Object.keys(UPSC_SYLLABUS)
 const byImportance = (a: UpscItem, b: UpscItem) =>
   b.score - a.score || b.related - a.related || b.publishedAt - a.publishedAt
@@ -257,7 +270,7 @@ export async function buildReport(period: Period, lang: Language): Promise<Repor
     const perDayHi = await Promise.all(days.map(d => getUpscDay(d, 'hi')))
     const hiById = new Map(perDayHi.flat().map(i => [i.articleId, i]))
     const translated = chosen
-      .map(en => { const h = hiById.get(en.articleId); return h?.hi ? { ...h, related: en.related } : null })
+      .map(en => { const h = hiById.get(en.articleId); return h?.hi ? { ...h, title: hindiTitle(h), related: en.related } : null })
       .filter((x): x is UpscItem => !!x)
     hiShare = translated.length / chosen.length
     chosen = translated
