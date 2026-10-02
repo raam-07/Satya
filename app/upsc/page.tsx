@@ -178,6 +178,21 @@ export default async function UPSCPage({ searchParams }: { searchParams: SP }) {
             {isHi ? '⬇ पीडीएफ: दैनिक · साप्ताहिक · मासिक' : '⬇ PDFs: daily · weekly · monthly'}
           </Link>
         </p>
+        <a
+          href="https://t.me/satyadheesh"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-[12.5px] font-semibold text-[var(--text1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+          style={{ borderColor: 'var(--border-md)' }}
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="#229ED9">
+            <path d="M21.9 4.3 18.6 19.9c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.2-8.3c.4-.4-.1-.6-.6-.2L6 13.4 1.1 11.9c-1.1-.3-1.1-1.1.2-1.6L20.5 2.9c.9-.3 1.7.2 1.4 1.4z" />
+          </svg>
+          {isHi ? 'टेलीग्राम पर जुड़ें: @satyadheesh' : 'Join us on Telegram: @satyadheesh'}
+          <span className="font-normal text-[var(--text3)]">
+            {isHi ? '· रोज़ सुबह 5 बजे पीडीएफ + क्विज़' : '· daily PDF + quiz at 5 AM'}
+          </span>
+        </a>
       </div>
 
       <div className="px-4 md:px-6 space-y-4 mt-4">
