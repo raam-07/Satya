@@ -9,6 +9,7 @@ const COOLDOWN_MS = 240 * 60 * 1000; // 4 hours: each revalidation makes every p
 const EVENTS_EVERY_MS = 12 * 60 * 60 * 1000;
 const HI_COOLDOWN_MS = 120 * 60 * 1000; // Hindi caches: at most every 2 hours
 const REPORTS_COOLDOWN_MS = 20 * 60 * 1000; // report PDF list (satya-upsc-reports builder): at most every 20 min
+const ENTITIES_COOLDOWN_MS = 30 * 60 * 1000; // entity library edits (party heads, roles): at most every 30 min
 const g = global as any;
 
 export async function GET(req: NextRequest) {
@@ -50,6 +51,19 @@ export async function POST(req: NextRequest) {
     revalidateTag('upsc-reports');
     g.lastReportsRevalidatedAt = now;
     return NextResponse.json({ revalidated: true, tag: 'upsc-reports', now });
+  }
+
+  // Entity library changed (entities.json pushed): refresh the pages built from it — party, leader, state,
+  // topic and source pages and the overview (tags 'entities' + 'stats'). Own clock; doesn't use the main slot.
+  if (tag === 'entities') {
+    const last = g.lastEntitiesRevalidatedAt || 0;
+    if (!force && now - last < ENTITIES_COOLDOWN_MS) {
+      return NextResponse.json({ revalidated: false, reason: 'entities cooldown active', remaining_seconds: Math.ceil((ENTITIES_COOLDOWN_MS - (now - last)) / 1000) });
+    }
+    revalidateTag('entities');
+    revalidateTag('stats');
+    g.lastEntitiesRevalidatedAt = now;
+    return NextResponse.json({ revalidated: true, tags: ['entities', 'stats'], now });
   }
 
   const lastRevalidatedAt = getLastRevalidatedAt();
