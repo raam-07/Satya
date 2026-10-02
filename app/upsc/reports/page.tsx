@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { getLanguage, LANG_COOKIE, Language } from '@/lib/i18n'
 import {
-  availablePeriods, getReportFiles, periodLabel, reportFileKey, reportPagePath, reportPdfPath,
+  availablePeriods, getReportFiles, periodLabel, reportEditions, reportPagePath, reportPdfPath,
   type Period, type ReportFile, type ReportKind,
 } from '@/lib/upscReports'
 import { UpscPdfButton } from '@/components/UpscPdfButton'
@@ -43,14 +43,17 @@ function ArchiveList({ periods, kind, isHi, files }: { periods: Period[]; kind: 
   return (
     <ul className="m-0 p-0 list-none divide-y border rounded-lg bg-[var(--surface)]" style={{ borderColor: 'var(--border)' }}>
       {periods.map(p => {
-        const has = files[reportFileKey(kind, p.key, isHi ? 'hi' : 'en')]
+        const ed = reportEditions(files, kind, p.key, isHi ? 'hi' : 'en')
         return (
           <li key={p.key} className="flex items-center justify-between gap-3 px-3 py-2" style={{ borderColor: 'var(--border)' }}>
             <Link href={reportPagePath(kind, p.key, isHi)} className="text-[13.5px] font-medium text-[var(--text1)] hover:text-[var(--accent)]">
               {periodLabel(p, isHi)}
             </Link>
-            {has
-              ? <a href={reportPdfPath(kind, p.key, isHi)} download className="text-[12px] font-mono text-[var(--accent)] hover:underline shrink-0">PDF ⬇</a>
+            {ed.brief || ed.detailed
+              ? <span className="flex gap-3 shrink-0">
+                  {ed.brief && <a href={reportPdfPath(kind, p.key, isHi, 'brief')} download className="text-[12px] font-mono text-[var(--accent)] hover:underline">{isHi ? 'सार ⬇' : 'Brief ⬇'}</a>}
+                  {ed.detailed && <a href={reportPdfPath(kind, p.key, isHi, ed.brief ? 'detailed' : undefined)} download className="text-[12px] font-mono text-[var(--accent)] hover:underline">{ed.brief ? (isHi ? 'विस्तृत ⬇' : 'Detailed ⬇') : 'PDF ⬇'}</a>}
+                </span>
               : <span className="text-[11px] font-mono text-[var(--text3)] shrink-0">{isHi ? 'जल्द' : 'soon'}</span>}
           </li>
         )

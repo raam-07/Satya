@@ -141,9 +141,23 @@ export function reportPagePath(kind: ReportKind, key: string, isHi: boolean) {
     : kind === 'weekly' ? `/upsc/current-affairs/week/${key}` : `/upsc/current-affairs/month/${key}`
   return isHi ? `${base}?lang=hi` : base
 }
-export const reportPdfPath = (kind: ReportKind, key: string, isHi: boolean) =>
-  `/upsc/reports/pdf/${kind}/${key}${isHi ? '?lang=hi' : ''}`
-export const reportFileKey = (kind: ReportKind, key: string, lang: Language) => `${kind}:${key}:${lang}`
+/** Brief = the short revision edition; Detailed = every note. Built by satya-upsc-reports. */
+export type ReportEdition = 'brief' | 'detailed'
+export const reportPdfPath = (kind: ReportKind, key: string, isHi: boolean, edition?: ReportEdition) => {
+  const q = [isHi ? 'lang=hi' : '', edition ? `edition=${edition}` : ''].filter(Boolean).join('&')
+  return `/upsc/reports/pdf/${kind}/${key}${q ? `?${q}` : ''}`
+}
+export const reportFileKey = (kind: ReportKind, key: string, lang: Language, edition?: ReportEdition) =>
+  `${kind}:${key}:${lang}${edition ? `:${edition}` : ''}`
+/** Stored keys to try for an edition, best first. The old single PDF stands in for Detailed. */
+export const editionKeys = (kind: ReportKind, key: string, lang: Language, edition?: ReportEdition | null) =>
+  edition === 'brief' ? [reportFileKey(kind, key, lang, 'brief')]
+    : edition === 'detailed' ? [reportFileKey(kind, key, lang, 'detailed'), reportFileKey(kind, key, lang)]
+      : [reportFileKey(kind, key, lang), reportFileKey(kind, key, lang, 'detailed')]
+export const reportEditions = (files: Record<string, ReportFile>, kind: ReportKind, key: string, lang: Language) => ({
+  brief: files[reportFileKey(kind, key, lang, 'brief')] ?? null,
+  detailed: editionKeys(kind, key, lang, 'detailed').map(k => files[k]).find(Boolean) ?? null,
+})
 
 // ---------------------------------------------------------------- report content
 
@@ -372,5 +386,6 @@ export async function readReportPdf(fileKey: string): Promise<Buffer | null> {
   }
 }
 
-export const pdfFileName = (kind: ReportKind, key: string, lang: Language) =>
-  `SatyaDheesh-UPSC-${kind === 'daily' ? 'Daily' : kind === 'weekly' ? 'Weekly' : 'Monthly'}-Current-Affairs-${key}${lang === 'hi' ? '-Hindi' : ''}.pdf`
+export const pdfFileName = (kind: ReportKind, key: string, lang: Language, edition?: ReportEdition | null) =>
+  `SatyaDheesh-UPSC-${kind === 'daily' ? 'Daily' : kind === 'weekly' ? 'Weekly' : 'Monthly'}${
+    edition === 'brief' ? '-Brief' : edition === 'detailed' ? '-Detailed' : ''}-Current-Affairs-${key}${lang === 'hi' ? '-Hindi' : ''}.pdf`
