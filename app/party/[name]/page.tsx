@@ -137,10 +137,10 @@ export default async function PartyPage({ params }: { params: { name: string } }
  
       {/* Body */}
       <div className="flex flex-col md:grid md:grid-cols-3">
-        {/* Ministers */}
+        {/* Leaders (cabinet ministers, CMs, party office-bearers, other tracked politicians) */}
         <div className="md:col-span-1 border-b md:border-b-0 md:border-r border-[var(--border-md)]">
           <div className="px-4 py-3 border-b border-[var(--border-md)]">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-[var(--text2)]">Ministers</span>
+            <span className="text-[10px] font-mono tracking-widest uppercase text-[var(--text2)]">Leaders</span>
           </div>
           <div className="divide-y divide-[var(--border)]">
             {(party.ministers ?? []).map((m, i) => (
