@@ -8,6 +8,7 @@ const COOLDOWN_MS = 240 * 60 * 1000; // 4 hours: each revalidation makes every p
 // Timelines change once a day (timeline service run), so their caches are refreshed at most twice a day.
 const EVENTS_EVERY_MS = 12 * 60 * 60 * 1000;
 const HI_COOLDOWN_MS = 120 * 60 * 1000; // Hindi caches: at most every 2 hours
+const REPORTS_COOLDOWN_MS = 20 * 60 * 1000; // report PDF list (satya-upsc-reports builder): at most every 20 min
 const g = global as any;
 
 export async function GET(req: NextRequest) {
@@ -37,6 +38,18 @@ export async function POST(req: NextRequest) {
     revalidateTag('hi');
     g.lastHiRevalidatedAt = now;
     return NextResponse.json({ revalidated: true, tag: 'hi', now });
+  }
+
+  // Report builder: new PDFs stored -> refresh only the report-file list (one small query) and the
+  // pages that show download buttons. Own clock; doesn't use the main 4-hour slot.
+  if (tag === 'upsc-reports') {
+    const last = g.lastReportsRevalidatedAt || 0;
+    if (!force && now - last < REPORTS_COOLDOWN_MS) {
+      return NextResponse.json({ revalidated: false, reason: 'reports cooldown active', remaining_seconds: Math.ceil((REPORTS_COOLDOWN_MS - (now - last)) / 1000) });
+    }
+    revalidateTag('upsc-reports');
+    g.lastReportsRevalidatedAt = now;
+    return NextResponse.json({ revalidated: true, tag: 'upsc-reports', now });
   }
 
   const lastRevalidatedAt = getLastRevalidatedAt();
