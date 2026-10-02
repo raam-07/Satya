@@ -156,7 +156,7 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
 
   if (lang === 'hi' && transDb) {
     try {
-      const [tRes, uRes, evTransRes] = await Promise.all([
+      const [tRes, uRes, evTransRes, noteTitleRes] = await Promise.all([
         transDb.execute({
           sql: `SELECT article_id, rephrased_title_hi FROM translations WHERE article_id IN (${ph})`,
           args: ids,
@@ -170,12 +170,23 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
               sql: `SELECT event_id, title_hi FROM event_translations WHERE event_id IN (${eventIds.map(() => '?').join(',')})`,
               args: eventIds,
             })
-          : Promise.resolve({ rows: [] })
+          : Promise.resolve({ rows: [] }),
+        // Hindi headline written for the note itself, used when the news article has none
+        transDb.execute({
+          sql: `SELECT article_id, title_hi FROM upsc_translations WHERE article_id IN (${ph}) AND title_hi IS NOT NULL`,
+          args: ids,
+        }).catch(() => ({ rows: [] as Record<string, unknown>[] })),
       ])
 
       tRes.rows.forEach(r => {
         const val = cleanHindiText(r.rephrased_title_hi ? String(r.rephrased_title_hi) : '')
         if (val) titleHiMap.set(Number(r.article_id), val)
+      })
+
+      noteTitleRes.rows.forEach(r => {
+        const id = Number(r.article_id)
+        const val = cleanHindiText(r.title_hi ? String(r.title_hi) : '')
+        if (val && !titleHiMap.has(id)) titleHiMap.set(id, val)
       })
 
       uRes.rows.forEach(r => {
