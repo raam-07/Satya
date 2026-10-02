@@ -40,6 +40,8 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
   const fullLoaded = useRef<Set<string>>(new Set())
   // Track if we can load more on the server for each tab
   const serverHasMoreMap = useRef<Map<string, boolean>>(new Map())
+  // Per tab: stories the server sent again on a later page (dropped), so the next offset still advances
+  const skippedMap = useRef<Map<string, number>>(new Map())
 
   const openModal  = useCallback((a: Article) => setModalArticle(a), [])
   const closeModal = useCallback(() => setModalArticle(null), [])
@@ -69,10 +71,15 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
       feedCache.current.clear()
       fullLoaded.current.clear()
       serverHasMoreMap.current.clear()
+      skippedMap.current.clear()
       feedCache.current.set(activeTab, initialArticles)
       setArticles(initialArticles)
     }
   }, [currentLang, activeTab, initialArticles])
+
+  // The tab on screen right now: a slow "load more" must not write its tab's list into another tab
+  const activeTabRef = useRef(activeTab)
+  activeTabRef.current = activeTab
 
   // Dynamic server-side pagination fetch
   const loadMoreArticles = useCallback(async () => {
@@ -80,9 +87,10 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
 
     setLoadingMore(true)
     try {
-      const currentOffset = articles.length
+      const currentOffset = articles.length + (skippedMap.current.get(activeTab) ?? 0)
       const res = await api.feed(activeTab, false, BATCH_SIZE, currentOffset, currentLang)
       const newArticles = res?.articles ?? []
+      if (activeTabRef.current !== activeTab) return  // user switched tabs meanwhile
       
       const hasMore = newArticles.length >= BATCH_SIZE
       const reachedLimit = (currentOffset + newArticles.length) >= MAX_FEED_LIMIT
@@ -91,8 +99,13 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
       setHasMoreOnServer(nextHasMore)
       serverHasMoreMap.current.set(activeTab, nextHasMore)
 
-      if (newArticles.length > 0) {
-        const updatedList = [...articles, ...newArticles]
+      // Offset paging shifts when new stories arrive, so a page can repeat stories already shown.
+      // Drop repeats: duplicate React keys can leave a stale card on screen across tab switches.
+      const seen = new Set(articles.map(a => a.id))
+      const fresh = newArticles.filter(a => !seen.has(a.id))
+      skippedMap.current.set(activeTab, (skippedMap.current.get(activeTab) ?? 0) + newArticles.length - fresh.length)
+      if (fresh.length > 0) {
+        const updatedList = [...articles, ...fresh]
         setArticles(updatedList)
         feedCache.current.set(activeTab, updatedList)
         setVisibleCount((prev) => prev + PAGE_SIZE)
@@ -112,6 +125,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
       try {
         fullLoaded.current.clear()
         serverHasMoreMap.current.clear()
+        skippedMap.current.clear()
         const res = await api.feed(activeTab, true, BATCH_SIZE, 0, currentLang)
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
@@ -154,6 +168,7 @@ export function HomeClient({ overview, initialArticles, initialTab = 'all', curr
         const list = res?.articles ?? []
         feedCache.current.set(activeTab, list)
         fullLoaded.current.add(activeTab)
+        skippedMap.current.set(activeTab, 0)
         if (active && list.length > 0) {
           setArticles(list)
           if (!cached) setVisibleCount(PAGE_SIZE)
