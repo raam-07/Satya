@@ -6,7 +6,7 @@ import { getLanguage, LANG_COOKIE, Language } from '@/lib/i18n'
 import { cleanTitle } from '@/lib/utils'
 import { UPSC_PAPERS, getUpscDay, getUpscDays, parseIstDay, type UpscItem } from '@/lib/upsc'
 import { UpscCard, PAPER_HINT } from '@/components/UpscCard'
-import { JsonLd } from '@/components/JsonLd'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 import { UpscPdfButton } from '@/components/UpscPdfButton'
 import { getReportFiles } from '@/lib/upscReports'
 
@@ -114,6 +114,11 @@ export default async function UpscDayPage({ params, searchParams }: Props) {
   return (
     <div className="md:max-w-3xl md:mx-auto pb-10">
       <JsonLd data={jsonLd} />
+      <JsonLd data={makeBreadcrumbJsonLd([
+        { name: isHi ? 'यूपीएससी' : 'UPSC', item: `https://satyadheesh.in/upsc${q}` },
+        { name: isHi ? 'दैनिक संग्रह' : 'Daily archive', item: `${BASE}${q}` },
+        { name: d, item: `${pageUrl}${q}` },
+      ])} />
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <nav className="text-[11px] font-mono text-[var(--text3)] mb-1">
           <Link href={`/upsc${q}`} className="hover:text-[var(--accent)]">UPSC</Link>

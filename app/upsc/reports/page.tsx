@@ -7,6 +7,7 @@ import {
   type Period, type ReportFile, type ReportKind,
 } from '@/lib/upscReports'
 import { UpscPdfButton } from '@/components/UpscPdfButton'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 
 export const revalidate = false
 
@@ -69,8 +70,14 @@ export default async function UpscReportsPage({ searchParams }: Props) {
     { kind: 'monthly', p: avail.monthly[0] },
   ]
 
+  const breadcrumbs = makeBreadcrumbJsonLd([
+    { name: isHi ? 'यूपीएससी' : 'UPSC', item: `https://satyadheesh.in/upsc${q}` },
+    { name: isHi ? 'रिपोर्ट और पीडीएफ' : 'Reports & PDFs', item: `${URL_}${q}` },
+  ])
+
   return (
     <div className="md:max-w-3xl md:mx-auto pb-10">
+      <JsonLd data={breadcrumbs} />
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <nav className="text-[11px] font-mono text-[var(--text3)] mb-1">
           <Link href={`/upsc${q}`} className="hover:text-[var(--accent)]">UPSC</Link>

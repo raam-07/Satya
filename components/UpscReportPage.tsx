@@ -9,7 +9,7 @@ import {
 } from '@/lib/upscReports'
 import { UpscCard, PAPER_HINT, POINTER_LABEL } from '@/components/UpscCard'
 import { UpscPdfButton } from '@/components/UpscPdfButton'
-import { JsonLd } from '@/components/JsonLd'
+import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 
 const SITE = 'https://satyadheesh.in'
 const MIN_TO_INDEX = 5
@@ -68,9 +68,16 @@ export async function ReportPage({ kind, periodKey, lang }: { kind: ReportKind; 
     isPartOf: { '@type': 'WebSite', name: 'SatyaDheesh', url: SITE },
   }
 
+  const breadcrumbs = makeBreadcrumbJsonLd([
+    { name: isHi ? 'यूपीएससी' : 'UPSC', item: `${SITE}/upsc${q}` },
+    { name: isHi ? 'रिपोर्ट और पीडीएफ' : 'Reports & PDFs', item: `${SITE}/upsc/reports${q}` },
+    { name: r.label, item: `${SITE}${reportPagePath(kind, periodKey, isHi)}` },
+  ])
+
   return (
     <div className="md:max-w-3xl md:mx-auto pb-10">
       <JsonLd data={jsonLd} />
+      <JsonLd data={breadcrumbs} />
       <div className="border-b px-4 md:px-6 py-5 bg-[var(--surface)]" style={{ borderColor: 'var(--border-md)' }}>
         <nav className="text-[11px] font-mono text-[var(--text3)] mb-1">
           <Link href={`/upsc${q}`} className="hover:text-[var(--accent)]">UPSC</Link>
