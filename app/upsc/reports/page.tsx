@@ -38,26 +38,35 @@ const KIND_LABEL: Record<ReportKind, { en: string; hi: string; enSub: string; hi
   monthly: { en: 'Monthly', hi: 'मासिक', enSub: 'The month’s exam digest, for revision', hiSub: 'महीने का परीक्षा सार, दोहराव के लिए' },
 }
 
+function ArchiveLinks({ kind, period, lang, files }: { kind: ReportKind; period: string; lang: Language; files: Record<string, ReportFile> }) {
+  const ed = reportEditions(files, kind, period, lang)
+  const hi = lang === 'hi'
+  const link = 'text-[12px] font-mono text-[var(--accent)] hover:underline whitespace-nowrap'
+  return (
+    <span lang={lang} className="inline-flex items-baseline gap-2">
+      <span className="text-[10.5px] font-mono uppercase tracking-wider text-[var(--text3)]">{hi ? 'हिंदी' : 'EN'}</span>
+      {ed.brief && <a href={reportPdfPath(kind, period, hi, 'brief')} download className={link}>{hi ? 'सार' : 'Brief'} ⬇</a>}
+      {ed.detailed && <a href={reportPdfPath(kind, period, hi, ed.brief ? 'detailed' : undefined)} download className={link}>{ed.brief ? (hi ? 'विस्तृत' : 'Detailed') : 'PDF'} ⬇</a>}
+      {!ed.brief && !ed.detailed && <span className="text-[11px] font-mono text-[var(--text3)]">{hi ? 'जल्द' : 'soon'}</span>}
+    </span>
+  )
+}
+
 function ArchiveList({ periods, kind, isHi, files }: { periods: Period[]; kind: ReportKind; isHi: boolean; files: Record<string, ReportFile> }) {
   if (!periods.length) return null
+  const langs: Language[] = isHi ? ['hi', 'en'] : ['en', 'hi']
   return (
     <ul className="m-0 p-0 list-none divide-y border rounded-lg bg-[var(--surface)]" style={{ borderColor: 'var(--border)' }}>
-      {periods.map(p => {
-        const ed = reportEditions(files, kind, p.key, isHi ? 'hi' : 'en')
-        return (
-          <li key={p.key} className="flex items-center justify-between gap-3 px-3 py-2" style={{ borderColor: 'var(--border)' }}>
-            <Link href={reportPagePath(kind, p.key, isHi)} className="text-[13.5px] font-medium text-[var(--text1)] hover:text-[var(--accent)]">
-              {periodLabel(p, isHi)}
-            </Link>
-            {ed.brief || ed.detailed
-              ? <span className="flex gap-3 shrink-0">
-                  {ed.brief && <a href={reportPdfPath(kind, p.key, isHi, 'brief')} download className="text-[12px] font-mono text-[var(--accent)] hover:underline">{isHi ? 'सार ⬇' : 'Brief ⬇'}</a>}
-                  {ed.detailed && <a href={reportPdfPath(kind, p.key, isHi, ed.brief ? 'detailed' : undefined)} download className="text-[12px] font-mono text-[var(--accent)] hover:underline">{ed.brief ? (isHi ? 'विस्तृत ⬇' : 'Detailed ⬇') : 'PDF ⬇'}</a>}
-                </span>
-              : <span className="text-[11px] font-mono text-[var(--text3)] shrink-0">{isHi ? 'जल्द' : 'soon'}</span>}
-          </li>
-        )
-      })}
+      {periods.map(p => (
+        <li key={p.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2" style={{ borderColor: 'var(--border)' }}>
+          <Link href={reportPagePath(kind, p.key, isHi)} className="text-[13.5px] font-medium text-[var(--text1)] hover:text-[var(--accent)]">
+            {periodLabel(p, isHi)}
+          </Link>
+          <span className="flex flex-wrap gap-x-4 gap-y-1">
+            {langs.map(l => <ArchiveLinks key={l} kind={kind} period={p.key} lang={l} files={files} />)}
+          </span>
+        </li>
+      ))}
     </ul>
   )
 }
