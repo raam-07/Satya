@@ -7,6 +7,7 @@ import {
   type Period, type ReportFile, type ReportKind,
 } from '@/lib/upscReports'
 import { UpscPdfButton } from '@/components/UpscPdfButton'
+import { TelegramStrip } from '@/components/TelegramStrip'
 import { JsonLd, makeBreadcrumbJsonLd } from '@/components/JsonLd'
 
 export const revalidate = false
@@ -102,6 +103,7 @@ export default async function UpscReportsPage({ searchParams }: Props) {
             ? 'दैनिक, साप्ताहिक और मासिक संकलन, हिंदी और अंग्रेज़ी में। मुफ़्त, कोई साइन-अप नहीं — डाउनलोड करें और अपने ग्रुप में शेयर करें।'
             : 'Daily, weekly and monthly compilations in English and Hindi. Free, no sign-up — download and share with your study group.'}
         </p>
+        <TelegramStrip isHi={isHi} className="mt-3" />
       </div>
 
       <div className="px-4 md:px-6 space-y-6 mt-4">
@@ -114,7 +116,7 @@ export default async function UpscReportsPage({ searchParams }: Props) {
               <h2 className="text-[17px] font-bold text-[var(--text1)] m-0 mt-1">
                 <Link href={reportPagePath(kind, p.key, isHi)} className="hover:text-[var(--accent)]">{periodLabel(p, isHi)}</Link>
               </h2>
-              <UpscPdfButton kind={kind} period={p.key} isHi={isHi} files={files} />
+              <UpscPdfButton kind={kind} period={p.key} isHi={isHi} files={files} telegram={false} />
             </section>
           ))}
         </div>

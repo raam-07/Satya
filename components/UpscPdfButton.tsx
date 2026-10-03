@@ -1,3 +1,4 @@
+import { TelegramStrip } from '@/components/TelegramStrip'
 import { reportEditions, reportPdfPath, type ReportFile, type ReportKind } from '@/lib/upscReports'
 
 const mb = (f: ReportFile) => f.bytes >= 1e6 ? `${(f.bytes / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(f.bytes / 1e3))} KB`
@@ -13,8 +14,8 @@ const LANG = {
  * and the Detailed notes. A language whose PDF isn't stored yet says so (Hindi is stored once >= 80%
  * of the notes are translated).
  */
-export function UpscPdfButton({ kind, period, isHi, files }: {
-  kind: ReportKind; period: string; isHi: boolean; files: Record<string, ReportFile>
+export function UpscPdfButton({ kind, period, isHi, files, telegram = true }: {
+  kind: ReportKind; period: string; isHi: boolean; files: Record<string, ReportFile>; telegram?: boolean
 }) {
   const langs: ('en' | 'hi')[] = isHi ? ['hi', 'en'] : ['en', 'hi']
   const rows = langs.map(lang => ({ lang, ed: reportEditions(files, kind, period, lang) }))
@@ -75,6 +76,7 @@ export function UpscPdfButton({ kind, period, isHi, files }: {
           ? `सार: छोटा, जल्दी दोहराव के लिए · विस्तृत: पूरे नोट्स, तथ्य और प्रश्न · अपडेट ${when} IST`
           : `Brief: short, for quick revision · Detailed: full notes, facts and questions · Updated ${when} IST`}
       </p>
+      {telegram && <TelegramStrip isHi={isHi} />}
     </div>
   )
 }
