@@ -123,6 +123,40 @@ function extractSignificantTokens(text: string): Set<string> {
   return set
 }
 
+/** Older notes had text clipped mid-word with '…' (fixed in the UPSC service, v2.7). Never show a cut-off:
+ *  list items are dropped, a sentence is trimmed back to its last full clause. */
+const cutOff = (t: string) => /…\s*$/.test(t)
+function uncut(t: string): string {
+  if (!cutOff(t)) return t
+  const head = t.replace(/…\s*$/, '')
+  for (const sep of ['. ', '; ', ': ', ' — ', ', ']) {
+    const k = head.lastIndexOf(sep)
+    if (k >= head.length / 2) return head.slice(0, k).replace(/[\s,;:—]+$/, '') + (sep === '. ' ? '.' : '')
+  }
+  return t
+}
+
+/** Numbers that identify a story ("28 features", "100 kmph"), not years. */
+function storyNumbers(text: string): Set<string> {
+  const out = new Set<string>()
+  for (const t of text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)) {
+    if (/^\d{2,}$/.test(t) && !/^(19|20)\d\d$/.test(t)) out.add(t)
+  }
+  return out
+}
+
+/** Same story told twice (different outlets, often filed under different papers): headlines share most words,
+ *  (4+ words) or share a story number and two more words. Checked across papers, within 72 h. */
+function sameHeadline(a: { title: Set<string>; nums: Set<string> }, b: { title: Set<string>; nums: Set<string> }) {
+  let shared = 0
+  a.title.forEach(t => { if (b.title.has(t)) shared++ })
+  const union = a.title.size + b.title.size - shared
+  const jac = union > 0 ? shared / union : 0
+  let num = false
+  a.nums.forEach(n => { if (b.nums.has(n)) num = true })
+  return (shared >= 4 && jac >= 0.3) || (num && shared >= 2)
+}
+
 /** Attach titles/sources/events from the main DB and collapse items of the same story. */
 async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): Promise<UpscItem[]> {
   if (!rows.length) return []
@@ -220,7 +254,8 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
 
   const out: UpscItem[] = []
   const seenEvents = new Map<number, UpscItem>()
-  const processedItems: { item: UpscItem; tokens: Set<string> }[] = []
+  const seenClusters = new Map<string, UpscItem>()
+  const processedItems: { item: UpscItem; tokens: Set<string>; title: Set<string>; nums: Set<string> }[] = []
 
   for (const r of rows) {
     const artId = Number(r.article_id)
@@ -228,13 +263,12 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
     if (!m) continue
 
     const evId = r.event_id != null ? Number(r.event_id) : null
-    // 1. Same event dedup: collapse multiple reports under the same event
-    if (evId != null) {
-      const existing = seenEvents.get(evId)
-      if (existing) {
-        existing.related++
-        continue
-      }
+    const clusterId = r.cluster_id ? String(r.cluster_id) : null
+    // 1. Same event or same story cluster (the news pipeline's grouping): collapse into the first
+    const sameStory = (evId != null && seenEvents.get(evId)) || (clusterId && seenClusters.get(clusterId))
+    if (sameStory) {
+      sameStory.related++
+      continue
     }
 
     const uTrans = upscTransMap.get(artId)
@@ -244,7 +278,7 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       String(r.why_in_news ?? '')
     )
     const title = (lang === 'hi' && titleHiMap.get(artId)) || enTitle
-    const whyInNews = (lang === 'hi' && uTrans?.why_in_news_hi) || String(r.why_in_news ?? '')
+    const whyInNews = (lang === 'hi' && uTrans?.why_in_news_hi) || uncut(String(r.why_in_news ?? ''))
     const factBox = (lang === 'hi' && uTrans?.fact_box_hi) || String(r.fact_box ?? '')
     const pointers = (lang === 'hi' && uTrans?.prelims_pointers_hi && uTrans.prelims_pointers_hi.length > 0)
       ? uTrans.prelims_pointers_hi
@@ -253,14 +287,23 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       ? uTrans.mains_question_hi
       : (r.mains_question ? String(r.mains_question) : null)
 
-    const itemTokens = extractSignificantTokens(`${title} ${whyInNews}`)
+    // compare on the English text in both languages (the Hindi text has no Latin words to match)
+    const itemTokens = extractSignificantTokens(`${enTitle} ${String(r.why_in_news ?? '')}`)
+    const titleTokens = extractSignificantTokens(enTitle)
+    const titleNums = storyNumbers(enTitle)
     const pubAt = Number(r.published_at)
     const paper = String(r.gs_paper)
     const subject = String(r.subject)
 
-    // 2. Near-duplicate content dedup: check recent items within 48h for matching core entities/keywords
+    // 2. Near-duplicates: same headline across papers within 72 h, or same paper + subject with matching
+    //    key words within 48 h
     let isDuplicate = false
     for (const p of processedItems) {
+      if (Math.abs(p.item.publishedAt - pubAt) <= 259200 && sameHeadline(p, { title: titleTokens, nums: titleNums })) {
+        p.item.related++
+        isDuplicate = true
+        break
+      }
       if (Math.abs(p.item.publishedAt - pubAt) <= 172800 && p.item.paper === paper && p.item.subject === subject) {
         let shared = 0
         itemTokens.forEach(t => {
@@ -290,7 +333,7 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
       factBox,
       pointers,
       mainsQuestion,
-      mainsDimensions: arr<string>(r.mains_dimensions),
+      mainsDimensions: arr<string>(r.mains_dimensions).filter(d => !cutOff(String(d))),
       keywords: arr<string>(r.keywords),
       title,
       source: m.source ? String(m.source) : null,
@@ -303,7 +346,8 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
     if (evId != null) {
       seenEvents.set(evId, item)
     }
-    processedItems.push({ item, tokens: itemTokens })
+    if (clusterId) seenClusters.set(clusterId, item)
+    processedItems.push({ item, tokens: itemTokens, title: titleTokens, nums: titleNums })
     out.push(item)
   }
   return out
