@@ -77,7 +77,26 @@ const DANGLING_HEADLINE_ENDINGS = new Set([
   'minister', 'chief', 'deputy', 'baby', 'infant', 'pk', 'p.k', 'dr', 'mr', 'ms',
 ])
 
-function cleanUpscTitle(rephrased?: string | null, original?: string | null, whyInNews?: string | null): string {
+/** A headline made from 'why in news': its first sentence, or cut back at a clause if long (no '…'). */
+function whyTitle(why: string): string {
+  const w = why.replace(/\s+/g, ' ').trim()
+  const m = w.match(/[।!?]|\.(?=\s|$)/)  // not the dot inside 87.7%
+  const first = m && m.index != null ? w.slice(0, m.index) : w
+  if (first.length <= 160) return first
+  for (const sep of [', ', '; ', ' — ']) {
+    const k = first.lastIndexOf(sep, 160)
+    if (k > 50) return first.slice(0, k)
+  }
+  return first
+}
+
+type TitleSource = 'headline' | 'original' | 'why'
+
+/** The note's headline and where it came from. A news headline about something else than the note (e.g.
+ *  'Sarvjeet Singh Virk, Co-founder & MD of Shoonya' on a SEBI F&O-losses note) shares no key word with
+ *  why-in-news and is skipped. Same rule as the PDF reports (satya-upsc-reports reports/data.py). */
+function cleanUpscTitle(rephrased?: string | null, original?: string | null, whyInNews?: string | null): { title: string; src: TitleSource } {
+  const whyTokens = extractSignificantTokens(whyInNews ?? '')
   const check = (t?: string | null) => {
     if (!t) return null
     const trimmed = t.trim().replace(/\s[-|]\s[^-|]+$/, '').trim()
@@ -85,20 +104,25 @@ function cleanUpscTitle(rephrased?: string | null, original?: string | null, why
     if (words.length < 3) return null
     const last = words[words.length - 1].toLowerCase().replace(/[^a-z0-9.]/g, '')
     if (DANGLING_HEADLINE_ENDINGS.has(last) || (last.length <= 1 && !/^\d+$/.test(last))) return null
+    if (whyTokens.size > 0) {
+      let shared = 0
+      extractSignificantTokens(trimmed).forEach(t => { if (whyTokens.has(t)) shared++ })
+      if (shared === 0) return null  // about something else
+    }
     return trimmed
   }
 
   const goodRephrased = check(rephrased)
-  if (goodRephrased) return goodRephrased
+  if (goodRephrased) return { title: goodRephrased, src: 'headline' }
 
   const goodOriginal = check(original)
-  if (goodOriginal) return goodOriginal
+  if (goodOriginal) return { title: goodOriginal, src: 'original' }
 
   if (whyInNews && whyInNews.trim().length >= 15) {
-    return whyInNews.trim()
+    return { title: whyTitle(whyInNews), src: 'why' }
   }
 
-  return (rephrased || original || '').trim()
+  return { title: (rephrased || original || '').trim(), src: 'headline' }
 }
 
 const STOPWORDS = new Set([
@@ -272,12 +296,15 @@ async function hydrate(rows: Record<string, unknown>[], lang: Language = 'en'): 
     }
 
     const uTrans = upscTransMap.get(artId)
-    const enTitle = cleanUpscTitle(
+    const { title: enTitle, src: titleSrc } = cleanUpscTitle(
       m.rephrased_title ? String(m.rephrased_title) : null,
       m.original_title ? String(m.original_title) : null,
       String(r.why_in_news ?? '')
     )
-    const title = (lang === 'hi' && titleHiMap.get(artId)) || enTitle
+    // Hindi headline only when it translates the headline English uses; otherwise made from the Hindi why-in-news
+    const title = (lang === 'hi' && titleSrc === 'headline' && titleHiMap.get(artId))
+      || (lang === 'hi' && titleSrc !== 'headline' && uTrans?.why_in_news_hi && whyTitle(uTrans.why_in_news_hi))
+      || enTitle
     const whyInNews = (lang === 'hi' && uTrans?.why_in_news_hi) || uncut(String(r.why_in_news ?? ''))
     const factBox = (lang === 'hi' && uTrans?.fact_box_hi) || String(r.fact_box ?? '')
     const pointers = (lang === 'hi' && uTrans?.prelims_pointers_hi && uTrans.prelims_pointers_hi.length > 0)
